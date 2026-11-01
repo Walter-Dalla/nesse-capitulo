@@ -1,5 +1,5 @@
 import { QueryClient } from "@tanstack/react-query";
-import type { AddPayload, BookInput, ShelfItem, ShelfPatch, Stats, Status, User } from "./types";
+import type { AddPayload, BookInput, Providers, ShelfItem, ShelfPatch, Stats, Status, User } from "./types";
 
 export const queryClient = new QueryClient({
   defaultOptions: {
@@ -8,7 +8,7 @@ export const queryClient = new QueryClient({
 });
 
 export class ApiError extends Error {
-  constructor(public status: number, message: string) {
+  constructor(public status: number, message: string, public code?: string) {
     super(message);
   }
 }
@@ -24,17 +24,19 @@ async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
     throw new ApiError(401, "Sessão expirada. Entre de novo.");
   }
   const data = res.headers.get("content-type")?.includes("json") ? await res.json() : null;
-  if (!res.ok) throw new ApiError(res.status, data?.error ?? `Erro ${res.status}`);
+  if (!res.ok) throw new ApiError(res.status, data?.error ?? `Erro ${res.status}`, data?.code);
   return data as T;
 }
 
 export const Api = {
-  me: () => api<{ user: User | null }>("/api/me"),
-  providers: () => api<{ google: boolean; dev: boolean }>("/auth/providers"),
+  me: () => api<{ user: User | null; adUnlocked: boolean }>("/api/me"),
+  providers: () => api<Providers>("/auth/providers"),
+  adReward: (provider: string) => api<{ unlocked: boolean }>("/api/ads/reward", { method: "POST", body: JSON.stringify({ provider, outcome: "viewed" }) }),
   devLogin: (name: string, email: string) => api<{ user: User }>("/auth/dev", { method: "POST", body: JSON.stringify({ name, email }) }),
   logout: () => api<{ ok: true }>("/auth/logout", { method: "POST" }),
 
-  search: (q: string) => api<{ items: BookInput[] }>(`/api/search?q=${encodeURIComponent(q)}`),
+  search: (q: string) => api<{ items: BookInput[]; provider: "google" | "openlibrary" | null }>(`/api/search?q=${encodeURIComponent(q)}`),
+  details: (id: string) => api<{ description: string | null }>(`/api/shelf/${id}/details`),
 
   shelf: (params: { status?: Status; year?: number } = {}) => {
     const qs = new URLSearchParams();

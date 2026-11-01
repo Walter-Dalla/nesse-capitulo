@@ -8,6 +8,7 @@ import { authRoutes, requireAuth } from "./auth.js";
 import { searchRoutes } from "./routes/search.js";
 import { shelfRoutes } from "./routes/shelf.js";
 import { statsRoutes } from "./routes/stats.js";
+import { adsRoutes } from "./routes/ads.js";
 import type { AppEnv } from "./types.js";
 
 /** Monta a aplicação Hono (sem servir estáticos) — reutilizado nos testes. */
@@ -26,6 +27,7 @@ export function createApp(db: DB) {
   api.route("/", searchRoutes());
   api.route("/", shelfRoutes(db));
   api.route("/", statsRoutes(db));
+  api.route("/", adsRoutes(db));
   app.route("/", api);
 
   app.notFound((c) => {

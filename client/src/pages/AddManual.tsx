@@ -4,14 +4,14 @@ import { AddSheet } from "../components/AddSheet";
 import { Page } from "../components/Layout";
 import type { BookInput, Status } from "../lib/types";
 
-/** Cadastro manual de um livro que não foi encontrado na busca. */
+/** Cadastro manual de um livro que não foi encontrado na busca (sem upload de capa: só metadados). */
 export function AddManualPage() {
   const [params] = useSearchParams();
   const [title, setTitle] = useState(params.get("titulo") ?? "");
   const [authors, setAuthors] = useState("");
   const [pages, setPages] = useState("");
   const [year, setYear] = useState("");
-  const [cover, setCover] = useState("");
+  const [isbn, setIsbn] = useState("");
   const [book, setBook] = useState<BookInput | null>(null);
   const defaultYear = params.get("ano") ? Number(params.get("ano")) : undefined;
   const defaultStatus = (params.get("status") as Status | null) ?? undefined;
@@ -25,7 +25,7 @@ export function AddManualPage() {
       authors: authors.split(/[,;]/).map((a) => a.trim()).filter(Boolean),
       pageCount: pages ? Number(pages) : null,
       publishedYear: year ? Number(year) : null,
-      coverUrl: cover.trim() || null,
+      isbn13: isbn.replace(/[^0-9Xx]/g, "") || null,
     });
   }
 
@@ -51,8 +51,9 @@ export function AddManualPage() {
           </div>
         </div>
         <div>
-          <label className="label" htmlFor="m-cover">URL da capa (opcional)</label>
-          <input id="m-cover" className="input" type="url" placeholder="https://…" value={cover} onChange={(e) => setCover(e.target.value)} />
+          <label className="label" htmlFor="m-isbn">ISBN (opcional)</label>
+          <input id="m-isbn" className="input" inputMode="numeric" placeholder="978…" value={isbn} onChange={(e) => setIsbn(e.target.value)} />
+          <p className="mt-1 text-xs text-stone-500">Com o ISBN a capa é buscada automaticamente na Open Library. Sem capa, o livro ganha uma capa colorida com o título.</p>
         </div>
         <button type="submit" className="btn-primary w-full">Continuar</button>
       </form>

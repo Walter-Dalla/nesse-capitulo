@@ -3,13 +3,15 @@ import { randomUUID } from "node:crypto";
 import type { DB } from "../db.js";
 import type { AppEnv, Book, BookInput, ShelfItem, Status } from "../types.js";
 import { ValidationError, optDate, optInt, optStr, parseBookInput, parseStatus } from "../validate.js";
+import { AD_REQUIRED } from "./ads.js";
+import { fetchDetails } from "./search.js";
 
 const SELECT_ITEM = `
   SELECT ub.id, ub.status, ub.rating, ub.review, ub.started_at, ub.finished_at, ub.read_year,
          ub.created_at, ub.updated_at,
          b.id AS b_id, b.source AS b_source, b.source_id AS b_source_id, b.title AS b_title,
-         b.authors AS b_authors, b.cover_url AS b_cover_url, b.page_count AS b_page_count,
-         b.published_year AS b_published_year, b.isbn13 AS b_isbn13, b.description AS b_description
+         b.authors AS b_authors, b.page_count AS b_page_count,
+         b.published_year AS b_published_year, b.isbn13 AS b_isbn13, b.cover_ref AS b_cover_ref
   FROM user_books ub JOIN books b ON b.id = ub.book_id`;
 
 function rowToItem(r: any): ShelfItem {
@@ -29,27 +31,26 @@ function rowToItem(r: any): ShelfItem {
       sourceId: r.b_source_id,
       title: r.b_title,
       authors: JSON.parse(r.b_authors ?? "[]"),
-      coverUrl: r.b_cover_url,
       pageCount: r.b_page_count,
       publishedYear: r.b_published_year,
       isbn13: r.b_isbn13,
-      description: r.b_description,
+      coverRef: r.b_cover_ref,
     },
   };
 }
 
 export function findOrCreateBook(db: DB, input: BookInput): string {
-  if (input.source === "google" && input.sourceId) {
-    const existing = db.prepare("SELECT id FROM books WHERE source = 'google' AND source_id = ?").get(input.sourceId) as { id: string } | undefined;
+  if (input.source !== "manual" && input.sourceId) {
+    const existing = db.prepare("SELECT id FROM books WHERE source = ? AND source_id = ?").get(input.source, input.sourceId) as { id: string } | undefined;
     if (existing) return existing.id;
   }
   const id = randomUUID();
   db.prepare(
-    `INSERT INTO books (id, source, source_id, title, authors, cover_url, page_count, published_year, isbn13, description)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO books (id, source, source_id, title, authors, page_count, published_year, isbn13, cover_ref)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
   ).run(
     id, input.source, input.sourceId ?? null, input.title, JSON.stringify(input.authors ?? []),
-    input.coverUrl ?? null, input.pageCount ?? null, input.publishedYear ?? null, input.isbn13 ?? null, input.description ?? null,
+    input.pageCount ?? null, input.publishedYear ?? null, input.isbn13 ?? null, input.coverRef ?? null,
   );
   return id;
 }
@@ -125,6 +126,15 @@ export function shelfRoutes(db: DB) {
     };
     reconcile(fields);
 
+    // Gate de monetização: criar um livro NOVO na estante exige o anúncio da sessão.
+    // Atualizar um livro que já está na estante continua livre.
+    if (!c.var.adUnlocked) {
+      const already = book.source !== "manual" && book.sourceId
+        ? db.prepare("SELECT ub.id FROM user_books ub JOIN books b ON b.id = ub.book_id WHERE ub.user_id = ? AND b.source = ? AND b.source_id = ?").get(user.id, book.source, book.sourceId)
+        : undefined;
+      if (!already) return c.json(AD_REQUIRED, 403);
+    }
+
     const result = db.transaction(() => {
       const bookId = findOrCreateBook(db, book);
       const existing = db.prepare("SELECT id FROM user_books WHERE user_id = ? AND book_id = ?").get(user.id, bookId) as { id: string } | undefined;
@@ -176,8 +186,8 @@ export function shelfRoutes(db: DB) {
     if (has("book") && current.book.source === "manual") {
       const b = parseBookInput({ ...body.book as object, source: "manual" });
       db.prepare(
-        `UPDATE books SET title = ?, authors = ?, cover_url = ?, page_count = ?, published_year = ?, isbn13 = ?, description = ? WHERE id = ?`,
-      ).run(b.title, JSON.stringify(b.authors ?? []), b.coverUrl, b.pageCount, b.publishedYear, b.isbn13, b.description, current.book.id);
+        `UPDATE books SET title = ?, authors = ?, page_count = ?, published_year = ?, isbn13 = ? WHERE id = ?`,
+      ).run(b.title, JSON.stringify(b.authors ?? []), b.pageCount, b.publishedYear, b.isbn13, current.book.id);
     }
 
     db.prepare(
@@ -186,6 +196,15 @@ export function shelfRoutes(db: DB) {
     ).run(fields.status, fields.rating, fields.review, fields.startedAt, fields.finishedAt, fields.readYear, current.id);
 
     return c.json({ item: getItem(db, user.id, current.id) });
+  });
+
+  // sinopse sob demanda, direto da fonte externa (nada é gravado no banco)
+  app.get("/api/shelf/:id/details", async (c) => {
+    const item = getItem(db, c.var.user.id, c.req.param("id"));
+    if (!item) return c.json({ error: "Não encontrado" }, 404);
+    if (item.book.source === "manual" || !item.book.sourceId) return c.json({ description: null });
+    c.header("Cache-Control", "private, max-age=3600");
+    return c.json(await fetchDetails(item.book.source, item.book.sourceId));
   });
 
   app.delete("/api/shelf/:id", (c) => {

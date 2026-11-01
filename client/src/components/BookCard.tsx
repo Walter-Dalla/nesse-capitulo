@@ -8,7 +8,7 @@ export function BookCard({ item }: { item: ShelfItem }) {
   const { book } = item;
   return (
     <Link to={`/livro/${item.id}`} className="card flex gap-3 p-3 transition active:scale-[0.99] hover:ring-accent-200 dark:hover:ring-stone-700">
-      <BookCover title={book.title} url={book.coverUrl} className="w-14" />
+      <BookCover book={book} className="w-14" />
       <div className="min-w-0 flex-1 py-0.5">
         <p className="line-clamp-2 font-semibold leading-snug">{book.title}</p>
         <p className="mt-0.5 truncate text-sm text-stone-500 dark:text-stone-400">{formatAuthors(book.authors)}</p>

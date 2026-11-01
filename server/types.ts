@@ -9,28 +9,36 @@ export interface User {
   picture: string | null;
 }
 
+export type BookSource = "google" | "openlibrary" | "manual";
+export const BOOK_SOURCES: BookSource[] = ["google", "openlibrary", "manual"];
+
+/** Metadados mínimos de um livro. Capa e sinopse não são persistidas: vêm da fonte externa. */
 export interface BookInput {
-  source: "google" | "manual";
+  source: BookSource;
   sourceId?: string | null;
   title: string;
   authors?: string[];
-  coverUrl?: string | null;
   pageCount?: number | null;
   publishedYear?: number | null;
   isbn13?: string | null;
-  description?: string | null;
+  /** 'g' (capa no Google Books via sourceId) | 'ol:<cover_id>' (Open Library) | null (derivar do ISBN) */
+  coverRef?: string | null;
 }
 
 export interface Book {
   id: string;
-  source: "google" | "manual";
+  source: BookSource;
   sourceId: string | null;
   title: string;
   authors: string[];
-  coverUrl: string | null;
   pageCount: number | null;
   publishedYear: number | null;
   isbn13: string | null;
+  coverRef: string | null;
+}
+
+/** Dados buscados sob demanda (não persistidos). */
+export interface BookDetails {
   description: string | null;
 }
 
@@ -48,5 +56,5 @@ export interface ShelfItem {
 }
 
 export type AppEnv = {
-  Variables: { user: User };
+  Variables: { user: User; sessionId: string; adUnlocked: boolean };
 };

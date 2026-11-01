@@ -38,16 +38,22 @@ function setSessionCookie(c: any, sessionId: string, expiresAt: number) {
   });
 }
 
-export function findUserBySession(db: DB, sessionId: string | undefined): User | null {
+export function findSession(db: DB, sessionId: string | undefined): { user: User; adUnlocked: boolean } | null {
   if (!sessionId) return null;
   const row = db
     .prepare(
-      `SELECT u.id, u.google_sub, u.email, u.name, u.picture
+      `SELECT u.id, u.google_sub, u.email, u.name, u.picture, s.ad_unlocked
        FROM sessions s JOIN users u ON u.id = s.user_id
        WHERE s.id = ? AND s.expires_at > ?`,
     )
-    .get(sessionId, Date.now()) as User | undefined;
-  return row ?? null;
+    .get(sessionId, Date.now()) as (User & { ad_unlocked: number }) | undefined;
+  if (!row) return null;
+  const { ad_unlocked, ...user } = row;
+  return { user, adUnlocked: ad_unlocked === 1 };
+}
+
+export function findUserBySession(db: DB, sessionId: string | undefined): User | null {
+  return findSession(db, sessionId)?.user ?? null;
 }
 
 export function upsertGoogleUser(db: DB, p: GoogleProfile): User {
@@ -77,9 +83,13 @@ export function upsertGoogleUser(db: DB, p: GoogleProfile): User {
 /** Middleware: exige usuário logado e o coloca em c.var.user */
 export function requireAuth(db: DB) {
   return createMiddleware<AppEnv>(async (c, next) => {
-    const user = findUserBySession(db, getCookie(c, SESSION_COOKIE));
-    if (!user) return c.json({ error: "Não autenticado" }, 401);
-    c.set("user", user);
+    const sid = getCookie(c, SESSION_COOKIE);
+    const session = findSession(db, sid);
+    if (!session || !sid) return c.json({ error: "Não autenticado" }, 401);
+    c.set("user", session.user);
+    c.set("sessionId", sid);
+    // sem anúncios configurados, tudo fica liberado
+    c.set("adUnlocked", !env.ads.enabled || session.adUnlocked);
     await next();
   });
 }
@@ -118,7 +128,11 @@ export function authRoutes(db: DB) {
   const app = new Hono<AppEnv>();
 
   app.get("/auth/providers", (c) =>
-    c.json({ google: googleLoginEnabled, dev: env.allowDevLogin }),
+    c.json({
+      google: googleLoginEnabled,
+      dev: env.allowDevLogin,
+      ads: { enabled: env.ads.enabled, provider: env.ads.provider, adsenseClient: env.ads.adsenseClient || null },
+    }),
   );
 
   // 1) redireciona ao Google
@@ -203,9 +217,9 @@ export function authRoutes(db: DB) {
   });
 
   app.get("/api/me", (c) => {
-    const user = findUserBySession(db, getCookie(c, SESSION_COOKIE));
-    if (!user) return c.json({ user: null });
-    return c.json({ user: publicUser(user) });
+    const session = findSession(db, getCookie(c, SESSION_COOKIE));
+    if (!session) return c.json({ user: null, adUnlocked: false });
+    return c.json({ user: publicUser(session.user), adUnlocked: !env.ads.enabled || session.adUnlocked });
   });
 
   return app;

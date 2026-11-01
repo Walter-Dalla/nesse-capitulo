@@ -17,21 +17,23 @@ CREATE TABLE IF NOT EXISTS sessions (
   id TEXT PRIMARY KEY,
   user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   expires_at INTEGER NOT NULL,
+  ad_unlocked INTEGER NOT NULL DEFAULT 0, -- 1 depois que o usuário viu o anúncio nesta sessão
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 CREATE INDEX IF NOT EXISTS idx_sessions_user ON sessions(user_id);
 
+-- Guardamos só o mínimo por livro: título, autores e referências curtas.
+-- Capa e sinopse NÃO ficam no banco: são derivadas/baixadas do Google Books ou da Open Library.
 CREATE TABLE IF NOT EXISTS books (
   id TEXT PRIMARY KEY,
-  source TEXT NOT NULL,              -- 'google' | 'manual'
-  source_id TEXT,                    -- id do volume no Google Books (null se manual)
+  source TEXT NOT NULL,              -- 'google' | 'openlibrary' | 'manual'
+  source_id TEXT,                    -- id do volume (Google) ou da obra (Open Library); null se manual
   title TEXT NOT NULL,
   authors TEXT NOT NULL DEFAULT '[]',-- JSON array de strings
-  cover_url TEXT,
   page_count INTEGER,
   published_year INTEGER,
   isbn13 TEXT,
-  description TEXT,
+  cover_ref TEXT,                    -- referência curta da capa ('g' = Google pelo source_id; 'ol:<id>' = Open Library); null = derivar do ISBN
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 CREATE UNIQUE INDEX IF NOT EXISTS idx_books_source
@@ -63,7 +65,22 @@ export function openDatabase(file = env.databasePath) {
   db.pragma("foreign_keys = ON");
   db.pragma("busy_timeout = 5000");
   db.exec(SCHEMA);
+  migrate(db);
   return db;
+}
+
+/** Migrações leves para bancos criados por versões anteriores. */
+function migrate(db: Database.Database) {
+  const cols = (table: string) => (db.pragma(`table_info(${table})`) as { name: string }[]).map((c) => c.name);
+  const books = cols("books");
+  if (!books.includes("cover_ref")) db.exec("ALTER TABLE books ADD COLUMN cover_ref TEXT");
+  if (books.includes("cover_url")) {
+    // versões antigas guardavam a URL inteira; converte para a referência curta e descarta
+    db.exec("UPDATE books SET cover_ref = 'g' WHERE source = 'google' AND cover_url IS NOT NULL AND cover_ref IS NULL");
+    db.exec("ALTER TABLE books DROP COLUMN cover_url");
+  }
+  if (books.includes("description")) db.exec("ALTER TABLE books DROP COLUMN description");
+  if (!cols("sessions").includes("ad_unlocked")) db.exec("ALTER TABLE sessions ADD COLUMN ad_unlocked INTEGER NOT NULL DEFAULT 0");
 }
 
 export type DB = ReturnType<typeof openDatabase>;

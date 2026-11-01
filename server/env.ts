@@ -36,6 +36,13 @@ export const env = {
     booksApiKey: process.env.GOOGLE_BOOKS_API_KEY ?? "",
   },
   allowDevLogin: process.env.ALLOW_DEV_LOGIN === "true" && !isProd,
+  ads: {
+    /** Exige ver um anúncio (uma vez por sessão) antes de criar livros na estante. */
+    enabled: process.env.ADS_ENABLED === "true",
+    /** 'simulated' (dev: contagem regressiva) | 'adsense' (Ad Placement API do Google, rewarded) */
+    provider: (process.env.AD_PROVIDER === "adsense" ? "adsense" : "simulated") as "simulated" | "adsense",
+    adsenseClient: process.env.ADSENSE_CLIENT_ID ?? "",
+  },
 };
 
 export const googleLoginEnabled = Boolean(env.google.clientId && env.google.clientSecret);

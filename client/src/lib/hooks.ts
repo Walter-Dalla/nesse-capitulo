@@ -10,19 +10,29 @@ export const useShelf = (params: { status?: Status; year?: number } = {}) =>
   useQuery({ queryKey: ["shelf", params], queryFn: () => Api.shelf(params) });
 export const useItem = (id: string) => useQuery({ queryKey: ["item", id], queryFn: () => Api.item(id) });
 
+/** Espera de 1 s depois da última tecla antes de consultar o backend. */
+export const SEARCH_DEBOUNCE_MS = 1000;
+export const SEARCH_MIN_CHARS = 3;
+
 export function useSearch(q: string) {
-  const debounced = useDebounced(q.trim(), 400);
-  return {
-    ...useQuery({
-      queryKey: ["search", debounced],
-      queryFn: () => Api.search(debounced),
-      enabled: debounced.length >= 2,
-      staleTime: 10 * 60_000,
-      retry: false,
-    }),
-    debounced,
-  };
+  const normalized = q.trim().replace(/\s+/g, " ");
+  const debounced = useDebounced(normalized, SEARCH_DEBOUNCE_MS);
+  const query = useQuery({
+    queryKey: ["search", debounced.toLowerCase()],
+    queryFn: () => Api.search(debounced),
+    enabled: debounced.length >= SEARCH_MIN_CHARS,
+    staleTime: 10 * 60_000,
+    gcTime: 30 * 60_000,
+    retry: false,
+  });
+  return { ...query, debounced, waiting: normalized.length >= SEARCH_MIN_CHARS && normalized !== debounced };
 }
+
+export const useDetails = (id: string, enabled: boolean) =>
+  useQuery({ queryKey: ["details", id], queryFn: () => Api.details(id), enabled, staleTime: 60 * 60_000, retry: false });
+
+export const useAdReward = () =>
+  useMutation({ mutationFn: (provider: string) => Api.adReward(provider), onSuccess: () => queryClient.invalidateQueries({ queryKey: ["me"] }) });
 
 export const useAddToShelf = () =>
   useMutation({ mutationFn: (p: AddPayload) => Api.add(p), onSuccess: () => invalidateShelf() });
@@ -43,8 +53,9 @@ export const useLogout = () =>
   useMutation({
     mutationFn: Api.logout,
     onSuccess: () => {
-      queryClient.clear();
-      queryClient.setQueryData(["me"], { user: null });
+      // primeiro derruba o usuário (RequireAuth redireciona), depois limpa o resto sem refetch
+      queryClient.setQueryData(["me"], { user: null, adUnlocked: false });
+      queryClient.removeQueries({ predicate: (q) => q.queryKey[0] !== "me" });
     },
   });
 

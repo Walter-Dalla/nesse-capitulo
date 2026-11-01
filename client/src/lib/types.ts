@@ -23,21 +23,36 @@ export interface User {
   picture: string | null;
 }
 
+export type BookSource = "google" | "openlibrary" | "manual";
+
+/** Metadados mínimos; capa e sinopse vêm da fonte externa (ver coverUrlFor / useDetails). */
 export interface BookInput {
-  source: "google" | "manual";
+  source: BookSource;
   sourceId?: string | null;
   title: string;
   authors?: string[];
-  coverUrl?: string | null;
   pageCount?: number | null;
   publishedYear?: number | null;
   isbn13?: string | null;
-  description?: string | null;
+  /** 'g' = capa do Google Books via sourceId; 'ol:<id>' = Open Library; null = tentar pelo ISBN */
+  coverRef?: string | null;
 }
 
 export interface Book extends BookInput {
   id: string;
   authors: string[];
+}
+
+export const SOURCE_LABEL: Record<BookSource, string> = {
+  google: "Google Books",
+  openlibrary: "Open Library",
+  manual: "cadastrado manualmente",
+};
+
+export interface Providers {
+  google: boolean;
+  dev: boolean;
+  ads: { enabled: boolean; provider: "simulated" | "adsense"; adsenseClient: string | null };
 }
 
 export interface ShelfItem {

@@ -1,4 +1,4 @@
-import { STATUSES, type BookInput, type Status } from "./types.js";
+import { BOOK_SOURCES, STATUSES, type BookInput, type BookSource, type Status } from "./types.js";
 
 export class ValidationError extends Error {}
 
@@ -38,23 +38,26 @@ export function parseStatus(v: unknown): Status {
 export function parseBookInput(v: unknown): BookInput {
   if (!v || typeof v !== "object") throw new ValidationError("book obrigatório");
   const b = v as Record<string, unknown>;
-  const source = b.source === "google" ? "google" : b.source === "manual" ? "manual" : null;
-  if (!source) throw new ValidationError("book.source deve ser 'google' ou 'manual'");
+  const source = BOOK_SOURCES.includes(b.source as BookSource) ? (b.source as BookSource) : null;
+  if (!source) throw new ValidationError(`book.source deve ser um de: ${BOOK_SOURCES.join(", ")}`);
   const title = optStr(b.title, "book.title", 500);
   if (!title) throw new ValidationError("book.title obrigatório");
   const authorsRaw = Array.isArray(b.authors) ? b.authors : [];
   const authors = authorsRaw.filter((a): a is string => typeof a === "string").map((a) => a.trim()).filter(Boolean).slice(0, 10);
   const sourceId = optStr(b.sourceId, "book.sourceId", 200);
-  if (source === "google" && !sourceId) throw new ValidationError("book.sourceId obrigatório para livros do Google");
+  if (source !== "manual" && !sourceId) throw new ValidationError("book.sourceId obrigatório para livros de fontes externas");
+  const coverRef = optStr(b.coverRef, "book.coverRef", 40);
+  if (coverRef && !/^(g|ol:\d{1,12})$/.test(coverRef)) throw new ValidationError("book.coverRef inválido");
+  const isbn = optStr(b.isbn13, "book.isbn13", 20)?.replace(/[^0-9Xx]/g, "") || null;
+  if (isbn && isbn.length !== 10 && isbn.length !== 13) throw new ValidationError("ISBN deve ter 10 ou 13 dígitos");
   return {
     source,
-    sourceId: source === "google" ? sourceId : null,
+    sourceId: source === "manual" ? null : sourceId,
     title,
     authors,
-    coverUrl: optStr(b.coverUrl, "book.coverUrl", 1000),
     pageCount: optInt(b.pageCount, "book.pageCount", 1, 100000),
     publishedYear: optInt(b.publishedYear, "book.publishedYear", 0, 3000),
-    isbn13: optStr(b.isbn13, "book.isbn13", 20),
-    description: optStr(b.description, "book.description", 5000),
+    isbn13: isbn,
+    coverRef: source === "manual" ? null : coverRef,
   };
 }

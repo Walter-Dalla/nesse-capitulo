@@ -6,9 +6,9 @@ import { ErrorBox, Page, Spinner } from "../components/Layout";
 import { Stars } from "../components/Stars";
 import { toast } from "../components/Toast";
 import { YearSelect } from "../components/YearSelect";
-import { useItem, useRemoveItem, useUpdateItem } from "../lib/hooks";
+import { useDetails, useItem, useRemoveItem, useUpdateItem } from "../lib/hooks";
 import { currentYear, formatAuthors, today } from "../lib/format";
-import { STATUS_ACTION, STATUS_ORDER, type ShelfPatch } from "../lib/types";
+import { SOURCE_LABEL, STATUS_ACTION, STATUS_ORDER, type ShelfPatch } from "../lib/types";
 
 export function BookDetailPage() {
   const { id = "" } = useParams();
@@ -20,6 +20,8 @@ export function BookDetailPage() {
 
   const [review, setReview] = useState("");
   const [showDesc, setShowDesc] = useState(false);
+  // sinopse vem sob demanda da fonte externa; não é gravada no banco
+  const details = useDetails(id, Boolean(item) && item?.book.source !== "manual");
   useEffect(() => { if (item) setReview(item.review ?? ""); }, [item?.id, item?.review]);
 
   async function save(patch: ShelfPatch, msg?: string) {
@@ -51,7 +53,7 @@ export function BookDetailPage() {
   return (
     <Page back action={<button type="button" onClick={onRemove} className="rounded-xl p-2 text-stone-500 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/40" aria-label="Remover da estante"><IconTrash /></button>}>
       <section className="flex gap-4">
-        <BookCover title={book.title} url={book.coverUrl} className="w-28" />
+        <BookCover book={book} size="L" className="w-28" />
         <div className="min-w-0 flex-1 py-1">
           <h1 className="text-xl font-bold leading-tight">{book.title}</h1>
           <p className="mt-1 text-stone-600 dark:text-stone-300">{formatAuthors(book.authors)}</p>
@@ -114,16 +116,16 @@ export function BookDetailPage() {
         )}
       </section>
 
-      {book.description && (
-        <section className="mt-6">
+      {details.data?.description && (
+        <section className="mt-6 fade-in">
           <span className="label">Sinopse</span>
-          <p className={`text-sm leading-relaxed text-stone-600 dark:text-stone-300 ${showDesc ? "" : "line-clamp-4"}`}>{book.description}</p>
+          <p className={`text-sm leading-relaxed text-stone-600 dark:text-stone-300 ${showDesc ? "" : "line-clamp-4"}`}>{details.data.description}</p>
           <button type="button" onClick={() => setShowDesc((v) => !v)} className="mt-1 text-sm font-semibold text-accent-700 dark:text-accent-400">{showDesc ? "Mostrar menos" : "Ler mais"}</button>
         </section>
       )}
 
       <p className="mt-8 text-center text-xs text-stone-400">
-        {book.source === "google" ? "Dados do livro: Google Books" : "Livro cadastrado manualmente"}
+        {book.source === "manual" ? "Livro cadastrado manualmente" : `Dados e capa: ${SOURCE_LABEL[book.source]}`}
       </p>
     </Page>
   );

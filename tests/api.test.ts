@@ -77,6 +77,11 @@ test("fluxo completo: login dev, adicionar, avaliar, listar por ano, mudar statu
   const badDate = await call("PATCH", `/api/shelf/${id}`, { startedAt: "2024-05-01", finishedAt: "2024-01-01" });
   assert.equal(badDate.status, 400);
 
+  // sinopse sob demanda: livro manual não tem fonte externa
+  const details = await call("GET", `/api/shelf/${id}/details`);
+  assert.equal(details.status, 200);
+  assert.equal(details.json.description, null);
+
   // concluir um livro que estava "lendo" sem informar data assume hoje
   const finish = await call("PATCH", `/api/shelf/${g1.json.item.id}`, { status: "read" });
   assert.equal(finish.json.item.readYear, new Date().getFullYear());
@@ -124,4 +129,59 @@ test("dados de um usuário não vazam para outro", async () => {
   assert.equal(patch.status, 404);
   const del = await app.request(`/api/shelf/${mine.items[0].id}`, { method: "DELETE", headers: { ...headers, Cookie: bob } });
   assert.equal(del.status, 404);
+});
+
+test("gate de anúncio: criar livro exige recompensa uma vez por sessão; editar é livre", async () => {
+  process.env.ADS_ENABLED = "true";
+  const { env } = await import("../server/env.ts");
+  const prev = env.ads.enabled;
+  env.ads.enabled = true;
+  try {
+    const call = client();
+    await call("POST", "/auth/dev", { email: "ads@x.com" });
+    const me = await call("GET", "/api/me");
+    assert.equal(me.json.adUnlocked, false);
+
+    const blocked = await call("POST", "/api/shelf", { book: manualBook, status: "want" });
+    assert.equal(blocked.status, 403);
+    assert.equal(blocked.json.code, "AD_REQUIRED");
+
+    const badReward = await call("POST", "/api/ads/reward", { provider: "simulated", outcome: "dismissed" });
+    assert.equal(badReward.status, 400);
+    const reward = await call("POST", "/api/ads/reward", { provider: "simulated", outcome: "viewed" });
+    assert.equal(reward.status, 200);
+
+    const ok = await call("POST", "/api/shelf", { book: manualBook, status: "want" });
+    assert.equal(ok.status, 201);
+    const edit = await call("PATCH", `/api/shelf/${ok.json.item.id}`, { rating: 3 });
+    assert.equal(edit.status, 200);
+
+    // nova sessão (novo login) volta a exigir o anúncio, mas editar o que já existe continua livre
+    const call2 = client();
+    void call2;
+    await call("POST", "/auth/logout");
+    await call("POST", "/auth/dev", { email: "ads@x.com" });
+    const again = await call("POST", "/api/shelf", { book: { source: "google", sourceId: "zzz", title: "Novo" }, status: "want" });
+    assert.equal(again.status, 403);
+    const editAgain = await call("PATCH", `/api/shelf/${ok.json.item.id}`, { rating: 2 });
+    assert.equal(editAgain.status, 200);
+  } finally {
+    env.ads.enabled = prev;
+  }
+});
+
+test("o banco guarda só metadados mínimos do livro (sem capa/sinopse)", async () => {
+  const call = client();
+  await call("POST", "/auth/dev", { email: "slim@x.com" });
+  const add = await call("POST", "/api/shelf", {
+    book: { source: "google", sourceId: "g1", title: "Livro", authors: ["A"], coverRef: "g", coverUrl: "https://x/y.jpg", description: "x".repeat(5000) },
+    status: "want",
+  });
+  assert.equal(add.status, 201);
+  assert.deepEqual(Object.keys(add.json.item.book).sort(), ["authors", "coverRef", "id", "isbn13", "pageCount", "publishedYear", "source", "sourceId", "title"]);
+  assert.equal(add.json.item.book.coverRef, "g");
+  const bad = await call("POST", "/api/shelf", { book: { source: "google", sourceId: "g2", title: "Livro", coverRef: "https://evil" }, status: "want" });
+  assert.equal(bad.status, 400);
+  const isbn = await call("POST", "/api/shelf", { book: { source: "manual", title: "Com ISBN", isbn13: "978-85-254-3218-6" }, status: "want" });
+  assert.equal(isbn.json.item.book.isbn13, "9788525432186");
 });
