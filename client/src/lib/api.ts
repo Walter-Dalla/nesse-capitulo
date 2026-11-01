@@ -1,0 +1,61 @@
+import { QueryClient } from "@tanstack/react-query";
+import type { AddPayload, BookInput, ShelfItem, ShelfPatch, Stats, Status, User } from "./types";
+
+export const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: { staleTime: 30_000, retry: 1, refetchOnWindowFocus: true },
+  },
+});
+
+export class ApiError extends Error {
+  constructor(public status: number, message: string) {
+    super(message);
+  }
+}
+
+async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
+  const res = await fetch(path, {
+    ...init,
+    credentials: "same-origin",
+    headers: { Accept: "application/json", ...(init.body ? { "Content-Type": "application/json" } : {}), ...init.headers },
+  });
+  if (res.status === 401) {
+    queryClient.setQueryData(["me"], { user: null });
+    throw new ApiError(401, "Sessão expirada. Entre de novo.");
+  }
+  const data = res.headers.get("content-type")?.includes("json") ? await res.json() : null;
+  if (!res.ok) throw new ApiError(res.status, data?.error ?? `Erro ${res.status}`);
+  return data as T;
+}
+
+export const Api = {
+  me: () => api<{ user: User | null }>("/api/me"),
+  providers: () => api<{ google: boolean; dev: boolean }>("/auth/providers"),
+  devLogin: (name: string, email: string) => api<{ user: User }>("/auth/dev", { method: "POST", body: JSON.stringify({ name, email }) }),
+  logout: () => api<{ ok: true }>("/auth/logout", { method: "POST" }),
+
+  search: (q: string) => api<{ items: BookInput[] }>(`/api/search?q=${encodeURIComponent(q)}`),
+
+  shelf: (params: { status?: Status; year?: number } = {}) => {
+    const qs = new URLSearchParams();
+    if (params.status) qs.set("status", params.status);
+    if (params.year) qs.set("year", String(params.year));
+    const s = qs.toString();
+    return api<{ items: ShelfItem[] }>(`/api/shelf${s ? `?${s}` : ""}`);
+  },
+  item: (id: string) => api<{ item: ShelfItem }>(`/api/shelf/${id}`),
+  add: (payload: AddPayload) => api<{ item: ShelfItem }>("/api/shelf", { method: "POST", body: JSON.stringify(payload) }),
+  update: (id: string, patch: ShelfPatch) => api<{ item: ShelfItem }>(`/api/shelf/${id}`, { method: "PATCH", body: JSON.stringify(patch) }),
+  remove: (id: string) => api<{ ok: true }>(`/api/shelf/${id}`, { method: "DELETE" }),
+
+  stats: () => api<Stats>("/api/stats"),
+};
+
+/** Invalida tudo que depende da estante após uma mutação. */
+export function invalidateShelf() {
+  return Promise.all([
+    queryClient.invalidateQueries({ queryKey: ["shelf"] }),
+    queryClient.invalidateQueries({ queryKey: ["item"] }),
+    queryClient.invalidateQueries({ queryKey: ["stats"] }),
+  ]);
+}
