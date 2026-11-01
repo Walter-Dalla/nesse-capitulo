@@ -19,7 +19,9 @@ function loadDotEnv(file = path.resolve(process.cwd(), ".env")) {
 }
 loadDotEnv();
 
-const isProd = process.env.NODE_ENV === "production";
+// Sem NODE_ENV definido (ex.: `npm start` no Windows), rodar o build compilado (.js) conta como produção.
+const runningCompiled = import.meta.url.endsWith(".js");
+const isProd = process.env.NODE_ENV ? process.env.NODE_ENV === "production" : runningCompiled;
 
 export const env = {
   isProd,

@@ -26,7 +26,7 @@ export function AdGate({ onUnlocked, onClose }: Props) {
   const reward = useAdReward();
   const provider = providers.data?.ads.provider ?? "simulated";
   const [seconds, setSeconds] = useState(SIMULATED_SECONDS);
-  const [phase, setPhase] = useState<"intro" | "playing" | "done" | "error">("intro");
+  const [phase, setPhase] = useState<"intro" | "playing" | "done" | "error" | "blocked">("intro");
   const started = useRef(false);
 
   async function grant() {
@@ -42,23 +42,30 @@ export function AdGate({ onUnlocked, onClose }: Props) {
   }
 
   function start() {
-    if (started.current) return;
+    if (started.current || !providers.data) return;
     started.current = true;
-    setPhase("playing");
-    if (provider === "adsense" && typeof window.adBreak === "function") {
+    if (provider === "adsense") {
+      const adBreak = window.adBreak;
+      if (typeof adBreak !== "function") {
+        // script do AdSense não carregou (bloqueador ou index.html sem o snippet): não libera
+        setPhase("blocked");
+        return;
+      }
+      setPhase("playing");
       let viewed = false;
-      window.adBreak({
+      adBreak({
         type: "reward",
         name: "novo-livro",
         beforeReward: (showAdFn: () => void) => showAdFn(),
         adViewed: () => { viewed = true; },
         adDismissed: () => { if (!viewed) setPhase("error"); },
-        adBreakDone: () => { if (viewed) grant(); else if (phase !== "error") setPhase("error"); },
+        adBreakDone: () => { if (viewed) grant(); else setPhase("error"); },
       });
       return;
     }
     // simulado
     setSeconds(SIMULATED_SECONDS);
+    setPhase("playing");
   }
 
   useEffect(() => {
@@ -66,7 +73,6 @@ export function AdGate({ onUnlocked, onClose }: Props) {
     if (seconds <= 0) { grant(); return; }
     const t = setTimeout(() => setSeconds((s) => s - 1), 1000);
     return () => clearTimeout(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, seconds, provider]);
 
   return (
@@ -76,7 +82,9 @@ export function AdGate({ onUnlocked, onClose }: Props) {
           <p className="text-sm text-stone-600 dark:text-stone-300">
             O Estante é gratuito. Para adicionar livros novos à estante, assista a um anúncio curto <strong>uma vez por sessão</strong>. Editar, avaliar e resenhar nunca pede anúncio.
           </p>
-          <button type="button" onClick={start} className="btn-primary w-full">Assistir anúncio</button>
+          <button type="button" onClick={start} disabled={!providers.data} className="btn-primary w-full">
+            {providers.data ? "Assistir anúncio" : "Carregando…"}
+          </button>
         </div>
       )}
       {phase === "playing" && (
@@ -95,6 +103,12 @@ export function AdGate({ onUnlocked, onClose }: Props) {
         </div>
       )}
       {phase === "done" && <p className="py-4 text-center font-semibold">Liberado! ✅</p>}
+      {phase === "blocked" && (
+        <div className="space-y-3">
+          <p className="text-sm text-red-700 dark:text-red-300">Não foi possível carregar o anúncio. Se você usa um bloqueador de anúncios, desative-o para este site e tente de novo.</p>
+          <button type="button" onClick={() => { started.current = false; setPhase("intro"); }} className="btn-secondary w-full">Tentar de novo</button>
+        </div>
+      )}
       {phase === "error" && (
         <div className="space-y-3">
           <p className="text-sm text-red-700 dark:text-red-300">O anúncio não foi concluído. Tente de novo para liberar a criação de livros.</p>

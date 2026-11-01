@@ -83,7 +83,7 @@ export function normalizeVolume(v: GoogleVolume): BookInput | null {
 }
 
 async function searchGoogle(q: string): Promise<BookInput[]> {
-  const params = new URLSearchParams({ q, maxResults: "12", printType: "books", fields: "items(id,volumeInfo(title,subtitle,authors,publishedDate,pageCount,industryIdentifiers,imageLinks/thumbnail))" });
+  const params = new URLSearchParams({ q, maxResults: "12", printType: "books", fields: "items(id,volumeInfo(title,subtitle,authors,publishedDate,pageCount,industryIdentifiers,imageLinks(thumbnail,smallThumbnail)))" });
   if (env.google.booksApiKey) params.set("key", env.google.booksApiKey);
   const res = await fetchJson(`${GOOGLE_BOOKS_URL}?${params}`);
   if (!res.ok) throw Object.assign(new Error(`Google Books ${res.status}`), { status: res.status });

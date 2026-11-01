@@ -28,7 +28,7 @@ Um único processo Node serve a API e o front buildado.
 
 ```bash
 npm install
-cp .env.example .env     # ajuste se quiser; já vem com ALLOW_DEV_LOGIN=true
+cp .env.example .env     # (Windows: copy .env.example .env) já vem com ALLOW_DEV_LOGIN=true
 npm run dev              # API em :3000 + Vite em :5173 (com proxy)
 ```
 
@@ -41,6 +41,7 @@ npm test          # testes da API
 npm run typecheck # TypeScript do front e do servidor
 npm run build     # gera dist/client e dist/server
 npm start         # produção: node dist/server/index.js (serve API + front na mesma porta)
+                  # rodar o build compilado já conta como produção (login dev desligado), a menos que NODE_ENV=development
 ```
 
 ## Configurando o login com Google

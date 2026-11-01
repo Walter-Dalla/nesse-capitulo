@@ -14,8 +14,8 @@
     "build": "npm run build:client && npm run build:server",
     "build:client": "vite build",
     "build:server": "tsc -p server/tsconfig.json",
-    "start": "NODE_ENV=production node dist/server/index.js",
-    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p server/tsconfig.json --noEmit",
+    "start": "node dist/server/index.js",
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p server/tsconfig.json --noEmit && tsc -p tests/tsconfig.json",
     "test": "node --test --import tsx tests/*.test.ts"
   },
   "dependencies": {

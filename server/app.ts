@@ -11,6 +11,11 @@ import { statsRoutes } from "./routes/stats.js";
 import { adsRoutes } from "./routes/ads.js";
 import type { AppEnv } from "./types.js";
 
+/** Caminhos que pertencem à API/autenticação (nunca caem no fallback da SPA). */
+export function isApiPath(path: string) {
+  return path === "/api" || path === "/auth" || path.startsWith("/api/") || path.startsWith("/auth/");
+}
+
 /** Monta a aplicação Hono (sem servir estáticos) — reutilizado nos testes. */
 export function createApp(db: DB) {
   const app = new Hono<AppEnv>();
@@ -31,7 +36,7 @@ export function createApp(db: DB) {
   app.route("/", api);
 
   app.notFound((c) => {
-    if (c.req.path.startsWith("/api/") || c.req.path.startsWith("/auth/")) return c.json({ error: "Rota não encontrada" }, 404);
+    if (isApiPath(c.req.path)) return c.json({ error: "Rota não encontrada" }, 404);
     return c.text("Not found", 404);
   });
 

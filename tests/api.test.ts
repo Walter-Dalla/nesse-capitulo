@@ -17,7 +17,7 @@ function client() {
     });
     const set = res.headers.get("set-cookie");
     if (set) cookie = set.split(";")[0];
-    const json = res.headers.get("content-type")?.includes("json") ? await res.json() : null;
+    const json: any = res.headers.get("content-type")?.includes("json") ? await res.json() : null;
     return { status: res.status, json };
   }
   return call;
