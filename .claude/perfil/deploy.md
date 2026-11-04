@@ -9,21 +9,21 @@ Alvo local: o agente roda `docker`/`docker compose` neste WSL, com confirmação
 
 ## Artefato
 Imagem Docker `estante` (multi-stage `Dockerfile`, `node:24-slim`, roda como `node`, `dist/` + deps de produção). Tags: `sha-<commit curto>`, `latest`, e `<versão>` opcional. [Dockerfile, deploy/publish.sh]
-Registro: nenhum por padrão (imagem fica no daemon local); com `REGISTRY=<host/org>` o script faz push (ex.: `ghcr.io/walter-dalla`, `docker login` feito pelo dono). [deploy/publish.sh, inferido]
+Registro: zot do dono em `http://192.168.1.40:5900` (HTTP, sem auth; já em `insecure-registries` do Docker Desktop). Imagem `192.168.1.40:5900/estante`. Publicar com `REGISTRY=192.168.1.40:5900`. Tags: `curl -s http://192.168.1.40:5900/v2/estante/tags/list`. [dono, docker info]
 Fora da imagem: `.env`, `data/`, `.git`, `docs/`, `.claude/` (`.dockerignore`). [.dockerignore]
 
 ## Pré-condições
 Árvore commitada (o script recusa árvore suja): `git status --porcelain` vazio. Commit/push: `_comum § Git`. [deploy/publish.sh]
 Daemon vivo: `docker version --format '{{.Server.Version}}'` e `docker compose version`. [inferido]
 Porta do alvo livre ou ocupada pelo próprio container: `docker compose ps`; `fuser 8080/tcp`. [compose.yaml]
-Com registro: `curl -s -o /dev/null -w "%{http_code}" https://<registro>/v2/` → 200/401. [inferido]
+Registro alcançável: `curl -s -o /dev/null -w "%{http_code}" http://192.168.1.40:5900/v2/` → `200`. [dono]
 
 ## Publicar
-`deploy/publish.sh [versão]`: `npm test`, `docker build`, tags, push se `REGISTRY`. ~1–2 min (cache quente: segundos). Log no scratchpad; filtrar `grep -E "^RESULT:|^ERRO:|not ok|ERROR"`. [deploy/publish.sh]
-Repush sem rebuild: `REGISTRY=<host/org> deploy/publish.sh --push-only`. [deploy/publish.sh]
+`REGISTRY=192.168.1.40:5900 deploy/publish.sh [versão]`: `npm test`, `docker build`, tags, push se `REGISTRY`. ~1–2 min (cache quente: segundos). Log no scratchpad; filtrar `grep -E "^RESULT:|^ERRO:|not ok|ERROR"`. [deploy/publish.sh]
+Repush sem rebuild: `REGISTRY=192.168.1.40:5900 deploy/publish.sh --push-only`. [deploy/publish.sh]
 
 ## Atualizar
-Local (agente): `IMAGE_TAG=sha-<commit> docker compose up -d` (produção) ou `docker compose -f compose.yaml -f compose.local.yaml up -d --build` (teste com login dev). Pronto quando `docker compose ps` mostra `(healthy)` (HEALTHCHECK em `/api/health`). [compose.yaml, Dockerfile]
+Local (agente): `ESTANTE_IMAGE=192.168.1.40:5900/estante IMAGE_TAG=sha-<commit> docker compose up -d` (produção) ou `docker compose -f compose.yaml -f compose.local.yaml up -d --build` (teste com login dev). Pronto quando `docker compose ps` mostra `(healthy)` (HEALTHCHECK em `/api/health`). [compose.yaml, Dockerfile]
 Segredos/variáveis do alvo: no `.env` ao lado do `compose.yaml` (interpolação do compose; nomes em § Segredos). [compose.yaml]
 
 ## Verificar
@@ -39,10 +39,10 @@ Nunca chamar em produção: `POST /api/shelf` (cria dados), `/auth/google*`. Log
 `SQLITE_CANTOPEN`/permission denied em `/app/data` → volume criado como root; o dono decide recriar o volume (perde dados). [Dockerfile, inferido]
 "Entrar sem Google" ausente → subiu sem `compose.local.yaml` (correto em produção). [server/env.ts]
 Login Google volta com erro → `BASE_URL`/`ESTANTE_BASE_URL` diferente do redirect URI cadastrado. [.env.example]
-`denied` no push → `docker login <registro>` do dono. [inferido]
+`http: server gave HTTP response to HTTPS client` → `192.168.1.40:5900` saiu de `insecure-registries` (Docker Desktop → Settings → Docker Engine). `denied` → zot ganhou auth; `docker login 192.168.1.40:5900` pelo dono. [inferido]
 
 ## Rollback
-`IMAGE_TAG=sha-<commit anterior> docker compose up -d` (com confirmação). Tags: `docker images estante --format '{{.Tag}} {{.CreatedSince}}'`. Rollback não volta o volume `estante-data`. [compose.yaml]
+`IMAGE_TAG=sha-<commit anterior> docker compose up -d` (com confirmação). Tags: `curl -s http://192.168.1.40:5900/v2/estante/tags/list` ou `docker images estante --format '{{.Tag}} {{.CreatedSince}}'`. Rollback não volta o volume `estante-data`. [compose.yaml]
 
 ## Backup
 Volume `nesse-capitulo_estante-data` (SQLite em WAL). Cópia consistente: `docker compose exec estante node -e "new (require('node:sqlite').DatabaseSync)('/app/data/estante.db').exec(\"VACUUM INTO '/app/data/backup.db'\")"` e `docker compose cp estante:/app/data/backup.db ./backup-<data>.db`. Sem agendamento. Nunca `docker compose down -v`. [inferido]
