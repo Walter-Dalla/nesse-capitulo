@@ -1,0 +1,22 @@
+# Produção: imagem + volume do SQLite. Segredos vêm do ambiente/.env do alvo (nunca versionados).
+services:
+  estante:
+    image: ${ESTANTE_IMAGE:-estante}:${IMAGE_TAG:-latest}
+    build: .
+    restart: unless-stopped
+    ports:
+      - "${ESTANTE_HOST_PORT:-8080}:3000"
+    environment:
+      NODE_ENV: production
+      BASE_URL: ${ESTANTE_BASE_URL:-http://localhost:8080}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      GOOGLE_EXTRA_CLIENT_IDS: ${GOOGLE_EXTRA_CLIENT_IDS:-}
+      GOOGLE_BOOKS_API_KEY: ${GOOGLE_BOOKS_API_KEY:-}
+      ADS_ENABLED: ${ADS_ENABLED:-false}
+      AD_PROVIDER: ${AD_PROVIDER:-simulated}
+      ADSENSE_CLIENT_ID: ${ADSENSE_CLIENT_ID:-}
+    volumes:
+      - estante-data:/app/data
+volumes:
+  estante-data:

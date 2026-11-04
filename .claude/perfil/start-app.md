@@ -11,7 +11,7 @@ Navegador em `http://localhost:5173` (dev) ou `http://localhost:3000` (build). C
 Sem janela: `curl -s -c /tmp/sid -X POST http://localhost:3000/auth/dev -H "Content-Type: application/json" -H "Origin: http://localhost:3000" -d '{"email":"dev@local"}'` e depois `curl -s -b /tmp/sid http://localhost:3000/api/shelf`. [server/auth.ts, tests/api.test.ts, inferido]
 
 ## Alternativa
-— (sem Docker no repo). [ls]
+Docker: `docker compose -f compose.yaml -f compose.local.yaml up -d --build` → `http://localhost:8080` (login dev ligado), stop: `docker compose down` (mantém o volume `estante-data`). Detalhes em `deploy.md`. [compose.yaml]
 
 ## Estado
 `data/estante.db` (+ `-wal`/`-shm`), ignorado pelo git; `stop` não apaga nada. Estado descartável: `DATABASE_PATH=/tmp/<arquivo>.db`. [.gitignore, server/env.ts]
