@@ -1,4 +1,4 @@
-import Database from "better-sqlite3";
+import { DatabaseSync } from "node:sqlite";
 import fs from "node:fs";
 import path from "node:path";
 import { env } from "./env.js";
@@ -59,19 +59,21 @@ CREATE INDEX IF NOT EXISTS idx_user_books_user_year ON user_books(user_id, read_
 
 export function openDatabase(file = env.databasePath) {
   if (file !== ":memory:") fs.mkdirSync(path.dirname(path.resolve(file)), { recursive: true });
-  const db = new Database(file);
-  db.pragma("journal_mode = WAL");
-  db.pragma("synchronous = NORMAL");
-  db.pragma("foreign_keys = ON");
-  db.pragma("busy_timeout = 5000");
+  const db = new DatabaseSync(file);
+  db.exec(`
+    PRAGMA journal_mode = WAL;
+    PRAGMA synchronous = NORMAL;
+    PRAGMA foreign_keys = ON;
+    PRAGMA busy_timeout = 5000;
+  `);
   db.exec(SCHEMA);
   migrate(db);
   return db;
 }
 
 /** Migrações leves para bancos criados por versões anteriores. */
-function migrate(db: Database.Database) {
-  const cols = (table: string) => (db.pragma(`table_info(${table})`) as { name: string }[]).map((c) => c.name);
+function migrate(db: DatabaseSync) {
+  const cols = (table: string) => db.prepare(`PRAGMA table_info(${table})`).all().map((c) => c.name);
   const books = cols("books");
   if (!books.includes("cover_ref")) db.exec("ALTER TABLE books ADD COLUMN cover_ref TEXT");
   if (books.includes("cover_url")) {
@@ -83,4 +85,17 @@ function migrate(db: Database.Database) {
   if (!cols("sessions").includes("ad_unlocked")) db.exec("ALTER TABLE sessions ADD COLUMN ad_unlocked INTEGER NOT NULL DEFAULT 0");
 }
 
-export type DB = ReturnType<typeof openDatabase>;
+export type DB = DatabaseSync;
+
+/** Roda `fn` numa transação: COMMIT se terminar, ROLLBACK se lançar erro. */
+export function transaction<T>(db: DB, fn: () => T): T {
+  db.exec("BEGIN");
+  try {
+    const result = fn();
+    db.exec("COMMIT");
+    return result;
+  } catch (err) {
+    db.exec("ROLLBACK");
+    throw err;
+  }
+}
