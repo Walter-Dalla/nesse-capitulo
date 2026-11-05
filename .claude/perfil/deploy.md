@@ -1,7 +1,7 @@
 # Perfil do /wh:deploy
 
 ## Alvo
-Hoje: Docker local no WSL do dono, `http://localhost:8080` (porta via `ESTANTE_HOST_PORT`), orquestrado por `compose.yaml` na raiz do checkout. Produção (host HTTPS com volume persistente) ainda não escolhida; quando houver, entra aqui com URL e orquestrador. [compose.yaml, README.md, inferido]
+Hoje: Docker local no WSL do dono, `http://localhost:8080` (porta via `ESTANTE_HOST_PORT`), orquestrado por `compose.yaml` na raiz do checkout. Produção: Stack `estante` no Komodo do homelab, modo UI Defined (compose colado na UI = `deploy/compose.prod.yaml`), imagem do zot. URL pública e servidor: —. [dono]
 Teste local com login dev: `compose.yaml` + `compose.local.yaml` (NODE_ENV=development, `ALLOW_DEV_LOGIN=true`). Nunca usar o override no alvo de produção. [compose.local.yaml]
 
 ## Acesso
@@ -24,7 +24,8 @@ Repush sem rebuild: `REGISTRY=192.168.1.40:5900 deploy/publish.sh --push-only`. 
 
 ## Atualizar
 Local (agente): `ESTANTE_IMAGE=192.168.1.40:5900/estante IMAGE_TAG=sha-<commit> docker compose up -d` (produção) ou `docker compose -f compose.yaml -f compose.local.yaml up -d --build` (teste com login dev). Pronto quando `docker compose ps` mostra `(healthy)` (HEALTHCHECK em `/api/health`). [compose.yaml, Dockerfile]
-Segredos/variáveis do alvo: no `.env` ao lado do `compose.yaml` (interpolação do compose; nomes em § Segredos). [compose.yaml]
+Produção (dono): Stack `estante` no Komodo com Poll For Updates + Auto Update redeploya quando `latest` muda no zot; senão botão Deploy. Fixar versão: `IMAGE_TAG=sha-<commit>` no Environment da Stack. `deploy/compose.prod.yaml` mudou → dono cola o conteúdo novo na Stack. [dono]
+Segredos/variáveis do alvo: no `.env` ao lado do `compose.yaml` (local) ou no Environment da Stack com `[[SECRET]]` do Komodo (produção) (interpolação do compose; nomes em § Segredos). [compose.yaml]
 
 ## Verificar
 `curl -s http://localhost:8080/api/health` → `{"ok":true}` (API e SQLite no ar). [server/app.ts]
