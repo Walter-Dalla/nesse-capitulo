@@ -1,0 +1,22 @@
+# Produção: conteúdo a colar na Stack do Komodo (modo UI Defined). Só imagem do zot, sem build.
+# Variáveis vêm do Environment da Stack (Komodo grava como .env ao lado do compose).
+services:
+  estante:
+    image: 192.168.1.40:5900/estante:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    ports:
+      - "${ESTANTE_HOST_PORT:-8080}:3000"
+    environment:
+      NODE_ENV: production
+      BASE_URL: ${ESTANTE_BASE_URL:?defina ESTANTE_BASE_URL}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      GOOGLE_EXTRA_CLIENT_IDS: ${GOOGLE_EXTRA_CLIENT_IDS:-}
+      GOOGLE_BOOKS_API_KEY: ${GOOGLE_BOOKS_API_KEY:-}
+      ADS_ENABLED: ${ADS_ENABLED:-false}
+      AD_PROVIDER: ${AD_PROVIDER:-simulated}
+      ADSENSE_CLIENT_ID: ${ADSENSE_CLIENT_ID:-}
+    volumes:
+      - estante-data:/app/data
+volumes:
+  estante-data:

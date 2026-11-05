@@ -16,13 +16,16 @@ Tracker de leituras **mobile-first** (PWA + API) inspirado em apps como o Cabece
 
 | Camada | Tecnologia |
 | --- | --- |
-| Front | React 19 + Vite + Tailwind CSS v4 + React Router + TanStack Query |
-| API | Node 20+ + [Hono](https://hono.dev) |
-| Banco | SQLite via `better-sqlite3` (arquivo em `data/estante.db`) |
+| Front | React 19 + Vite 8 + Tailwind CSS v4 + React Router 8 + TanStack Query 5 |
+| API | Node 22.13+ (recomendado 24 LTS) + [Hono](https://hono.dev) 4 |
+| Banco | SQLite embutido do Node (`node:sqlite`), sem dependência nativa (arquivo em `data/estante.db`) |
 | Auth | Google OAuth 2.0 implementado direto (sem lib), sessão em cookie `HttpOnly` |
 | Testes | `node:test` contra a app Hono com banco em memória |
+| Linguagem | TypeScript 7 |
 
 Um único processo Node serve a API e o front buildado.
+
+> Sem dependência nativa: `npm install` não precisa de compilador (`make`/`node-gyp`). Em versões do Node em que o `node:sqlite` ainda é experimental, ele imprime um `ExperimentalWarning` ao subir; é só aviso.
 
 ## Rodando localmente
 

@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import { randomUUID } from "node:crypto";
-import type { DB } from "../db.js";
+import type { SQLInputValue } from "node:sqlite";
+import { transaction, type DB } from "../db.js";
 import type { AppEnv, Book, BookInput, ShelfItem, Status } from "../types.js";
 import { ValidationError, optDate, optInt, optStr, parseBookInput, parseStatus } from "../validate.js";
 import { AD_REQUIRED } from "./ads.js";
@@ -95,7 +96,7 @@ export function shelfRoutes(db: DB) {
     const status = c.req.query("status");
     const year = c.req.query("year");
     const where: string[] = ["ub.user_id = ?"];
-    const params: unknown[] = [user.id];
+    const params: SQLInputValue[] = [user.id];
     if (status) { where.push("ub.status = ?"); params.push(parseStatus(status)); }
     if (year) { where.push("ub.read_year = ?"); params.push(optInt(year, "year", 1000, 3000)); }
     const order = status === "read" || year
@@ -135,7 +136,7 @@ export function shelfRoutes(db: DB) {
       if (!already) return c.json(AD_REQUIRED, 403);
     }
 
-    const result = db.transaction(() => {
+    const result = transaction(db, () => {
       const bookId = findOrCreateBook(db, book);
       const existing = db.prepare("SELECT id FROM user_books WHERE user_id = ? AND book_id = ?").get(user.id, bookId) as { id: string } | undefined;
       const id = existing?.id ?? randomUUID();
@@ -151,7 +152,7 @@ export function shelfRoutes(db: DB) {
         ).run(id, user.id, bookId, fields.status, fields.rating, fields.review, fields.startedAt, fields.finishedAt, fields.readYear);
       }
       return { id, created: !existing };
-    })();
+    });
 
     return c.json({ item: getItem(db, user.id, result.id) }, result.created ? 201 : 200);
   });
@@ -187,7 +188,7 @@ export function shelfRoutes(db: DB) {
       const b = parseBookInput({ ...body.book as object, source: "manual" });
       db.prepare(
         `UPDATE books SET title = ?, authors = ?, page_count = ?, published_year = ?, isbn13 = ? WHERE id = ?`,
-      ).run(b.title, JSON.stringify(b.authors ?? []), b.pageCount, b.publishedYear, b.isbn13, current.book.id);
+      ).run(b.title, JSON.stringify(b.authors ?? []), b.pageCount ?? null, b.publishedYear ?? null, b.isbn13 ?? null, current.book.id);
     }
 
     db.prepare(

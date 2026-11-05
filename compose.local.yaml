@@ -1,0 +1,8 @@
+# Teste local no Docker: liga o login dev ("Entrar sem Google"). NUNCA usar no alvo de produção.
+# docker compose -f compose.yaml -f compose.local.yaml up -d --build
+services:
+  estante:
+    environment:
+      NODE_ENV: development
+      ALLOW_DEV_LOGIN: "true"
+      BASE_URL: http://localhost:${ESTANTE_HOST_PORT:-8080}
