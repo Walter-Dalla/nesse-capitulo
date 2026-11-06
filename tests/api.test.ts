@@ -1,13 +1,16 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 
 process.env.ALLOW_DEV_LOGIN = "true";
 process.env.NODE_ENV = "test";
 const { openDatabase } = await import("../server/db.ts");
 const { createApp } = await import("../server/app.ts");
 
-function client() {
-  const app = createApp(openDatabase(":memory:"));
+function client(db = openDatabase(":memory:")) {
+  const app = createApp(db);
   let cookie = "";
   async function call(method: string, path: string, body?: unknown) {
     const res = await app.request(path, {
@@ -170,7 +173,95 @@ test("gate de anúncio: criar livro exige recompensa uma vez por sessão; editar
   }
 });
 
-test("o banco guarda só metadados mínimos do livro (sem capa/sinopse)", async () => {
+test("data com ano incompleto é recusada e mantém o valor salvo", async () => {
+  const call = client();
+  await call("POST", "/auth/dev", { email: "data@x.com" });
+  const add = await call("POST", "/api/shelf", { book: manualBook, status: "read", startedAt: "2024-01-10", finishedAt: "2024-02-10" });
+  const id = add.json.item.id;
+  for (const patch of [{ startedAt: "0002-01-10" }, { finishedAt: "0202-02-10" }]) {
+    const r = await call("PATCH", `/api/shelf/${id}`, patch);
+    assert.equal(r.status, 400);
+  }
+  const item = (await call("GET", `/api/shelf/${id}`)).json.item;
+  assert.equal(item.startedAt, "2024-01-10");
+  assert.equal(item.finishedAt, "2024-02-10");
+  assert.equal(item.readYear, 2024);
+});
+
+test("sinopse é gravada na primeira consulta e servida do banco nas próximas, inclusive para outro usuário", async () => {
+  const db = openDatabase(":memory:");
+  const realFetch = globalThis.fetch;
+  let calls = 0;
+  globalThis.fetch = (async () => {
+    calls++;
+    return Response.json({ volumeInfo: { description: "<b>Sinopse</b> da fonte" } });
+  }) as typeof fetch;
+  try {
+    const book = { source: "google", sourceId: "persiste-1", title: "Livro" };
+    const ana = client(db);
+    await ana("POST", "/auth/dev", { email: "ana@x.com" });
+    const add = await ana("POST", "/api/shelf", { book: { ...book, description: "enviada pelo cliente" }, status: "read" });
+    assert.equal((db.prepare("SELECT description FROM books").get() as any).description, null);
+
+    const first = await ana("GET", `/api/shelf/${add.json.item.id}/details`);
+    assert.equal(first.json.description, "Sinopse da fonte");
+    assert.equal(calls, 1);
+    assert.equal((db.prepare("SELECT description FROM books").get() as any).description, "Sinopse da fonte");
+
+    // muda o valor no banco para provar que a resposta vem dele, não do cache em memória
+    db.prepare("UPDATE books SET description = 'Do banco'").run();
+    const bia = client(db);
+    await bia("POST", "/auth/dev", { email: "bia@x.com" });
+    const addBia = await bia("POST", "/api/shelf", { book, status: "want" });
+    const second = await bia("GET", `/api/shelf/${addBia.json.item.id}/details`);
+    assert.equal(second.json.description, "Do banco");
+    assert.equal(calls, 1);
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+});
+
+test("falha da fonte externa não grava sinopse e a consulta seguinte tenta de novo", async () => {
+  const db = openDatabase(":memory:");
+  const realFetch = globalThis.fetch;
+  let up = false;
+  globalThis.fetch = (async () => (up ? Response.json({ volumeInfo: { description: "Voltou" } }) : new Response("", { status: 429 }))) as typeof fetch;
+  try {
+    const call = client(db);
+    await call("POST", "/auth/dev", { email: "falha@x.com" });
+    const add = await call("POST", "/api/shelf", { book: { source: "google", sourceId: "persiste-2", title: "Livro" }, status: "want" });
+    const down = await call("GET", `/api/shelf/${add.json.item.id}/details`);
+    assert.equal(down.json.description, null);
+    assert.equal((db.prepare("SELECT description FROM books").get() as any).description, null);
+    up = true;
+    const back = await call("GET", `/api/shelf/${add.json.item.id}/details`);
+    assert.equal(back.json.description, "Voltou");
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+});
+
+test("migração adiciona a coluna de sinopse em banco antigo e não apaga sinopse ao reabrir", () => {
+  const dir = mkdtempSync(join(tmpdir(), "estante-"));
+  try {
+    const file = join(dir, "t.db");
+    const old = openDatabase(file);
+    old.exec("ALTER TABLE books DROP COLUMN description");
+    old.close();
+
+    const migrated = openDatabase(file);
+    migrated.prepare("INSERT INTO books (id, source, title, description) VALUES ('b1', 'manual', 'T', 'Guardada')").run();
+    migrated.close();
+
+    const reopened = openDatabase(file);
+    assert.equal((reopened.prepare("SELECT description FROM books WHERE id = 'b1'").get() as any).description, "Guardada");
+    reopened.close();
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("item da estante não expõe capa/sinopse e ignora as enviadas pelo cliente", async () => {
   const call = client();
   await call("POST", "/auth/dev", { email: "slim@x.com" });
   const add = await call("POST", "/api/shelf", {

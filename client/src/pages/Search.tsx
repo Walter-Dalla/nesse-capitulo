@@ -11,6 +11,7 @@ import { SOURCE_LABEL, type BookInput, type Status } from "../lib/types";
 /**
  * Busca com autocompletar: as sugestões aparecem 1 s depois que o usuário para de digitar
  * (useSearch), com no mínimo 3 caracteres. Nada é consultado a cada tecla.
+ * Enter pesquisa na hora; só abre um livro se ele foi escolhido com as setas.
  */
 export function SearchPage() {
   const [params] = useSearchParams();
@@ -31,6 +32,7 @@ export function SearchPage() {
   const showList = search.debounced.length >= SEARCH_MIN_CHARS;
 
   function onKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key === "Enter" && active < 0) { e.preventDefault(); search.flush(); return; }
     if (!items.length) return;
     if (e.key === "ArrowDown") { e.preventDefault(); setActive((a) => Math.min(items.length - 1, a + 1)); }
     else if (e.key === "ArrowUp") { e.preventDefault(); setActive((a) => Math.max(-1, a - 1)); }
@@ -39,7 +41,7 @@ export function SearchPage() {
   }
 
   return (
-    <Page title={defaultYear ? `Li em ${defaultYear}` : "Buscar livro"} back={Boolean(defaultYear)}>
+    <Page title={defaultYear ? `Li em ${defaultYear}` : "Buscar livro"}>
       <div className="relative mb-3">
         <IconSearch className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" width={20} height={20} />
         <input
@@ -53,7 +55,7 @@ export function SearchPage() {
           className="input pl-10 pr-10"
           placeholder="Título, autor ou ISBN"
           value={q}
-          onChange={(e) => setQ(e.target.value)}
+          onChange={(e) => { setQ(e.target.value); setActive(-1); }}
           onKeyDown={onKeyDown}
           enterKeyHint="search"
           autoComplete="off"
@@ -96,7 +98,6 @@ export function SearchPage() {
               role="option"
               aria-selected={active === i}
               className={`flex cursor-pointer items-center gap-3 px-3 py-2.5 transition ${active === i ? "bg-accent-50 dark:bg-stone-800" : "hover:bg-stone-50 dark:hover:bg-stone-800/60"}`}
-              onMouseEnter={() => setActive(i)}
               onClick={() => setPicked(b)}
             >
               <BookCover book={b} size="S" className="w-9" />

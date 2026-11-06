@@ -12,7 +12,7 @@ export interface User {
 export type BookSource = "google" | "openlibrary" | "manual";
 export const BOOK_SOURCES: BookSource[] = ["google", "openlibrary", "manual"];
 
-/** Metadados mínimos de um livro. Capa e sinopse não são persistidas: vêm da fonte externa. */
+/** Metadados mínimos de um livro. Capa e sinopse não vêm do cliente: saem da fonte externa. */
 export interface BookInput {
   source: BookSource;
   sourceId?: string | null;

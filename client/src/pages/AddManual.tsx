@@ -30,7 +30,7 @@ export function AddManualPage() {
   }
 
   return (
-    <Page title="Adicionar manualmente" back>
+    <Page title="Adicionar manualmente">
       <form onSubmit={submit} className="space-y-4">
         <div>
           <label className="label" htmlFor="m-title">Título *</label>

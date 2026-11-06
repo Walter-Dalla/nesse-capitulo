@@ -25,6 +25,8 @@ export function optDate(v: unknown, field: string): string | null {
   const s = optStr(v, field, 10);
   if (s === null) return null;
   if (!DATE_RE.test(s) || Number.isNaN(Date.parse(s))) throw new ValidationError(`${field} deve estar no formato AAAA-MM-DD`);
+  // mesma faixa de readYear: o ano da data de término vira o ano da leitura
+  if (Number(s.slice(0, 4)) < 1000) throw new ValidationError(`${field} tem ano inválido`);
   return s;
 }
 

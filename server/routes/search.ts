@@ -151,7 +151,7 @@ export async function searchBooks(q: string): Promise<{ items: BookInput[]; prov
   return { items, provider };
 }
 
-/** Sinopse sob demanda (não persistida). */
+/** Sinopse na fonte externa; quem grava no banco é `GET /api/shelf/:id/details`. */
 export async function fetchDetails(source: string, sourceId: string): Promise<BookDetails> {
   const key = `${source}:${sourceId}`;
   const hit = detailsCache.get(key);

@@ -3,10 +3,10 @@ aliases: [estante, shelf, status, lendo, quero ler, lido, abandonado, nota, rese
 ---
 # Estante e status
 
-Quatro listas (Lendo, Quero ler, Lidos, Abandonados), nota 1–5 e resenha por livro; mudar o status reconcilia datas e ano (README § Regras).
+Quatro listas (Lendo, Quero ler, Lidos, Abandonados) mais "Ver todos", sem filtro de status e seleção padrão ao abrir o app; nota 1–5 e resenha por livro; mudar o status reconcilia datas e ano (README § Regras). Na tela do livro, nota, status, datas, ano e resenha ficam em rascunho no navegador e vão ao servidor num único `PATCH`, ao clicar em Salvar.
 
 ## Símbolos de entrada
-`shelfRoutes` (`server/routes/shelf.ts`), `reconcile`, `getItem`, `findOrCreateBook`, `parseStatus` (`server/validate.ts`), `ShelfItem`/`Status` (`server/types.ts`), `ShelfPage`, `BookDetailPage`, `AddSheet`, `BookCard`, `useShelf`, `useAddToShelf`, `useUpdateItem`, `useRemoveItem`, tabela `user_books` (`server/db.ts`).
+`shelfRoutes` (`server/routes/shelf.ts`), `reconcile`, `getItem`, `findOrCreateBook`, `parseStatus` (`server/validate.ts`), `ShelfItem`/`Status` (`server/types.ts`), `ShelfPage`, `BookDetailPage`, `readDraft`, `writeDraft`, `changedFields` (`client/src/lib/itemDraft.ts`), `DateField`, `AddSheet`, `BookCard`, `useShelf`, `useAddToShelf`, `useUpdateItem`, `useRemoveItem`, tabela `user_books` (`server/db.ts`).
 
 ## Interações
 - [busca](busca.md): o item nasce de um resultado de busca via `AddSheet`.
