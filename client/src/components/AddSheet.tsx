@@ -6,6 +6,7 @@ import { AdGate } from "./AdGate";
 import { currentYear, formatAuthors } from "../lib/format";
 import { STATUS_ACTION, STATUS_ORDER, type BookInput, type Status } from "../lib/types";
 import { BookCover } from "./BookCover";
+import { DateField } from "./DateField";
 import { Sheet } from "./Sheet";
 import { Stars } from "./Stars";
 import { toast } from "./Toast";
@@ -80,7 +81,7 @@ export function AddSheet({ book, defaultStatus = "want", defaultYear, onClose }:
             </div>
             <div>
               <label className="label" htmlFor="add-date">Terminei em (opcional)</label>
-              <input id="add-date" type="date" className="input" value={finishedAt} max={new Date().toISOString().slice(0, 10)} onChange={(e) => { setFinishedAt(e.target.value); if (e.target.value) setYear(Number(e.target.value.slice(0, 4))); }} />
+              <DateField id="add-date" value={finishedAt || null} onCommit={(v) => { setFinishedAt(v ?? ""); if (v) setYear(Number(v.slice(0, 4))); }} />
             </div>
           </div>
           <div>

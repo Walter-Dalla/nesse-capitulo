@@ -4,9 +4,9 @@ Tracker de leituras **mobile-first** (PWA + API) inspirado em apps como o Cabece
 
 - **Login com Google** (OAuth 2.0 / OpenID Connect) — o mesmo login funciona no app Android publicado na Play Store (via TWA ou via `POST /auth/google/token` com o Google Sign-In nativo).
 - **Buscar livros** com autocompletar (Google Books, com Open Library como reserva) ou **cadastrar manualmente** sem upload de capa: com o ISBN a capa vem sozinha.
-- **Banco enxuto**: por livro ficam só título, autores, páginas, ano, ISBN e ids curtos. Capas e sinopses não são armazenadas: são carregadas da fonte externa quando a tela precisa.
+- **Banco enxuto**: por livro ficam só título, autores, páginas, ano, ISBN, ids curtos e sinopse. Capas não vão para o servidor: vêm da fonte externa e ficam no cache do navegador.
 - **Monetização opcional**: anúncio recompensado uma vez por sessão para criar livros (ver [docs/MONETIZACAO.md](docs/MONETIZACAO.md)).
-- **Quatro listas**: Lendo, Quero ler, Lidos e Abandonados.
+- **Quatro listas**: Lendo, Quero ler, Lidos e Abandonados, mais "Ver todos" sem filtro.
 - **Nota de 1 a 5 estrelas** e **resenha** por livro (privadas).
 - **Histórico por ano**, com registro **retroativo**: basta informar o ano (a data exata é opcional). Estatísticas por ano: livros, páginas e nota média.
 - Dados em **SQLite** (um arquivo, WAL, sem servidor de banco). Rápido e simples.
@@ -87,14 +87,14 @@ Todas as rotas `/api/*` exigem sessão (cookie `sid`).
 | DELETE | `/api/shelf/:id` | Remove da estante |
 | GET | `/api/stats` | Totais por status e por ano (livros, páginas, nota média) |
 
-| GET | `/api/shelf/:id/details` | Sinopse sob demanda, direto da fonte (não persistida) |
+| GET | `/api/shelf/:id/details` | Sinopse do banco; na falta, busca na fonte e grava |
 | GET | `/api/ads/status` · POST `/api/ads/reward` | Gate de anúncio por sessão (se `ADS_ENABLED=true`) |
 
 Regras: ao marcar como **Lido**, o ano vem da data de término, ou do `readYear` informado, ou do ano atual. Mudar para **Quero ler** limpa datas; **Lendo**/**Abandonado** limpam a data de término e o ano.
 
 ### Busca e capas: o que é guardado
 
-Nada de imagem nem de sinopse vai para o banco. Cada livro guarda uma referência curta de capa (`cover_ref`):
+Nenhuma imagem vai para o banco. A sinopse é gravada em `books.description` na primeira consulta bem-sucedida à fonte. Ao adicionar um livro ou salvar alterações na tela dele, o navegador guarda capa (service worker, cache `estante-covers`) e sinopse (cache `estante-details`); os dois caches são limpos ao sair da conta. Cada livro guarda uma referência curta de capa (`cover_ref`):
 
 | Fonte | `source_id` | `cover_ref` | Capa derivada no cliente |
 | --- | --- | --- | --- |

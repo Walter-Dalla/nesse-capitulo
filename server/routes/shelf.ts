@@ -199,13 +199,20 @@ export function shelfRoutes(db: DB) {
     return c.json({ item: getItem(db, user.id, current.id) });
   });
 
-  // sinopse sob demanda, direto da fonte externa (nada é gravado no banco)
+  // sinopse: vem do banco; na falta, busca na fonte externa e grava para as próximas consultas
   app.get("/api/shelf/:id/details", async (c) => {
     const item = getItem(db, c.var.user.id, c.req.param("id"));
     if (!item) return c.json({ error: "Não encontrado" }, 404);
     if (item.book.source === "manual" || !item.book.sourceId) return c.json({ description: null });
-    c.header("Cache-Control", "private, max-age=3600");
-    return c.json(await fetchDetails(item.book.source, item.book.sourceId));
+    const stored = db.prepare("SELECT description FROM books WHERE id = ?").get(item.book.id) as { description: string | null } | undefined;
+    let description = stored?.description ?? null;
+    if (description === null) {
+      description = (await fetchDetails(item.book.source, item.book.sourceId)).description;
+      if (description !== null) db.prepare("UPDATE books SET description = ? WHERE id = ?").run(description, item.book.id);
+    }
+    // sem sinopse pode ser falha passageira da fonte: o navegador não deve guardar esse resultado
+    c.header("Cache-Control", description === null ? "no-store" : "private, max-age=3600");
+    return c.json({ description });
   });
 
   app.delete("/api/shelf/:id", (c) => {

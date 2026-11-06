@@ -22,8 +22,9 @@ CREATE TABLE IF NOT EXISTS sessions (
 );
 CREATE INDEX IF NOT EXISTS idx_sessions_user ON sessions(user_id);
 
--- Guardamos só o mínimo por livro: título, autores e referências curtas.
--- Capa e sinopse NÃO ficam no banco: são derivadas/baixadas do Google Books ou da Open Library.
+-- Guardamos só o mínimo por livro: título, autores, referências curtas e a sinopse.
+-- A capa NÃO fica no banco: é derivada/baixada do Google Books ou da Open Library.
+-- A sinopse é gravada na primeira consulta bem-sucedida à fonte externa.
 CREATE TABLE IF NOT EXISTS books (
   id TEXT PRIMARY KEY,
   source TEXT NOT NULL,              -- 'google' | 'openlibrary' | 'manual'
@@ -34,6 +35,7 @@ CREATE TABLE IF NOT EXISTS books (
   published_year INTEGER,
   isbn13 TEXT,
   cover_ref TEXT,                    -- referência curta da capa ('g' = Google pelo source_id; 'ol:<id>' = Open Library); null = derivar do ISBN
+  description TEXT,                  -- sinopse vinda da fonte externa; null = ainda não obtida
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 CREATE UNIQUE INDEX IF NOT EXISTS idx_books_source
@@ -81,7 +83,7 @@ function migrate(db: DatabaseSync) {
     db.exec("UPDATE books SET cover_ref = 'g' WHERE source = 'google' AND cover_url IS NOT NULL AND cover_ref IS NULL");
     db.exec("ALTER TABLE books DROP COLUMN cover_url");
   }
-  if (books.includes("description")) db.exec("ALTER TABLE books DROP COLUMN description");
+  if (!books.includes("description")) db.exec("ALTER TABLE books ADD COLUMN description TEXT");
   if (!cols("sessions").includes("ad_unlocked")) db.exec("ALTER TABLE sessions ADD COLUMN ad_unlocked INTEGER NOT NULL DEFAULT 0");
 }
 

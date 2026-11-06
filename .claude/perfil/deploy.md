@@ -1,7 +1,7 @@
 # Perfil do /wh:deploy
 
 ## Alvo
-Hoje: Docker local no WSL do dono, `http://localhost:8080` (porta via `ESTANTE_HOST_PORT`), orquestrado por `compose.yaml` na raiz do checkout. Produção: Stack `estante` no Komodo do homelab, modo UI Defined (compose colado na UI = `deploy/compose.prod.yaml`), imagem do zot. URL pública e servidor: —. [dono]
+Hoje: Docker local no WSL do dono, `http://localhost:8080` (porta via `ESTANTE_HOST_PORT`), orquestrado por `compose.yaml` na raiz do checkout. Produção: Stack `estante` no Komodo do homelab, modo UI Defined (compose colado na UI = `deploy/compose.prod.yaml`), imagem do zot. URL pública: `https://nesse-capitulo.walterdalla.uk`, via túnel do cloudflared (rede externa `cloudflared_network`, alias `nesse-capitulo`, porta 3000). Servidor: —. [dono]
 Teste local com login dev: `compose.yaml` + `compose.local.yaml` (NODE_ENV=development, `ALLOW_DEV_LOGIN=true`). Nunca usar o override no alvo de produção. [compose.local.yaml]
 
 ## Acesso

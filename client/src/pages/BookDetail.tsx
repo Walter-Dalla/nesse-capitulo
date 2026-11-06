@@ -1,14 +1,17 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { BookCover } from "../components/BookCover";
 import { IconTrash } from "../components/Icons";
 import { ErrorBox, Page, Spinner } from "../components/Layout";
+import { Sheet } from "../components/Sheet";
 import { Stars } from "../components/Stars";
 import { toast } from "../components/Toast";
 import { YearSelect } from "../components/YearSelect";
 import { useDetails, useItem, useRemoveItem, useUpdateItem } from "../lib/hooks";
-import { currentYear, formatAuthors, today } from "../lib/format";
-import { SOURCE_LABEL, STATUS_ACTION, STATUS_ORDER, type ShelfPatch } from "../lib/types";
+import { DateField } from "../components/DateField";
+import { currentYear, formatAuthors } from "../lib/format";
+import { changedFields, readDraft, writeDraft, type ItemDraft } from "../lib/itemDraft";
+import { SOURCE_LABEL, STATUS_ACTION, STATUS_ORDER } from "../lib/types";
 
 export function BookDetailPage() {
   const { id = "" } = useParams();
@@ -18,40 +21,53 @@ export function BookDetailPage() {
   const remove = useRemoveItem();
   const item = query.data?.item;
 
-  const [review, setReview] = useState("");
+  // nota, status, datas, ano e resenha ficam aqui até o usuário clicar em Salvar
+  const [draft, setDraftState] = useState<ItemDraft>(() => readDraft(id));
   const [showDesc, setShowDesc] = useState(false);
-  // sinopse vem sob demanda da fonte externa; não é gravada no banco
+  const [confirmRemove, setConfirmRemove] = useState(false);
+  // sinopse vem do cache do navegador ou do servidor, que a grava no banco
   const details = useDetails(id, Boolean(item) && item?.book.source !== "manual");
-  useEffect(() => { if (item) setReview(item.review ?? ""); }, [item?.id, item?.review]);
 
-  async function save(patch: ShelfPatch, msg?: string) {
+  function setDraft(next: ItemDraft) {
+    setDraftState(next);
+    writeDraft(id, next);
+  }
+
+  const change = (patch: ItemDraft) => setDraft({ ...draft, ...patch });
+
+  async function save() {
+    if (!item) return;
     try {
-      await update.mutateAsync(patch);
-      if (msg) toast(msg);
+      await update.mutateAsync(changedFields(item, draft));
+      setDraft({});
+      toast("Alterações salvas");
     } catch (e) {
       toast((e as Error).message, "error");
     }
   }
 
   async function onRemove() {
-    if (!item || !confirm(`Remover “${item.book.title}” da sua estante?`)) return;
+    if (!item) return;
     try {
       await remove.mutateAsync(item.id);
+      writeDraft(id, {});
       toast("Removido da estante");
       navigate("/", { replace: true });
     } catch (e) {
+      setConfirmRemove(false);
       toast((e as Error).message, "error");
     }
   }
 
-  if (query.isPending) return <Page back><Spinner /></Page>;
-  if (query.isError || !item) return <Page back><ErrorBox error={query.error ?? new Error("Livro não encontrado")} /></Page>;
+  if (query.isPending) return <Page><Spinner /></Page>;
+  if (query.isError || !item) return <Page><ErrorBox error={query.error ?? new Error("Livro não encontrado")} /></Page>;
 
   const { book } = item;
-  const reviewDirty = review !== (item.review ?? "");
+  const current = { ...item, ...draft };
+  const dirty = Object.keys(changedFields(item, draft)).length > 0;
 
   return (
-    <Page back action={<button type="button" onClick={onRemove} className="rounded-xl p-2 text-stone-500 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/40" aria-label="Remover da estante"><IconTrash /></button>}>
+    <Page action={<button type="button" onClick={() => setConfirmRemove(true)} className="rounded-xl p-2 text-stone-500 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/40" aria-label="Remover da estante"><IconTrash /></button>}>
       <section className="flex gap-4">
         <BookCover book={book} size="L" className="w-28" />
         <div className="min-w-0 flex-1 py-1">
@@ -61,7 +77,7 @@ export function BookDetailPage() {
             {[book.publishedYear, book.pageCount ? `${book.pageCount} páginas` : null, book.isbn13 ? `ISBN ${book.isbn13}` : null].filter(Boolean).join(" · ")}
           </p>
           <div className="mt-3">
-            <Stars value={item.rating} onChange={(v) => save({ rating: v })} size="lg" />
+            <Stars value={current.rating} onChange={(v) => change({ rating: v })} size="lg" />
           </div>
         </div>
       </section>
@@ -70,28 +86,28 @@ export function BookDetailPage() {
         <span className="label">Status</span>
         <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-label="Status">
           {STATUS_ORDER.map((s) => (
-            <button key={s} type="button" role="radio" aria-checked={item.status === s} disabled={update.isPending} onClick={() => item.status !== s && save({ status: s })} className={item.status === s ? "btn-primary" : "btn-secondary"}>
+            <button key={s} type="button" role="radio" aria-checked={current.status === s} disabled={update.isPending} onClick={() => change({ status: s })} className={current.status === s ? "btn-primary" : "btn-secondary"}>
               {STATUS_ACTION[s]}
             </button>
           ))}
         </div>
       </section>
 
-      {item.status !== "want" && (
+      {current.status !== "want" && (
         <section className="card fade-in mt-4 grid grid-cols-2 gap-3 p-4">
-          <div className={item.status === "read" ? "" : "col-span-2"}>
+          <div className={current.status === "read" ? "" : "col-span-2"}>
             <label className="label" htmlFor="d-start">Comecei em</label>
-            <input id="d-start" type="date" className="input" value={item.startedAt ?? ""} max={today()} onChange={(e) => save({ startedAt: e.target.value || null })} />
+            <DateField id="d-start" value={current.startedAt} onCommit={(v) => change({ startedAt: v })} />
           </div>
-          {item.status === "read" && (
+          {current.status === "read" && (
             <>
               <div>
                 <label className="label" htmlFor="d-finish">Terminei em</label>
-                <input id="d-finish" type="date" className="input" value={item.finishedAt ?? ""} max={today()} onChange={(e) => save({ finishedAt: e.target.value || null })} />
+                <DateField id="d-finish" value={current.finishedAt} onCommit={(v) => change({ finishedAt: v, ...(v ? { readYear: Number(v.slice(0, 4)) } : {}) })} />
               </div>
               <div className="col-span-2">
                 <label className="label" htmlFor="d-year">Conta como leitura de</label>
-                <YearSelect id="d-year" value={item.readYear ?? currentYear()} onChange={(y) => save({ readYear: y }, `Movido para ${y}`)} />
+                <YearSelect id="d-year" value={current.readYear ?? currentYear()} onChange={(y) => change({ readYear: y, ...(current.finishedAt && Number(current.finishedAt.slice(0, 4)) !== y ? { finishedAt: null } : {}) })} />
                 <p className="mt-1 text-xs text-stone-500">Não lembra a data exata? Só o ano já basta para o histórico.</p>
               </div>
             </>
@@ -105,15 +121,9 @@ export function BookDetailPage() {
           id="d-review"
           className="input min-h-32 resize-y py-3"
           placeholder="O que você achou? Só você vê."
-          value={review}
-          onChange={(e) => setReview(e.target.value)}
+          value={current.review ?? ""}
+          onChange={(e) => change({ review: e.target.value || null })}
         />
-        {reviewDirty && (
-          <div className="fade-in mt-2 flex gap-2">
-            <button type="button" onClick={() => save({ review: review || null }, "Resenha salva")} disabled={update.isPending} className="btn-primary flex-1">Salvar resenha</button>
-            <button type="button" onClick={() => setReview(item.review ?? "")} className="btn-secondary">Cancelar</button>
-          </div>
-        )}
       </section>
 
       {details.data?.description && (
@@ -127,6 +137,23 @@ export function BookDetailPage() {
       <p className="mt-8 text-center text-xs text-stone-400">
         {book.source === "manual" ? "Livro cadastrado manualmente" : `Dados e capa: ${SOURCE_LABEL[book.source]}`}
       </p>
+
+      {dirty && (
+        <div className="fade-in sticky bottom-24 z-20 mt-4 flex gap-2">
+          <button type="button" onClick={save} disabled={update.isPending} className="btn-primary flex-1 shadow-lg">{update.isPending ? "Salvando…" : "Salvar"}</button>
+          <button type="button" onClick={() => setDraft({})} disabled={update.isPending} className="btn-secondary shadow-lg">Cancelar</button>
+        </div>
+      )}
+
+      {confirmRemove && (
+        <Sheet title="Remover da estante" onClose={() => setConfirmRemove(false)}>
+          <p className="text-sm text-stone-600 dark:text-stone-300">Remover “{book.title}” da sua estante? Nota, resenha e datas deste livro serão apagadas.</p>
+          <div className="mt-5 flex gap-2">
+            <button type="button" onClick={() => setConfirmRemove(false)} disabled={remove.isPending} className="btn-secondary flex-1">Cancelar</button>
+            <button type="button" onClick={onRemove} disabled={remove.isPending} className="btn-primary flex-1 !bg-red-600 hover:!bg-red-700">{remove.isPending ? "Removendo…" : "Remover"}</button>
+          </div>
+        </Sheet>
+      )}
     </Page>
   );
 }

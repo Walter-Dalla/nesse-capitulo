@@ -14,10 +14,13 @@ const HINTS: Record<Status, string> = {
 
 export function ShelfPage() {
   const [params, setParams] = useSearchParams();
-  const status = (STATUS_ORDER.includes(params.get("s") as Status) ? params.get("s") : "reading") as Status;
-  const shelf = useShelf({ status });
+  const status = params.get("s") as Status;
+  // sem filtro válido na URL (tela inicial), mostra todos
+  const showAll = !STATUS_ORDER.includes(status);
+  const shelf = useShelf(showAll ? {} : { status });
   const stats = useStats();
   const me = useMe();
+  const total = stats.data ? STATUS_ORDER.reduce((sum, s) => sum + stats.data.counts[s], 0) : 0;
 
   return (
     <Page
@@ -32,13 +35,18 @@ export function ShelfPage() {
         </Link>
       }
     >
-      <div className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4 pb-3" role="tablist" aria-label="Status">
+      <div className="flex flex-wrap gap-2 pb-3" role="tablist" aria-label="Status">
+        <button type="button" role="tab" aria-selected={showAll} onClick={() => setParams({}, { replace: true })} className={showAll ? "chip-on" : "chip-off"}>
+          Ver todos
+          {total ? <span className={`ml-0.5 rounded-full px-1.5 text-xs ${showAll ? "bg-white/20" : "bg-stone-100 dark:bg-stone-800"}`}>{total}</span> : null}
+        </button>
         {STATUS_ORDER.map((s) => {
           const count = stats.data?.counts[s];
+          const selected = !showAll && status === s;
           return (
-            <button key={s} type="button" role="tab" aria-selected={status === s} onClick={() => setParams({ s }, { replace: true })} className={status === s ? "chip-on" : "chip-off"}>
+            <button key={s} type="button" role="tab" aria-selected={selected} onClick={() => setParams({ s }, { replace: true })} className={selected ? "chip-on" : "chip-off"}>
               {STATUS_LABEL[s]}
-              {count ? <span className={`ml-0.5 rounded-full px-1.5 text-xs ${status === s ? "bg-white/20" : "bg-stone-100 dark:bg-stone-800"}`}>{count}</span> : null}
+              {count ? <span className={`ml-0.5 rounded-full px-1.5 text-xs ${selected ? "bg-white/20" : "bg-stone-100 dark:bg-stone-800"}`}>{count}</span> : null}
             </button>
           );
         })}
@@ -49,10 +57,10 @@ export function ShelfPage() {
       ) : shelf.isError ? (
         <ErrorBox error={shelf.error} retry={() => shelf.refetch()} />
       ) : shelf.data.items.length === 0 ? (
-        <Empty title={`Nada em “${STATUS_LABEL[status]}”`} hint={HINTS[status]} action={<Link to="/buscar" className="btn-primary mt-2">Buscar livro</Link>} />
+        <Empty title={showAll ? "Sua estante está vazia" : `Nada em “${STATUS_LABEL[status]}”`} hint={showAll ? "Busque um livro para começar." : HINTS[status]} action={<Link to="/buscar" className="btn-primary mt-2">Buscar livro</Link>} />
       ) : (
         <ul className="fade-in space-y-2.5">
-          {shelf.data.items.map((item) => <li key={item.id}><BookCard item={item} /></li>)}
+          {shelf.data.items.map((item) => <li key={item.id}><BookCard item={item} showStatus={showAll} /></li>)}
         </ul>
       )}
 

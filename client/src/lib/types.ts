@@ -25,7 +25,7 @@ export interface User {
 
 export type BookSource = "google" | "openlibrary" | "manual";
 
-/** Metadados mínimos; capa e sinopse vêm da fonte externa (ver coverUrlFor / useDetails). */
+/** Metadados mínimos; capa vem da fonte externa e sinopse do servidor (ver coverUrlFor / useDetails). */
 export interface BookInput {
   source: BookSource;
   sourceId?: string | null;

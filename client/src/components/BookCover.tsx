@@ -11,7 +11,8 @@ interface Props {
 
 /**
  * Capa do livro carregada direto da fonte externa (Google Books / Open Library) a partir de
- * referências curtas; nada de imagem é armazenado. Sem capa, mostra um placeholder colorido
+ * referências curtas; nada de imagem vai para o servidor, só para o cache do navegador
+ * (service worker). Sem capa, mostra um placeholder colorido
  * determinístico pelo título.
  */
 export function BookCover({ book, size = "M", className = "" }: Props) {

@@ -1,11 +1,10 @@
 import type { ReactNode } from "react";
-import { useNavigate } from "react-router";
+import { useLocation, useNavigate } from "react-router";
 import { BottomNav } from "./BottomNav";
 import { IconBack } from "./Icons";
 
 interface PageProps {
   title?: string;
-  back?: boolean;
   action?: ReactNode;
   children: ReactNode;
   nav?: boolean;
@@ -13,14 +12,19 @@ interface PageProps {
 }
 
 /** Container mobile-first: coluna centralizada (máx. 28rem no desktop), header opcional e bottom nav. */
-export function Page({ title, back, action, children, nav = true, padded = true }: PageProps) {
+export function Page({ title, action, children, nav = true, padded = true }: PageProps) {
   const navigate = useNavigate();
+  const { pathname } = useLocation();
+  // idx é a posição que o React Router grava no histórico: 0 é a primeira tela aberta no app,
+  // e voltar dali sairia dele
+  const canGoBack = (window.history.state?.idx ?? 0) > 0;
+  const showBack = canGoBack || pathname !== "/";
   return (
     <div className={`mx-auto min-h-dvh max-w-md ${nav ? "pb-24" : ""}`}>
-      {(title || back || action) && (
+      {(title || showBack || action) && (
         <header className="sticky top-0 z-30 flex min-h-14 items-center gap-2 bg-stone-50/90 px-3 backdrop-blur dark:bg-stone-950/90">
-          {back && (
-            <button type="button" onClick={() => (window.history.length > 1 ? navigate(-1) : navigate("/"))} className="-ml-1 rounded-xl p-2 text-stone-700 hover:bg-stone-200/60 dark:text-stone-200 dark:hover:bg-stone-800" aria-label="Voltar">
+          {showBack && (
+            <button type="button" onClick={() => (canGoBack ? navigate(-1) : navigate("/", { replace: true }))} className="-ml-1 rounded-xl p-2 text-stone-700 hover:bg-stone-200/60 dark:text-stone-200 dark:hover:bg-stone-800" aria-label="Voltar">
               <IconBack />
             </button>
           )}

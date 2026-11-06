@@ -18,5 +18,14 @@ services:
       ADSENSE_CLIENT_ID: ${ADSENSE_CLIENT_ID:-}
     volumes:
       - estante-data:/app/data
+    # O ingress do cloudflared aponta para http://nesse-capitulo:3000.
+    networks:
+      default:
+      cloudflared_network:
+        aliases:
+          - nesse-capitulo
 volumes:
   estante-data:
+networks:
+  cloudflared_network:
+    external: true
