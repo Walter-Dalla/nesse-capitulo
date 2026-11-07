@@ -7,7 +7,8 @@ Tracker de leituras **mobile-first** (PWA + API) inspirado em apps como o Cabece
 - **Banco enxuto**: por livro ficam só título, autores, páginas, ano, ISBN, ids curtos e sinopse. Capas não vão para o servidor: vêm da fonte externa e ficam no cache do navegador.
 - **Monetização opcional**: anúncio recompensado uma vez por sessão para criar livros (ver [docs/MONETIZACAO.md](docs/MONETIZACAO.md)).
 - **Quatro listas**: Lendo, Quero ler, Lidos e Abandonados, mais "Ver todos" sem filtro.
-- **Nota de 1 a 5 estrelas** e **resenha** por livro (privadas).
+- **Nota de 1 a 5 estrelas** e **resenha** por livro (privadas: nem amigos veem).
+- **Amigos** por link de convite: cada um vê o que o outro está lendo e já leu. Na tela do livro e nos cartões da Estante e de Por ano, um selo mostra quais amigos já leram aquele livro.
 - **Histórico por ano**, com registro **retroativo**: basta informar o ano (a data exata é opcional). Estatísticas por ano: livros, páginas e nota média.
 - Dados em **SQLite** (um arquivo, WAL, sem servidor de banco). Rápido e simples.
 - Funciona na web também (layout centralizado no desktop), instalável como app (manifest + service worker).
@@ -86,11 +87,20 @@ Todas as rotas `/api/*` exigem sessão (cookie `sid`).
 | PATCH | `/api/shelf/:id` | Atualização parcial (status, nota, resenha, datas, ano; `book` para livros manuais) |
 | DELETE | `/api/shelf/:id` | Remove da estante |
 | GET | `/api/stats` | Totais por status e por ano (livros, páginas, nota média) |
-
 | GET | `/api/shelf/:id/details` | Sinopse do banco; na falta, busca na fonte e grava |
 | GET | `/api/ads/status` · POST `/api/ads/reward` | Gate de anúncio por sessão (se `ADS_ENABLED=true`) |
+| POST | `/api/friends/invites` | Gera um link de convite: `201 { code, expiresAt }` (uso único, 7 dias) |
+| GET | `/api/friends/invites/:code` | Prévia do convite: `{ inviter, alreadyFriends }`, sem consumir |
+| POST | `/api/friends/invites/:code/accept` | Confirma: `201 { friend }` criou, `200` se já eram amigos; `404` inválido/vencido/usado; `400 INVITE_SELF` |
+| GET | `/api/friends` | Amigos, cada um com o que está lendo: `{ friends: FriendSummary[] }` |
+| GET | `/api/friends/:userId/shelf` | Lendo e Lidos de um amigo, sem nota, resenha, datas nem sinopse; `404` se não for amigo |
+| DELETE | `/api/friends/:userId` | Desfaz a amizade (para os dois) |
+| GET | `/api/shelf/:id/friends` | Amigos que já leram este livro da minha estante; `404` se o item não for meu |
+| GET | `/api/friends/badges` | `{ badges: { [itemId]: quantidade } }` para os cartões, só contagens > 0 |
 
 Regras: ao marcar como **Lido**, o ano vem da data de término, ou do `readYear` informado, ou do ano atual. Mudar para **Quero ler** limpa datas; **Lendo**/**Abandonado** limpam a data de término e o ano.
+
+Amigos: o convite é um link `/amigos/convite/<código>`; quem abre vê quem convidou e só vira amigo ao tocar em **Confirmar amizade**. Se a pessoa não estiver logada, o código fica guardado no aparelho por 1 h e o app volta ao convite depois do login. Amigo vê só livros em **Lendo** e **Lidos** (com o ano), nunca nota, resenha, datas, sinopse ou e-mail. O selo "já leu" conta amigos com o livro em **Lido** e casa pelo mesmo registro de livro (mesma fonte e id) ou pelo mesmo ISBN; título e autor iguais não bastam.
 
 ### Busca e capas: o que é guardado
 
@@ -109,11 +119,11 @@ A busca só é disparada **1 s depois que o usuário para de digitar** (mínimo 
 ```
 client/          front (Vite + React)
   public/        manifest, service worker, ícones, .well-known/assetlinks.json
-  src/pages/     Login, Estante, Buscar, Adicionar manual, Livro, Por ano, Perfil
+  src/pages/     Login, Estante, Buscar, Adicionar manual, Livro, Por ano, Amigos, Perfil
 server/          API Hono
   auth.ts        sessões + Google OAuth
   db.ts          schema SQLite
-  routes/        search, shelf, stats
+  routes/        search, shelf, stats, ads, friends
 tests/           testes da API (node:test)
 data/            banco SQLite (ignorado pelo git)
 ```

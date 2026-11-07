@@ -10,3 +10,4 @@ Livros lidos por ano, com registro retroativo (só o ano; data opcional). Totais
 
 ## Interações
 - [estante](estante.md): `readYear` é derivado de `finishedAt` ou informado ao marcar como Lido.
+- [amigos](amigos.md): os cartões de Por ano mostram o chip "N amigos leram"; amigos veem o `readYear` dos meus Lidos.

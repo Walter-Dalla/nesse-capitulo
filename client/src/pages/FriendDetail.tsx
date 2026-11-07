@@ -5,7 +5,7 @@ import { Avatar } from "../components/FriendBadge";
 import { Empty, ErrorBox, Page, Spinner } from "../components/Layout";
 import { Sheet } from "../components/Sheet";
 import { toast } from "../components/Toast";
-import { displayName, formatAuthors } from "../lib/format";
+import { displayName, formatAuthors, plural } from "../lib/format";
 import { useFriendShelf, useRemoveFriend } from "../lib/hooks";
 import type { FriendBook } from "../lib/types";
 
@@ -61,7 +61,7 @@ export function FriendDetailPage() {
         <Avatar user={friend} size="lg" />
         <div className="min-w-0">
           <h1 className="truncate text-xl font-bold">{name}</h1>
-          <p className="text-sm text-stone-500 dark:text-stone-400">{reading.length} lendo · {read.length} lidos</p>
+          <p className="text-sm text-stone-500 dark:text-stone-400">{reading.length} lendo · {plural(read.length, "lido", "lidos")}</p>
         </div>
       </section>
 
