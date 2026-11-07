@@ -93,3 +93,26 @@ export interface ShelfPatch {
 export interface AddPayload extends Omit<ShelfPatch, "book"> {
   book: BookInput;
 }
+
+/** O que se vê de um amigo: nunca o e-mail. */
+export interface FriendUser {
+  id: string;
+  name: string | null;
+  picture: string | null;
+}
+
+/** Livro na estante de um amigo: só lendo/lido, sem nota, resenha ou datas. */
+export interface FriendBook {
+  status: "reading" | "read";
+  readYear: number | null;
+  book: Book;
+}
+
+export interface FriendSummary extends FriendUser {
+  reading: FriendBook[];
+}
+
+export interface FriendInvitePreview {
+  inviter: FriendUser;
+  alreadyFriends: boolean;
+}

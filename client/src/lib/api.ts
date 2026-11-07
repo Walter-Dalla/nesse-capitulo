@@ -1,5 +1,7 @@
 import { QueryClient } from "@tanstack/react-query";
-import type { AddPayload, BookInput, Providers, ShelfItem, ShelfPatch, Stats, Status, User } from "./types";
+import type {
+  AddPayload, BookInput, FriendBook, FriendInvitePreview, FriendSummary, FriendUser, Providers, ShelfItem, ShelfPatch, Stats, Status, User,
+} from "./types";
 
 export const queryClient = new QueryClient({
   defaultOptions: {
@@ -51,6 +53,15 @@ export const Api = {
   remove: (id: string) => api<{ ok: true }>(`/api/shelf/${id}`, { method: "DELETE" }),
 
   stats: () => api<Stats>("/api/stats"),
+
+  createInvite: () => api<{ code: string; expiresAt: number }>("/api/friends/invites", { method: "POST" }),
+  invite: (code: string) => api<FriendInvitePreview>(`/api/friends/invites/${encodeURIComponent(code)}`),
+  acceptInvite: (code: string) => api<{ friend: FriendUser }>(`/api/friends/invites/${encodeURIComponent(code)}/accept`, { method: "POST" }),
+  friends: () => api<{ friends: FriendSummary[] }>("/api/friends"),
+  friendShelf: (userId: string) => api<{ friend: FriendUser; items: FriendBook[] }>(`/api/friends/${encodeURIComponent(userId)}/shelf`),
+  removeFriend: (userId: string) => api<{ ok: true }>(`/api/friends/${encodeURIComponent(userId)}`, { method: "DELETE" }),
+  bookFriends: (itemId: string) => api<{ friends: FriendUser[] }>(`/api/shelf/${encodeURIComponent(itemId)}/friends`),
+  friendBadges: () => api<{ badges: Record<string, number> }>("/api/friends/badges"),
 };
 
 /** Invalida tudo que depende da estante após uma mutação. */
@@ -59,5 +70,7 @@ export function invalidateShelf() {
     queryClient.invalidateQueries({ queryKey: ["shelf"] }),
     queryClient.invalidateQueries({ queryKey: ["item"] }),
     queryClient.invalidateQueries({ queryKey: ["stats"] }),
+    // contagem de amigos por item; ["friends","book",id] fica de fora: daria 404 durante a remoção do item
+    queryClient.invalidateQueries({ queryKey: ["friends", "badges"] }),
   ]);
 }

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Navigate, useSearchParams } from "react-router";
 import { Api, queryClient } from "../lib/api";
 import { useMe, useProviders } from "../lib/hooks";
+import { browserInviteStore, readPendingInvite } from "../lib/pendingInvite";
 import { IconGoogle } from "../components/Icons";
 import { toast } from "../components/Toast";
 
@@ -18,6 +19,7 @@ export function LoginPage() {
   const [devName, setDevName] = useState("");
   const [busy, setBusy] = useState(false);
   const error = params.get("error");
+  const pendingInvite = readPendingInvite(browserInviteStore()) !== null;
 
   if (me.data?.user) return <Navigate to="/" replace />;
 
@@ -46,6 +48,9 @@ export function LoginPage() {
       </div>
 
       <div className="space-y-3">
+        {pendingInvite && (
+          <p className="rounded-xl bg-accent-100 px-4 py-3 text-center text-sm font-medium text-accent-700 dark:bg-accent-700/30 dark:text-accent-200">Entre para ver o convite de amizade.</p>
+        )}
         {error && <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-950/50 dark:text-red-300">{ERRORS[error] ?? "Falha no login."}</p>}
 
         {providers.data?.google ? (
@@ -64,7 +69,7 @@ export function LoginPage() {
           </div>
         )}
 
-        <p className="pt-2 text-center text-xs text-stone-400">Seus dados ficam na sua conta e só você vê.</p>
+        <p className="pt-2 text-center text-xs text-stone-400">Seus dados ficam na sua conta. Amigos veem só o que você está lendo e já leu.</p>
       </div>
     </div>
   );

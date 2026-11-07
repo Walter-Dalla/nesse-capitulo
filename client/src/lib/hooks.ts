@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { Api, invalidateShelf, queryClient } from "./api";
 import { clearBookCaches, forgetDetails, loadDetails, preloadCovers } from "./bookCache";
 import { clearDrafts } from "./itemDraft";
+import { browserInviteStore, clearPendingInvite } from "./pendingInvite";
 import type { AddPayload, ShelfItem, ShelfPatch, Status } from "./types";
 
 export const useMe = () => useQuery({ queryKey: ["me"], queryFn: Api.me, staleTime: 5 * 60_000 });
@@ -11,6 +12,38 @@ export const useStats = () => useQuery({ queryKey: ["stats"], queryFn: Api.stats
 export const useShelf = (params: { status?: Status; year?: number } = {}) =>
   useQuery({ queryKey: ["shelf", params], queryFn: () => Api.shelf(params) });
 export const useItem = (id: string) => useQuery({ queryKey: ["item", id], queryFn: () => Api.item(id) });
+
+// ---------- amigos ----------
+// Tudo sob o prefixo ["friends"]: mudar uma amizade invalida o prefixo inteiro.
+// O badge não usa o prefixo ["item"]: invalidateShelf refaria a chamada e daria 404 durante a remoção do item.
+
+export const useFriends = () => useQuery({ queryKey: ["friends"], queryFn: Api.friends });
+export const useFriendShelf = (id: string) =>
+  useQuery({ queryKey: ["friends", "detail", id], queryFn: () => Api.friendShelf(id), retry: false });
+export const useBookFriends = (itemId: string, enabled: boolean) =>
+  useQuery({ queryKey: ["friends", "book", itemId], queryFn: () => Api.bookFriends(itemId), enabled, retry: false });
+export const useFriendBadges = () => useQuery({ queryKey: ["friends", "badges"], queryFn: Api.friendBadges, retry: false });
+export const useInvite = (code: string) =>
+  useQuery({ queryKey: ["friends", "invite", code], queryFn: () => Api.invite(code), retry: false });
+
+export const useCreateInvite = () => useMutation({ mutationFn: Api.createInvite });
+
+export const useAcceptInvite = () =>
+  useMutation({
+    mutationFn: (code: string) => Api.acceptInvite(code),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["friends"] }),
+  });
+
+export const useRemoveFriend = () =>
+  useMutation({
+    mutationFn: (userId: string) => Api.removeFriend(userId),
+    onSuccess: (_data, userId) =>
+      Promise.all([
+        // a tela do ex-amigo daria 404 se fosse refeita agora; só fica vencida para a próxima visita
+        queryClient.invalidateQueries({ queryKey: ["friends", "detail", userId], refetchType: "none" }),
+        queryClient.invalidateQueries({ queryKey: ["friends"], predicate: (q) => !(q.queryKey[1] === "detail" && q.queryKey[2] === userId) }),
+      ]),
+  });
 
 /** Espera de 1 s depois da última tecla antes de consultar o backend. */
 export const SEARCH_DEBOUNCE_MS = 1000;
@@ -60,6 +93,8 @@ export const useUpdateItem = (id: string) =>
     onSuccess: (data) => {
       queryClient.setQueryData(["item", id], data);
       cacheBookAssets(data.item);
+      // o item continua existindo: pode refazer quem dos amigos já leu (ISBN de livro manual pode ter mudado)
+      void queryClient.invalidateQueries({ queryKey: ["friends", "book", id] });
       return invalidateShelf();
     },
   });
@@ -82,6 +117,7 @@ export const useLogout = () =>
       queryClient.removeQueries({ predicate: (q) => q.queryKey[0] !== "me" });
       void clearBookCaches();
       clearDrafts();
+      clearPendingInvite(browserInviteStore());
     },
   });
 

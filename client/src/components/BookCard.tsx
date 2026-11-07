@@ -1,11 +1,14 @@
 import { Link } from "react-router";
 import { STATUS_ACTION, type ShelfItem } from "../lib/types";
-import { formatAuthors, formatDate } from "../lib/format";
+import { formatAuthors, formatDate, friendsReadChip } from "../lib/format";
+import { useFriendBadges } from "../lib/hooks";
 import { BookCover } from "./BookCover";
 import { Stars } from "./Stars";
 
 export function BookCard({ item, showStatus = false }: { item: ShelfItem; showStatus?: boolean }) {
   const { book } = item;
+  // uma chamada só para todos os cartões: o React Query deduplica pela chave
+  const friendsRead = useFriendBadges().data?.badges[item.id] ?? 0;
   return (
     <Link to={`/livro/${item.id}`} className="card flex gap-3 p-3 transition active:scale-[0.99] hover:ring-accent-200 dark:hover:ring-stone-700">
       <BookCover book={book} className="w-14" />
@@ -22,6 +25,11 @@ export function BookCard({ item, showStatus = false }: { item: ShelfItem; showSt
           )}
           {item.status === "reading" && item.startedAt && <span>Desde {formatDate(item.startedAt)}</span>}
           {book.pageCount ? <span>{book.pageCount} pág.</span> : null}
+          {friendsRead > 0 && (
+            <span className="rounded-md bg-sky-100 px-1.5 py-0.5 font-semibold text-sky-700 dark:bg-sky-900/40 dark:text-sky-200">
+              {friendsReadChip(friendsRead)}
+            </span>
+          )}
         </div>
         {item.review && <p className="mt-1.5 line-clamp-2 text-xs italic text-stone-500 dark:text-stone-400">“{item.review}”</p>}
       </div>

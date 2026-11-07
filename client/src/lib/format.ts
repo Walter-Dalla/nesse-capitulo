@@ -36,3 +36,21 @@ export function coverUrlFor(book: { source: string; sourceId?: string | null; co
   if (book.isbn13) return `https://covers.openlibrary.org/b/isbn/${book.isbn13}-${size}.jpg?default=false`;
   return null;
 }
+
+/** Nome de um amigo para exibir; sem nome, como no Perfil. */
+export function displayName(user: { name: string | null }) {
+  return user.name?.trim() || "Leitor(a)";
+}
+
+/** Texto do badge na tela do livro: "Ana já leu", "Ana e João já leram", "Ana, João e mais 2 já leram". */
+export function friendsReadText(names: string[]) {
+  if (names.length === 0) return "";
+  if (names.length === 1) return `${names[0]} já leu`;
+  if (names.length === 2) return `${names[0]} e ${names[1]} já leram`;
+  return `${names[0]}, ${names[1]} e mais ${names.length - 2} já leram`;
+}
+
+/** Chip do cartão: "1 amigo leu", "2 amigos leram". */
+export function friendsReadChip(count: number) {
+  return count === 1 ? "1 amigo leu" : `${count} amigos leram`;
+}

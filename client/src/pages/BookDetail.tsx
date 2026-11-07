@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { BookCover } from "../components/BookCover";
+import { FriendBadge } from "../components/FriendBadge";
 import { IconTrash } from "../components/Icons";
 import { ErrorBox, Page, Spinner } from "../components/Layout";
 import { Sheet } from "../components/Sheet";
@@ -81,6 +82,9 @@ export function BookDetailPage() {
           </div>
         </div>
       </section>
+
+      {/* amigos que já leram: só aparece depois que o livro está na minha estante, nunca na busca */}
+      <FriendBadge itemId={item.id} />
 
       <section className="mt-6">
         <span className="label">Status</span>
