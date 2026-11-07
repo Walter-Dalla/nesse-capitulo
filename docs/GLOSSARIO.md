@@ -7,7 +7,7 @@ Vocabulário de negócio ↔ identificadores do código. Coluna "Evite" só traz
 | Negócio | Código | Evite / nota |
 | --- | --- | --- |
 | Estante | `ShelfPage`, `GET /api/shelf`, tabela `user_books` | "biblioteca", "lista" (lista = um dos quatro status) |
-| Item da estante | `ShelfItem`, `getItem`, `rowToItem` | um livro na estante de um usuário; não confundir com `Book` |
+| Item da estante | `ShelfItem`, `getItem`, `rowToItem` (usa `rowToBook`) | um livro na estante de um usuário; não confundir com `Book` |
 | Status | `Status` (`want`, `reading`, `read`, `abandoned`), `parseStatus`, `STATUS_LABEL` | as quatro listas |
 | Quero ler | `want` | "wishlist" |
 | Lendo | `reading` | |
@@ -17,6 +17,9 @@ Vocabulário de negócio ↔ identificadores do código. Coluna "Evite" só traz
 | Resenha | `review` | privada |
 | Datas de leitura | `startedAt`, `finishedAt`, `reconcile` | mudar de status limpa ou preenche datas (README § Regras) |
 | Ano de leitura | `readYear`, `YearsPage`, `GET /api/shelf?year=` | registro retroativo: só o ano, data opcional |
+| Página atual / progresso | `currentPage` / `current_page`, `readingPercent`, `pageProgressText`, `ProgressBar` | só em Lendo (onde estou) e Abandonado (onde parei); Quero ler e Lido limpam |
+| Comentário | `BookComment`, tabela `book_comments`, `commentsRoutes`, `Comments`, `useComments` | vários por livro; não confundir com a resenha (uma só, sempre privada) |
+| Visibilidade do comentário | `visibility` (`private`, `public`), `VISIBILITY_LABEL` | público = amigos veem; não existe "todos os usuários" |
 | Mudar status | `PATCH /api/shelf/:id`, `useUpdateItem`, `STATUS_ACTION` | |
 
 ## Livro e fontes
@@ -30,7 +33,7 @@ Vocabulário de negócio ↔ identificadores do código. Coluna "Evite" só traz
 | Open Library | `normalizeOpenLibraryDoc` | reserva quando o Google falha |
 | Cadastro manual | `AddManualPage`, `/adicionar`, fonte `manual` | capa derivada do ISBN |
 | Referência de capa | `coverRef` / `cover_ref` (`g`, `ol:<id>`, null), `coverUrlFor`, `BookCover` | a URL é montada no cliente |
-| Sinopse | `BookDetails.description`, `fetchDetails`, `GET /api/shelf/:id/details` | sob demanda, nunca persistida |
+| Sinopse | `BookDetails.description`, `books.description`, `fetchDetails`, `GET /api/shelf/:id/details` | buscada na fonte na primeira consulta e gravada no banco; não sai nas rotas de amigos |
 | Limite de busca | `allowSearch` | rajada de 5, depois 1/s por usuário; cache 10 min |
 
 ## Conta e sessão
@@ -42,6 +45,17 @@ Vocabulário de negócio ↔ identificadores do código. Coluna "Evite" só traz
 | Login dev | `POST /auth/dev`, `ALLOW_DEV_LOGIN` | botão "Entrar sem Google"; nunca em produção |
 | Sessão | `createSession`, `findSession`, cookie `sid`, tabela `sessions` | 30 dias |
 | Usuário | `User`, `useMe`, `GET /api/me` | |
+
+## Amigos
+
+| Negócio | Código | Evite / nota |
+| --- | --- | --- |
+| Amigo / amizade | `FriendUser`, `friendships` (`user_low` < `user_high`), `areFriends`, `friendsRoutes` | uma linha por par, sem pedido pendente; vale nos dois sentidos. "seguir", "seguidor" |
+| Convite | `friend_invites`, `POST /api/friends/invites`, `resolveInvite`, `FriendInvitePage`, `/amigos/convite/:code` | link de uso único, sem validade; abrir não cria amizade, só o toque em "Confirmar amizade" |
+| Convite guardado | `pendingInvite.ts` (`savePendingInvite`, `pendingInviteRedirect`), chave `estante:convite` | código salvo no aparelho por 1 h para sobreviver ao login; limpo ao chegar à tela do convite e no logout |
+| Estante do amigo | `GET /api/friends/:userId/shelf`, `FriendBook`, `FriendShelfItem`, `FriendDetailPage` | só Lendo e Lidos, com ano, página atual e comentários públicos; sem nota, resenha, datas, sinopse ou e-mail |
+| Comentários de amigos | `FriendComment`, `GET /api/shelf/:id/comments` (`friends`) | públicos de amigos sobre o mesmo livro (book_id ou ISBN), em qualquer status da estante deles |
+| Amigos que já leram (selo) | `FriendBadge`, `GET /api/shelf/:id/friends`, `GET /api/friends/badges`, `BADGES_SQL`, `useFriendBadges` | conta amigos com o livro em `read`; casa por `book_id` ou ISBN, nunca por título + autor; nunca na busca |
 
 ## Monetização e estatísticas
 
@@ -59,3 +73,5 @@ Vocabulário de negócio ↔ identificadores do código. Coluna "Evite" só traz
 | `sourceId` vs `id` | id na fonte externa vs id interno | `findOrCreateBook` deduplica por `source` + `sourceId` |
 | `ShelfItem.id` vs `book.id` | id da linha `user_books` vs id do `books` | as rotas `/api/shelf/:id` usam o do item |
 | `isProd` | `NODE_ENV=production` ou rodar o `.js` compilado | `npm start` desliga o login dev mesmo sem `NODE_ENV` |
+| `/api/shelf/:id/friends` | amigos que já leram o **meu** item `:id` | mora em `friendsRoutes`, não em `shelfRoutes`; 404 se o item não for meu |
+| Selo de amigos e `["item"]` | o selo usa as chaves `["friends", …]` do React Query | `invalidateShelf` não refaz `["friends","book",id]`: daria 404 durante a remoção do item |

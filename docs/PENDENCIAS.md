@@ -11,6 +11,11 @@ Levantadas em 2026-11-06, no deploy em produção e no diagnóstico do `/wh:adot
 - [ ] Confirmar que o app OAuth foi publicado em **Público-alvo**. Em modo de teste, só entra quem estiver na lista de test users.
 - [ ] Commitar `deploy/compose.prod.yaml` e `.claude/perfil/deploy.md`.
 
+## Amigos
+
+- [ ] Atualizar o formulário de **Segurança dos dados** da Play Store: o app agora mostra a outros usuários (amigos que aceitaram o convite) nome, foto, os livros em Lendo e Lidos com o ano e a página atual, e os comentários marcados como públicos.
+- [ ] Publicar uma política de privacidade, se a Play Store exigir com o compartilhamento entre usuários (o repo não tem uma).
+
 ## Perfis do harness
 
 - [ ] Confirmar as 15 linhas `[inferido]`: `deploy` 7, `_comum` 5, `implementation` 2, `start-app` 1.

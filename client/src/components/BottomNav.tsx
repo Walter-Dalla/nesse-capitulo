@@ -1,10 +1,11 @@
 import { NavLink } from "react-router";
-import { IconCalendar, IconSearch, IconShelf, IconUser } from "./Icons";
+import { IconCalendar, IconFriends, IconSearch, IconShelf, IconUser } from "./Icons";
 
 const ITEMS = [
   { to: "/", label: "Estante", Icon: IconShelf },
   { to: "/buscar", label: "Buscar", Icon: IconSearch },
   { to: "/anos", label: "Por ano", Icon: IconCalendar },
+  { to: "/amigos", label: "Amigos", Icon: IconFriends },
   { to: "/perfil", label: "Perfil", Icon: IconUser },
 ];
 
