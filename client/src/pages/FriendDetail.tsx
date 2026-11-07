@@ -5,25 +5,43 @@ import { Avatar } from "../components/FriendBadge";
 import { Empty, ErrorBox, Page, Spinner } from "../components/Layout";
 import { Sheet } from "../components/Sheet";
 import { toast } from "../components/Toast";
-import { displayName, formatAuthors, plural } from "../lib/format";
+import { ProgressBar } from "../components/ProgressBar";
+import { displayName, formatAuthors, formatTimestamp, pageProgressText, plural, readingPercent } from "../lib/format";
 import { useFriendShelf, useRemoveFriend } from "../lib/hooks";
-import type { FriendBook } from "../lib/types";
+import type { FriendShelfItem } from "../lib/types";
 
-/** Livro de um amigo: sem link para /livro/:id (não é meu item) e sem nota, resenha ou datas. */
-function FriendBookRow({ item }: { item: FriendBook }) {
+/** Livro de um amigo: sem link para /livro/:id (não é meu item), sem nota, resenha ou datas; só comentários públicos. */
+function FriendBookRow({ item }: { item: FriendShelfItem }) {
   const { book } = item;
+  const percent = item.status === "reading" ? readingPercent(item.currentPage, book.pageCount) : null;
   return (
-    <li className="card flex gap-3 p-3">
-      <BookCover book={book} className="w-12" />
-      <div className="min-w-0 flex-1 py-0.5">
-        <p className="line-clamp-2 font-semibold leading-snug">{book.title}</p>
-        <p className="mt-0.5 truncate text-sm text-stone-500 dark:text-stone-400">{formatAuthors(book.authors)}</p>
-        {item.status === "read" && item.readYear && (
-          <span className="mt-2 inline-block rounded-md bg-accent-100 px-1.5 py-0.5 text-xs font-semibold text-accent-700 dark:bg-accent-700/30 dark:text-accent-200">
-            {item.readYear}
-          </span>
-        )}
+    <li className="card p-3">
+      <div className="flex gap-3">
+        <BookCover book={book} className="w-12" />
+        <div className="min-w-0 flex-1 py-0.5">
+          <p className="line-clamp-2 font-semibold leading-snug">{book.title}</p>
+          <p className="mt-0.5 truncate text-sm text-stone-500 dark:text-stone-400">{formatAuthors(book.authors)}</p>
+          {item.status === "read" && item.readYear && (
+            <span className="mt-2 inline-block rounded-md bg-accent-100 px-1.5 py-0.5 text-xs font-semibold text-accent-700 dark:bg-accent-700/30 dark:text-accent-200">
+              {item.readYear}
+            </span>
+          )}
+          {item.status === "reading" && item.currentPage != null && (
+            <p className="mt-2 text-xs text-stone-500 dark:text-stone-400">{pageProgressText(item.currentPage, book.pageCount)}</p>
+          )}
+          {percent !== null && <ProgressBar percent={percent} className="mt-1.5" />}
+        </div>
       </div>
+      {item.comments.length > 0 && (
+        <ul className="mt-3 space-y-2 border-t border-stone-100 pt-3 dark:border-stone-800">
+          {item.comments.map((c) => (
+            <li key={c.id} className="text-sm">
+              <p className="whitespace-pre-wrap break-words leading-relaxed">{c.body}</p>
+              <p className="mt-0.5 text-xs text-stone-500 dark:text-stone-400">{formatTimestamp(c.createdAt)}</p>
+            </li>
+          ))}
+        </ul>
+      )}
     </li>
   );
 }

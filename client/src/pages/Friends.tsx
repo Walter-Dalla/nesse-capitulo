@@ -3,7 +3,7 @@ import { Link } from "react-router";
 import { Avatar } from "../components/FriendBadge";
 import { Empty, ErrorBox, Page, Spinner } from "../components/Layout";
 import { toast } from "../components/Toast";
-import { displayName } from "../lib/format";
+import { displayName, readingPercent } from "../lib/format";
 import { useCreateInvite, useFriends } from "../lib/hooks";
 
 const SHARE_TEXT = "Vamos acompanhar o que o outro está lendo na Estante?";
@@ -51,7 +51,7 @@ export function FriendsPage() {
           {create.isPending ? "Gerando link…" : "Convidar amigo"}
         </button>
         <p className="mt-3 text-xs leading-relaxed text-stone-500 dark:text-stone-400">
-          O link vale para uma pessoa, por 7 dias. Quem confirmar vira seu amigo e vocês veem o que o outro está lendo e já leu.
+          O link não expira e vale para uma pessoa. Quem confirmar vira seu amigo e vocês veem o que o outro está lendo, já leu e os comentários públicos.
         </p>
         {manualUrl && (
           <div className="fade-in mt-3">
@@ -76,7 +76,12 @@ export function FriendsPage() {
                 <div className="min-w-0 flex-1">
                   <p className="truncate font-semibold">{displayName(f)}</p>
                   <p className="truncate text-sm text-stone-500 dark:text-stone-400">
-                    {f.reading.length ? `Lendo ${f.reading.map((r) => r.book.title).join(", ")}` : "Sem leitura no momento"}
+                    {f.reading.length
+                      ? `Lendo ${f.reading.map((r) => {
+                          const pct = readingPercent(r.currentPage, r.book.pageCount);
+                          return pct === null ? r.book.title : `${r.book.title} (${pct}%)`;
+                        }).join(", ")}`
+                      : "Sem leitura no momento"}
                   </p>
                 </div>
               </Link>

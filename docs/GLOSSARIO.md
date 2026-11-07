@@ -17,6 +17,9 @@ Vocabulário de negócio ↔ identificadores do código. Coluna "Evite" só traz
 | Resenha | `review` | privada |
 | Datas de leitura | `startedAt`, `finishedAt`, `reconcile` | mudar de status limpa ou preenche datas (README § Regras) |
 | Ano de leitura | `readYear`, `YearsPage`, `GET /api/shelf?year=` | registro retroativo: só o ano, data opcional |
+| Página atual / progresso | `currentPage` / `current_page`, `readingPercent`, `pageProgressText`, `ProgressBar` | só em Lendo (onde estou) e Abandonado (onde parei); Quero ler e Lido limpam |
+| Comentário | `BookComment`, tabela `book_comments`, `commentsRoutes`, `Comments`, `useComments` | vários por livro; não confundir com a resenha (uma só, sempre privada) |
+| Visibilidade do comentário | `visibility` (`private`, `public`), `VISIBILITY_LABEL` | público = amigos veem; não existe "todos os usuários" |
 | Mudar status | `PATCH /api/shelf/:id`, `useUpdateItem`, `STATUS_ACTION` | |
 
 ## Livro e fontes
@@ -48,9 +51,10 @@ Vocabulário de negócio ↔ identificadores do código. Coluna "Evite" só traz
 | Negócio | Código | Evite / nota |
 | --- | --- | --- |
 | Amigo / amizade | `FriendUser`, `friendships` (`user_low` < `user_high`), `areFriends`, `friendsRoutes` | uma linha por par, sem pedido pendente; vale nos dois sentidos. "seguir", "seguidor" |
-| Convite | `friend_invites`, `POST /api/friends/invites`, `resolveInvite`, `FriendInvitePage`, `/amigos/convite/:code` | link de uso único, 7 dias (`INVITE_TTL_MS`); abrir não cria amizade, só o toque em "Confirmar amizade" |
+| Convite | `friend_invites`, `POST /api/friends/invites`, `resolveInvite`, `FriendInvitePage`, `/amigos/convite/:code` | link de uso único, sem validade; abrir não cria amizade, só o toque em "Confirmar amizade" |
 | Convite guardado | `pendingInvite.ts` (`savePendingInvite`, `pendingInviteRedirect`), chave `estante:convite` | código salvo no aparelho por 1 h para sobreviver ao login; limpo ao chegar à tela do convite e no logout |
-| Estante do amigo | `GET /api/friends/:userId/shelf`, `FriendBook`, `FriendDetailPage` | só Lendo e Lidos, com ano; sem nota, resenha, datas, sinopse ou e-mail |
+| Estante do amigo | `GET /api/friends/:userId/shelf`, `FriendBook`, `FriendShelfItem`, `FriendDetailPage` | só Lendo e Lidos, com ano, página atual e comentários públicos; sem nota, resenha, datas, sinopse ou e-mail |
+| Comentários de amigos | `FriendComment`, `GET /api/shelf/:id/comments` (`friends`) | públicos de amigos sobre o mesmo livro (book_id ou ISBN), em qualquer status da estante deles |
 | Amigos que já leram (selo) | `FriendBadge`, `GET /api/shelf/:id/friends`, `GET /api/friends/badges`, `BADGES_SQL`, `useFriendBadges` | conta amigos com o livro em `read`; casa por `book_id` ou ISBN, nunca por título + autor; nunca na busca |
 
 ## Monetização e estatísticas

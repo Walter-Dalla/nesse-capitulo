@@ -1,6 +1,7 @@
 import { QueryClient } from "@tanstack/react-query";
 import type {
-  AddPayload, BookInput, FriendBook, FriendInvitePreview, FriendSummary, FriendUser, Providers, ShelfItem, ShelfPatch, Stats, Status, User,
+  AddPayload, BookComment, BookInput, CommentVisibility, FriendComment, FriendInvitePreview, FriendShelfItem, FriendSummary, FriendUser,
+  Providers, ShelfItem, ShelfPatch, Stats, Status, User,
 } from "./types";
 
 export const queryClient = new QueryClient({
@@ -54,14 +55,21 @@ export const Api = {
 
   stats: () => api<Stats>("/api/stats"),
 
-  createInvite: () => api<{ code: string; expiresAt: number }>("/api/friends/invites", { method: "POST" }),
+  createInvite: () => api<{ code: string }>("/api/friends/invites", { method: "POST" }),
   invite: (code: string) => api<FriendInvitePreview>(`/api/friends/invites/${encodeURIComponent(code)}`),
   acceptInvite: (code: string) => api<{ friend: FriendUser }>(`/api/friends/invites/${encodeURIComponent(code)}/accept`, { method: "POST" }),
   friends: () => api<{ friends: FriendSummary[] }>("/api/friends"),
-  friendShelf: (userId: string) => api<{ friend: FriendUser; items: FriendBook[] }>(`/api/friends/${encodeURIComponent(userId)}/shelf`),
+  friendShelf: (userId: string) => api<{ friend: FriendUser; items: FriendShelfItem[] }>(`/api/friends/${encodeURIComponent(userId)}/shelf`),
   removeFriend: (userId: string) => api<{ ok: true }>(`/api/friends/${encodeURIComponent(userId)}`, { method: "DELETE" }),
   bookFriends: (itemId: string) => api<{ friends: FriendUser[] }>(`/api/shelf/${encodeURIComponent(itemId)}/friends`),
   friendBadges: () => api<{ badges: Record<string, number> }>("/api/friends/badges"),
+
+  comments: (itemId: string) => api<{ comments: BookComment[]; friends: FriendComment[] }>(`/api/shelf/${encodeURIComponent(itemId)}/comments`),
+  addComment: (itemId: string, input: { body: string; visibility: CommentVisibility }) =>
+    api<{ comment: BookComment }>(`/api/shelf/${encodeURIComponent(itemId)}/comments`, { method: "POST", body: JSON.stringify(input) }),
+  updateComment: (id: string, patch: { body?: string; visibility?: CommentVisibility }) =>
+    api<{ comment: BookComment }>(`/api/comments/${encodeURIComponent(id)}`, { method: "PATCH", body: JSON.stringify(patch) }),
+  removeComment: (id: string) => api<{ ok: true }>(`/api/comments/${encodeURIComponent(id)}`, { method: "DELETE" }),
 };
 
 /** Invalida tudo que depende da estante após uma mutação. */

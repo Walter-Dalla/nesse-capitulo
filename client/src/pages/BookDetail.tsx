@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { BookCover } from "../components/BookCover";
+import { Comments } from "../components/Comments";
 import { FriendBadge } from "../components/FriendBadge";
+import { ProgressBar } from "../components/ProgressBar";
 import { IconTrash } from "../components/Icons";
 import { ErrorBox, Page, Spinner } from "../components/Layout";
 import { Sheet } from "../components/Sheet";
@@ -10,9 +12,18 @@ import { toast } from "../components/Toast";
 import { YearSelect } from "../components/YearSelect";
 import { useDetails, useItem, useRemoveItem, useUpdateItem } from "../lib/hooks";
 import { DateField } from "../components/DateField";
-import { currentYear, formatAuthors } from "../lib/format";
+import { currentYear, formatAuthors, readingPercent } from "../lib/format";
 import { changedFields, readDraft, writeDraft, type ItemDraft } from "../lib/itemDraft";
 import { SOURCE_LABEL, STATUS_ACTION, STATUS_ORDER } from "../lib/types";
+
+const PAGE_MAX = 100000;
+
+/** Campo de página: vazio vira null; o resto, inteiro entre 0 e PAGE_MAX. */
+function parsePage(value: string): number | null {
+  if (value.trim() === "") return null;
+  const n = Math.floor(Number(value));
+  return Number.isFinite(n) ? Math.min(PAGE_MAX, Math.max(0, n)) : null;
+}
 
 export function BookDetailPage() {
   const { id = "" } = useParams();
@@ -66,6 +77,8 @@ export function BookDetailPage() {
   const { book } = item;
   const current = { ...item, ...draft };
   const dirty = Object.keys(changedFields(item, draft)).length > 0;
+  const tracksPage = current.status === "reading" || current.status === "abandoned";
+  const percent = readingPercent(current.currentPage, book.pageCount);
 
   return (
     <Page action={<button type="button" onClick={() => setConfirmRemove(true)} className="rounded-xl p-2 text-stone-500 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/40" aria-label="Remover da estante"><IconTrash /></button>}>
@@ -103,6 +116,29 @@ export function BookDetailPage() {
             <label className="label" htmlFor="d-start">Comecei em</label>
             <DateField id="d-start" value={current.startedAt} onCommit={(v) => change({ startedAt: v })} />
           </div>
+          {tracksPage && (
+            <div className="col-span-2">
+              <label className="label" htmlFor="d-page">{current.status === "reading" ? "Estou na página" : "Parei na página"}</label>
+              <div className="flex items-center gap-3">
+                <input
+                  id="d-page"
+                  type="number"
+                  inputMode="numeric"
+                  min={0}
+                  max={PAGE_MAX}
+                  className="input w-28"
+                  placeholder="0"
+                  value={current.currentPage ?? ""}
+                  onChange={(e) => change({ currentPage: parsePage(e.target.value) })}
+                />
+                <span className="text-sm text-stone-500 dark:text-stone-400">
+                  {book.pageCount ? `de ${book.pageCount}` : "sem total de páginas"}
+                  {percent !== null && <span className="ml-2 font-semibold text-stone-700 dark:text-stone-200">{percent}%</span>}
+                </span>
+              </div>
+              {percent !== null && <ProgressBar percent={percent} className="mt-3" />}
+            </div>
+          )}
           {current.status === "read" && (
             <>
               <div>
@@ -130,6 +166,8 @@ export function BookDetailPage() {
         />
       </section>
 
+      <Comments itemId={item.id} />
+
       {details.data?.description && (
         <section className="mt-6 fade-in">
           <span className="label">Sinopse</span>
@@ -151,7 +189,7 @@ export function BookDetailPage() {
 
       {confirmRemove && (
         <Sheet title="Remover da estante" onClose={() => setConfirmRemove(false)}>
-          <p className="text-sm text-stone-600 dark:text-stone-300">Remover “{book.title}” da sua estante? Nota, resenha e datas deste livro serão apagadas.</p>
+          <p className="text-sm text-stone-600 dark:text-stone-300">Remover “{book.title}” da sua estante? Nota, resenha, datas, página e comentários deste livro serão apagados.</p>
           <div className="mt-5 flex gap-2">
             <button type="button" onClick={() => setConfirmRemove(false)} disabled={remove.isPending} className="btn-secondary flex-1">Cancelar</button>
             <button type="button" onClick={onRemove} disabled={remove.isPending} className="btn-primary flex-1 !bg-red-600 hover:!bg-red-700">{remove.isPending ? "Removendo…" : "Remover"}</button>

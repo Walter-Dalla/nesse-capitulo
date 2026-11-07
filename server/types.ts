@@ -50,6 +50,8 @@ export interface ShelfItem {
   startedAt: string | null;
   finishedAt: string | null;
   readYear: number | null;
+  /** Página em que o leitor está (Lendo) ou parou (Abandonado); null em Quero ler e Lido. */
+  currentPage: number | null;
   createdAt: string;
   updatedAt: string;
   book: Book;
@@ -66,11 +68,39 @@ export interface FriendUser {
 export interface FriendBook {
   status: "reading" | "read";
   readYear: number | null;
+  /** Progresso de quem está lendo; null em Lido. */
+  currentPage: number | null;
   book: Book;
+}
+
+/** Livro na tela de um amigo, com os comentários que ele deixou públicos. */
+export interface FriendShelfItem extends FriendBook {
+  comments: PublicComment[];
 }
 
 export interface FriendSummary extends FriendUser {
   reading: FriendBook[];
+}
+
+export type CommentVisibility = "private" | "public";
+export const COMMENT_VISIBILITIES: CommentVisibility[] = ["private", "public"];
+
+/** Comentário como amigos o veem: sem a visibilidade (só públicos saem para eles). */
+export interface PublicComment {
+  id: string;
+  body: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** Meu comentário, com a visibilidade escolhida. */
+export interface BookComment extends PublicComment {
+  visibility: CommentVisibility;
+}
+
+/** Comentário público de um amigo sobre o mesmo livro. */
+export interface FriendComment extends PublicComment {
+  author: FriendUser;
 }
 
 export interface FriendInvitePreview {

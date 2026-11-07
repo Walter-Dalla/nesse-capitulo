@@ -30,7 +30,7 @@ test("amigo vê só Lendo e Lidos da estante do outro, nos dois sentidos", async
   assert.equal(byTitle["Lendo agora"].status, "reading");
   assert.equal(byTitle["Lendo agora"].readYear, null);
   assert.deepEqual(byTitle["Lendo agora"].book.authors, ["Autora"]);
-  assert.deepEqual(Object.keys(byTitle["Já li"]).sort(), ["book", "readYear", "status"]);
+  assert.deepEqual(Object.keys(byTitle["Já li"]).sort(), ["book", "comments", "currentPage", "readYear", "status"]);
   assert.deepEqual(Object.keys(byTitle["Já li"].book).sort(), ["authors", "coverRef", "id", "isbn13", "pageCount", "publishedYear", "source", "sourceId", "title"]);
 
   // o outro sentido também vale

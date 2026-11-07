@@ -13,7 +13,7 @@ Levantadas em 2026-11-06, no deploy em produção e no diagnóstico do `/wh:adot
 
 ## Amigos
 
-- [ ] Atualizar o formulário de **Segurança dos dados** da Play Store: o app agora mostra a outros usuários (amigos que aceitaram o convite) nome, foto e os livros em Lendo e Lidos com o ano.
+- [ ] Atualizar o formulário de **Segurança dos dados** da Play Store: o app agora mostra a outros usuários (amigos que aceitaram o convite) nome, foto, os livros em Lendo e Lidos com o ano e a página atual, e os comentários marcados como públicos.
 - [ ] Publicar uma política de privacidade, se a Play Store exigir com o compartilhamento entre usuários (o repo não tem uma).
 
 ## Perfis do harness

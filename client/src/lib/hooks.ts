@@ -4,7 +4,7 @@ import { Api, invalidateShelf, queryClient } from "./api";
 import { clearBookCaches, forgetDetails, loadDetails, preloadCovers } from "./bookCache";
 import { clearDrafts } from "./itemDraft";
 import { browserInviteStore, clearPendingInvite } from "./pendingInvite";
-import type { AddPayload, ShelfItem, ShelfPatch, Status } from "./types";
+import type { AddPayload, BookComment, CommentVisibility, ShelfItem, ShelfPatch, Status } from "./types";
 
 export const useMe = () => useQuery({ queryKey: ["me"], queryFn: Api.me, staleTime: 5 * 60_000 });
 export const useProviders = () => useQuery({ queryKey: ["providers"], queryFn: Api.providers, staleTime: Infinity });
@@ -31,7 +31,11 @@ export const useCreateInvite = () => useMutation({ mutationFn: Api.createInvite 
 export const useAcceptInvite = () =>
   useMutation({
     mutationFn: (code: string) => Api.acceptInvite(code),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["friends"] }),
+    // comentários públicos do novo amigo passam a aparecer nos meus livros
+    onSuccess: () => Promise.all([
+      queryClient.invalidateQueries({ queryKey: ["friends"] }),
+      queryClient.invalidateQueries({ queryKey: ["comments"] }),
+    ]),
   });
 
 export const useRemoveFriend = () =>
@@ -42,7 +46,36 @@ export const useRemoveFriend = () =>
         // a tela do ex-amigo daria 404 se fosse refeita agora; só fica vencida para a próxima visita
         queryClient.invalidateQueries({ queryKey: ["friends", "detail", userId], refetchType: "none" }),
         queryClient.invalidateQueries({ queryKey: ["friends"], predicate: (q) => !(q.queryKey[1] === "detail" && q.queryKey[2] === userId) }),
+        queryClient.invalidateQueries({ queryKey: ["comments"] }),
       ]),
+  });
+
+// ---------- comentários ----------
+// Chave própria (["comments", itemId]): fora de invalidateShelf, que a refaria com 404 durante a remoção do item.
+
+export const useComments = (itemId: string) => useQuery({ queryKey: ["comments", itemId], queryFn: () => Api.comments(itemId) });
+
+/** Troca um comentário meu no cache, sem refazer a lista inteira. */
+function patchCachedComment(itemId: string, fn: (list: BookComment[]) => BookComment[]) {
+  queryClient.setQueryData<{ comments: BookComment[]; friends: unknown[] }>(["comments", itemId], (old) => (old ? { ...old, comments: fn(old.comments) } : old));
+}
+
+export const useAddComment = (itemId: string) =>
+  useMutation({
+    mutationFn: (input: { body: string; visibility: CommentVisibility }) => Api.addComment(itemId, input),
+    onSuccess: ({ comment }) => patchCachedComment(itemId, (list) => [comment, ...list]),
+  });
+
+export const useUpdateComment = (itemId: string) =>
+  useMutation({
+    mutationFn: ({ id, ...patch }: { id: string; body?: string; visibility?: CommentVisibility }) => Api.updateComment(id, patch),
+    onSuccess: ({ comment }) => patchCachedComment(itemId, (list) => list.map((c) => (c.id === comment.id ? comment : c))),
+  });
+
+export const useRemoveComment = (itemId: string) =>
+  useMutation({
+    mutationFn: (id: string) => Api.removeComment(id),
+    onSuccess: (_data, id) => patchCachedComment(itemId, (list) => list.filter((c) => c.id !== id)),
   });
 
 /** Espera de 1 s depois da última tecla antes de consultar o backend. */
@@ -95,6 +128,7 @@ export const useUpdateItem = (id: string) =>
       cacheBookAssets(data.item);
       // o item continua existindo: pode refazer quem dos amigos já leu (ISBN de livro manual pode ter mudado)
       void queryClient.invalidateQueries({ queryKey: ["friends", "book", id] });
+      void queryClient.invalidateQueries({ queryKey: ["comments", id] });
       return invalidateShelf();
     },
   });

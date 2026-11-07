@@ -69,7 +69,7 @@ export function LoginPage() {
           </div>
         )}
 
-        <p className="pt-2 text-center text-xs text-stone-400">Seus dados ficam na sua conta. Amigos veem só o que você está lendo e já leu.</p>
+        <p className="pt-2 text-center text-xs text-stone-400">Seus dados ficam na sua conta. Amigos veem o que você está lendo, já leu e os comentários que você deixar públicos.</p>
       </div>
     </div>
   );

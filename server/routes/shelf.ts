@@ -9,7 +9,7 @@ import { fetchDetails } from "./search.js";
 
 const SELECT_ITEM = `
   SELECT ub.id, ub.status, ub.rating, ub.review, ub.started_at, ub.finished_at, ub.read_year,
-         ub.created_at, ub.updated_at,
+         ub.current_page, ub.created_at, ub.updated_at,
          b.id AS b_id, b.source AS b_source, b.source_id AS b_source_id, b.title AS b_title,
          b.authors AS b_authors, b.page_count AS b_page_count,
          b.published_year AS b_published_year, b.isbn13 AS b_isbn13, b.cover_ref AS b_cover_ref
@@ -39,6 +39,7 @@ function rowToItem(r: any): ShelfItem {
     startedAt: r.started_at,
     finishedAt: r.finished_at,
     readYear: r.read_year,
+    currentPage: r.current_page,
     createdAt: r.created_at,
     updatedAt: r.updated_at,
     book: rowToBook(r),
@@ -66,8 +67,13 @@ export function getItem(db: DB, userId: string, id: string): ShelfItem | null {
   return row ? rowToItem(row) : null;
 }
 
-/** Regras de consistência entre status, datas e ano de leitura. */
-function reconcile(next: { status: Status; startedAt: string | null; finishedAt: string | null; readYear: number | null }) {
+/** Página atual só faz sentido em Lendo (onde estou) e Abandonado (onde parei). */
+export const PAGE_MAX = 100000;
+const keepsPage = (status: Status) => status === "reading" || status === "abandoned";
+
+/** Regras de consistência entre status, datas, ano de leitura e página atual. */
+function reconcile(next: { status: Status; startedAt: string | null; finishedAt: string | null; readYear: number | null; currentPage: number | null }) {
+  if (!keepsPage(next.status)) next.currentPage = null;
   if (next.status === "read") {
     if (next.finishedAt) next.readYear = Number(next.finishedAt.slice(0, 4));
     if (!next.readYear) next.readYear = new Date().getFullYear();
@@ -129,6 +135,7 @@ export function shelfRoutes(db: DB) {
       startedAt: optDate(body.startedAt, "startedAt"),
       finishedAt: optDate(body.finishedAt, "finishedAt"),
       readYear: optInt(body.readYear, "readYear", 1000, 3000),
+      currentPage: optInt(body.currentPage, "currentPage", 0, PAGE_MAX),
     };
     reconcile(fields);
 
@@ -143,18 +150,20 @@ export function shelfRoutes(db: DB) {
 
     const result = transaction(db, () => {
       const bookId = findOrCreateBook(db, book);
-      const existing = db.prepare("SELECT id FROM user_books WHERE user_id = ? AND book_id = ?").get(user.id, bookId) as { id: string } | undefined;
+      const existing = db.prepare("SELECT id, current_page FROM user_books WHERE user_id = ? AND book_id = ?").get(user.id, bookId) as { id: string; current_page: number | null } | undefined;
       const id = existing?.id ?? randomUUID();
       if (existing) {
+        // sem página informada, mantém a salva enquanto o novo status ainda usa página
+        const currentPage = keepsPage(fields.status) ? (fields.currentPage ?? existing.current_page) : null;
         db.prepare(
           `UPDATE user_books SET status = ?, rating = COALESCE(?, rating), review = COALESCE(?, review),
-             started_at = ?, finished_at = ?, read_year = ?, updated_at = datetime('now') WHERE id = ?`,
-        ).run(fields.status, fields.rating, fields.review, fields.startedAt, fields.finishedAt, fields.readYear, id);
+             started_at = ?, finished_at = ?, read_year = ?, current_page = ?, updated_at = datetime('now') WHERE id = ?`,
+        ).run(fields.status, fields.rating, fields.review, fields.startedAt, fields.finishedAt, fields.readYear, currentPage, id);
       } else {
         db.prepare(
-          `INSERT INTO user_books (id, user_id, book_id, status, rating, review, started_at, finished_at, read_year)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        ).run(id, user.id, bookId, fields.status, fields.rating, fields.review, fields.startedAt, fields.finishedAt, fields.readYear);
+          `INSERT INTO user_books (id, user_id, book_id, status, rating, review, started_at, finished_at, read_year, current_page)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        ).run(id, user.id, bookId, fields.status, fields.rating, fields.review, fields.startedAt, fields.finishedAt, fields.readYear, fields.currentPage);
       }
       return { id, created: !existing };
     });
@@ -162,7 +171,7 @@ export function shelfRoutes(db: DB) {
     return c.json({ item: getItem(db, user.id, result.id) }, result.created ? 201 : 200);
   });
 
-  // atualização parcial: status, nota, resenha, datas, ano
+  // atualização parcial: status, nota, resenha, datas, ano, página atual
   app.patch("/api/shelf/:id", async (c) => {
     const user = c.var.user;
     const current = getItem(db, user.id, c.req.param("id"));
@@ -177,6 +186,7 @@ export function shelfRoutes(db: DB) {
       startedAt: has("startedAt") ? optDate(body.startedAt, "startedAt") : current.startedAt,
       finishedAt: has("finishedAt") ? optDate(body.finishedAt, "finishedAt") : current.finishedAt,
       readYear: has("readYear") ? optInt(body.readYear, "readYear", 1000, 3000) : current.readYear,
+      currentPage: has("currentPage") ? optInt(body.currentPage, "currentPage", 0, PAGE_MAX) : current.currentPage,
     };
     // se o usuário mudou o ano manualmente e a data de término não bate, descarta a data
     if (has("readYear") && !has("finishedAt") && fields.finishedAt && fields.readYear && Number(fields.finishedAt.slice(0, 4)) !== fields.readYear) {
@@ -198,8 +208,8 @@ export function shelfRoutes(db: DB) {
 
     db.prepare(
       `UPDATE user_books SET status = ?, rating = ?, review = ?, started_at = ?, finished_at = ?, read_year = ?,
-         updated_at = datetime('now') WHERE id = ?`,
-    ).run(fields.status, fields.rating, fields.review, fields.startedAt, fields.finishedAt, fields.readYear, current.id);
+         current_page = ?, updated_at = datetime('now') WHERE id = ?`,
+    ).run(fields.status, fields.rating, fields.review, fields.startedAt, fields.finishedAt, fields.readYear, fields.currentPage, current.id);
 
     return c.json({ item: getItem(db, user.id, current.id) });
   });

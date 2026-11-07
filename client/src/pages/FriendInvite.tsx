@@ -42,7 +42,7 @@ export function FriendInvitePage() {
   } else if (isSelf(acceptError) || isSelf(invite.error)) {
     body = <Message title="Este convite é seu" hint="Envie o link para um amigo." />;
   } else if (isInvalid(acceptError) || isInvalid(invite.error)) {
-    body = <Message title="Convite inválido ou expirado" hint="Peça um novo link a quem convidou." />;
+    body = <Message title="Convite inválido ou já usado" hint="Cada link vale para uma pessoa. Peça um novo a quem convidou." />;
   } else if (invite.isPending) {
     body = <Spinner />;
   } else if (invite.isError) {
@@ -56,7 +56,7 @@ export function FriendInvitePage() {
         <Avatar user={inviter} size="lg" />
         <h2 className="mt-4 text-xl font-bold leading-snug">{displayName(inviter)} convidou você para ser amigo</h2>
         <p className="mt-2 max-w-xs text-sm text-stone-600 dark:text-stone-300">
-          Ao confirmar, vocês veem o que o outro está lendo e já leu. Nota e resenha continuam privadas.
+          Ao confirmar, vocês veem o que o outro está lendo, já leu e os comentários públicos. Nota, resenha e comentários privados continuam só seus.
         </p>
         <div className="mt-6 flex w-full flex-col gap-2">
           <button type="button" onClick={confirm} disabled={accept.isPending} className="btn-primary w-full">

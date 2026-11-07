@@ -1,17 +1,15 @@
 import { Hono } from "hono";
 import { randomBytes } from "node:crypto";
 import { transaction, type DB } from "../db.js";
-import type { AppEnv, FriendBook, FriendSummary, FriendUser } from "../types.js";
+import type { AppEnv, FriendBook, FriendShelfItem, FriendSummary, FriendUser, PublicComment } from "../types.js";
 import { getItem, rowToBook } from "./shelf.js";
 
-export const INVITE_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 dias
-
-const INVALID_INVITE = { error: "Convite inválido ou expirado" };
+const INVALID_INVITE = { error: "Convite inválido ou já usado" };
 const SELF_INVITE = { error: "Este convite é seu", code: "INVITE_SELF" };
 const NOT_FOUND = { error: "Não encontrado" };
 
 /** CTE com os ids dos amigos de `?1`. A amizade é guardada uma vez por par (user_low < user_high). */
-const MY_FRIENDS = `my_friends(id) AS (
+export const MY_FRIENDS = `my_friends(id) AS (
   SELECT user_high FROM friendships WHERE user_low = ?1
   UNION ALL
   SELECT user_low FROM friendships WHERE user_high = ?1
@@ -21,7 +19,7 @@ const MY_FRIENDS = `my_friends(id) AS (
  * Colunas que um amigo pode ver: status, ano de leitura e o livro sem sinopse.
  * Nunca use SELECT_ITEM/rowToItem aqui: trazem nota, resenha e datas.
  */
-const FRIEND_BOOK_COLS = `ub.status AS status, ub.read_year AS read_year,
+const FRIEND_BOOK_COLS = `ub.id AS item_id, ub.status AS status, ub.read_year AS read_year, ub.current_page AS current_page,
   b.id AS b_id, b.source AS b_source, b.source_id AS b_source_id, b.title AS b_title,
   b.authors AS b_authors, b.page_count AS b_page_count,
   b.published_year AS b_published_year, b.isbn13 AS b_isbn13, b.cover_ref AS b_cover_ref`;
@@ -92,8 +90,12 @@ function findFriendUser(db: DB, id: string): FriendUser | null {
   return row ? { id: row.id, name: row.name, picture: row.picture } : null;
 }
 
+export function rowToPublicComment(r: any): PublicComment {
+  return { id: r.id, body: r.body, createdAt: r.created_at, updatedAt: r.updated_at };
+}
+
 function rowToFriendBook(r: any): FriendBook {
-  return { status: r.status, readYear: r.read_year, book: rowToBook(r) };
+  return { status: r.status, readYear: r.read_year, currentPage: r.current_page, book: rowToBook(r) };
 }
 
 type InviteState =
@@ -109,13 +111,13 @@ type InviteState =
 export function resolveInvite(db: DB, code: string, me: string): InviteState {
   const row = db
     .prepare(
-      `SELECT fi.inviter_id, fi.expires_at, fi.used_by, u.name, u.picture
+      `SELECT fi.inviter_id, fi.used_by, u.name, u.picture
        FROM friend_invites fi JOIN users u ON u.id = fi.inviter_id
        WHERE fi.code = ?`,
     )
-    .get(code) as { inviter_id: string; expires_at: number; used_by: string | null; name: string | null; picture: string | null } | undefined;
-  // 1. inexistente ou vencido
-  if (!row || row.expires_at <= Date.now()) return { state: "invalid" };
+    .get(code) as { inviter_id: string; used_by: string | null; name: string | null; picture: string | null } | undefined;
+  // 1. inexistente (convites não expiram)
+  if (!row) return { state: "invalid" };
   // 2. o convite é meu
   if (row.inviter_id === me) return { state: "self" };
   const inviter: FriendUser = { id: row.inviter_id, name: row.name, picture: row.picture };
@@ -133,15 +135,11 @@ export function resolveInvite(db: DB, code: string, me: string): InviteState {
 export function friendsRoutes(db: DB) {
   const app = new Hono<AppEnv>();
 
-  // gera um link de convite novo; vários convites ativos convivem
+  // gera um link de convite novo: uso único e sem validade; vários convites abertos convivem
   app.post("/api/friends/invites", (c) => {
-    const userId = c.var.user.id;
     const code = randomBytes(16).toString("base64url");
-    const expiresAt = Date.now() + INVITE_TTL_MS;
-    // limpeza oportunista dos meus convites vencidos, como em createSession
-    db.prepare("DELETE FROM friend_invites WHERE inviter_id = ? AND expires_at < ?").run(userId, Date.now());
-    db.prepare("INSERT INTO friend_invites (code, inviter_id, expires_at) VALUES (?, ?, ?)").run(code, userId, expiresAt);
-    return c.json({ code, expiresAt }, 201);
+    db.prepare("INSERT INTO friend_invites (code, inviter_id) VALUES (?, ?)").run(code, c.var.user.id);
+    return c.json({ code }, 201);
   });
 
   // prévia do convite: quem convidou. Nunca escreve no banco (prévia de link, recarregar, "Agora não").
@@ -205,7 +203,8 @@ export function friendsRoutes(db: DB) {
     return c.json({ friends });
   });
 
-  // estante de um amigo: só Lendo e Lidos. Não amigo recebe 404, igual a id inexistente.
+  // estante de um amigo: só Lendo e Lidos, com os comentários públicos de cada livro.
+  // Não amigo recebe 404, igual a id inexistente.
   app.get("/api/friends/:userId/shelf", (c) => {
     const friendId = c.req.param("userId");
     if (!areFriends(db, c.var.user.id, friendId)) return c.json(NOT_FOUND, 404);
@@ -218,8 +217,24 @@ export function friendsRoutes(db: DB) {
          WHERE ub.user_id = ? AND ub.status IN ('reading', 'read')
          ORDER BY ub.updated_at DESC`,
       )
-      .all(friendId);
-    return c.json({ friend, items: rows.map(rowToFriendBook) });
+      .all(friendId) as any[];
+    // comentários públicos de todos esses livros numa consulta só; nunca os privados
+    const comments = db
+      .prepare(
+        `SELECT c.item_id, c.id, c.body, c.created_at, c.updated_at
+         FROM book_comments c JOIN user_books ub ON ub.id = c.item_id
+         WHERE c.user_id = ? AND c.visibility = 'public' AND ub.status IN ('reading', 'read')
+         ORDER BY c.created_at DESC, c.rowid DESC`,
+      )
+      .all(friendId) as any[];
+    const byItem = new Map<string, PublicComment[]>();
+    for (const r of comments) {
+      const list = byItem.get(r.item_id) ?? [];
+      list.push(rowToPublicComment(r));
+      byItem.set(r.item_id, list);
+    }
+    const items: FriendShelfItem[] = rows.map((r) => ({ ...rowToFriendBook(r), comments: byItem.get(r.item_id) ?? [] }));
+    return c.json({ friend, items });
   });
 
   // desfaz a amizade, valendo para os dois lados

@@ -7,7 +7,7 @@ Tracker de leituras mobile-first (PWA React + API Hono + SQLite via `node:sqlite
 - `client/src/pages/` — telas (Login, Shelf, Search, AddManual, BookDetail, Years, Friends, FriendDetail, FriendInvite, Profile); `client/src/components/` — UI compartilhada; `client/src/lib/` — `api.ts` (chamadas), `hooks.ts`, `types.ts`, `pendingInvite.ts` (convite que sobrevive ao login).
 - `client/public/` — manifest, service worker, ícones, `.well-known/assetlinks.json` (TWA).
 - `server/app.ts` — monta a app Hono; `server/auth.ts` — sessões + Google OAuth; `server/db.ts` — schema SQLite; `server/types.ts` — tipos do domínio (`Status`, `Book`, `ShelfItem`); `server/validate.ts`; `server/env.ts`.
-- `server/routes/` — `search.ts` (Google Books + Open Library, cache, rate limit), `shelf.ts`, `stats.ts`, `ads.ts`, `friends.ts` (convite, amigos, selo de quem já leu).
+- `server/routes/` — `search.ts` (Google Books + Open Library, cache, rate limit), `shelf.ts`, `stats.ts`, `ads.ts`, `friends.ts` (convite, amigos, selo de quem já leu), `comments.ts` (comentários privados e públicos).
 - `tests/` — testes da API com `node:test` e banco em memória.
 - `data/` — banco SQLite em runtime (ignorado pelo git).
 

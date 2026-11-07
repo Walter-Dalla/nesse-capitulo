@@ -1,55 +1,79 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { addBook, befriend, client, invite, login, openDatabase, twoFriends } from "./friends-helpers.ts";
 
-const INVALID = "Convite inválido ou expirado";
+const INVALID = "Convite inválido ou já usado";
 
-test("gerar convite devolve código e validade de 7 dias", async () => {
+test("gerar convite devolve só o código, sem validade", async () => {
   const db = openDatabase(":memory:");
   const ana = await login(db, "Ana");
-  const before = Date.now();
   const r = await ana.call("POST", "/api/friends/invites");
   assert.equal(r.status, 201);
+  assert.deepEqual(Object.keys(r.json), ["code"]);
   assert.equal(typeof r.json.code, "string");
   assert.ok(r.json.code.length >= 20);
-  const week = 7 * 24 * 60 * 60 * 1000;
-  assert.ok(r.json.expiresAt >= before + week && r.json.expiresAt <= Date.now() + week);
-  // vários convites ativos convivem
+  // vários convites abertos convivem
   const other = await ana.call("POST", "/api/friends/invites");
   assert.notEqual(other.json.code, r.json.code);
   assert.equal((db.prepare("SELECT COUNT(*) AS n FROM friend_invites").get() as any).n, 2);
 });
 
-test("criar convite apaga só os meus convites vencidos", async () => {
+test("convite não expira: um convite de anos atrás continua valendo", async () => {
   const db = openDatabase(":memory:");
   const ana = await login(db, "Ana");
   const bia = await login(db, "Bia");
-  const oldAna = await invite(ana);
-  const oldBia = await invite(bia);
-  db.prepare("UPDATE friend_invites SET expires_at = 0").run();
+  const code = await invite(ana);
+  db.prepare("UPDATE friend_invites SET created_at = '2000-01-01 00:00:00'").run();
+  // criar outros convites não apaga os antigos
   await invite(ana);
-  const codes = (db.prepare("SELECT code FROM friend_invites").all() as any[]).map((r) => r.code);
-  assert.ok(!codes.includes(oldAna));
-  assert.ok(codes.includes(oldBia));
+  const get = await bia.call("GET", `/api/friends/invites/${code}`);
+  assert.equal(get.status, 200);
+  assert.equal(get.json.alreadyFriends, false);
+  assert.equal((await bia.call("POST", `/api/friends/invites/${code}/accept`)).status, 201);
 });
 
-test("passo 1: código inexistente ou vencido dá 404 nas duas rotas", async () => {
+test("banco com a coluna de validade antiga: a migração tira a coluna e o convite vencido volta a valer", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "estante-convite-"));
+  try {
+    const file = join(dir, "t.db");
+    const old = openDatabase(file);
+    old.exec("DROP TABLE friend_invites");
+    old.exec(`CREATE TABLE friend_invites (
+      code TEXT PRIMARY KEY,
+      inviter_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      expires_at INTEGER NOT NULL,
+      used_by TEXT REFERENCES users(id) ON DELETE CASCADE,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    )`);
+    old.prepare("INSERT INTO users (id, name) VALUES ('ana', 'Ana')").run();
+    old.prepare("INSERT INTO friend_invites (code, inviter_id, expires_at) VALUES ('velho', 'ana', 0)").run();
+    old.close();
+
+    const db = openDatabase(file);
+    const cols = (db.prepare("PRAGMA table_info(friend_invites)").all() as any[]).map((c) => c.name);
+    assert.ok(!cols.includes("expires_at"));
+    const bia = await login(db, "Bia");
+    assert.equal((await bia.call("GET", "/api/friends/invites/velho")).status, 200);
+    assert.equal((await bia.call("POST", "/api/friends/invites/velho/accept")).status, 201);
+    const ana = await login(db, "Ana2");
+    assert.equal((await ana.call("POST", "/api/friends/invites")).status, 201);
+    db.close();
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("passo 1: código inexistente dá 404 nas duas rotas", async () => {
   const db = openDatabase(":memory:");
-  const ana = await login(db, "Ana");
   const bia = await login(db, "Bia");
   for (const path of ["/api/friends/invites/nao-existe", "/api/friends/invites/nao-existe/accept"]) {
     const r = await bia.call(path.endsWith("accept") ? "POST" : "GET", path);
     assert.equal(r.status, 404);
     assert.deepEqual(r.json, { error: INVALID });
   }
-  const code = await invite(ana);
-  db.prepare("UPDATE friend_invites SET expires_at = 0").run();
-  const get = await bia.call("GET", `/api/friends/invites/${code}`);
-  assert.equal(get.status, 404);
-  assert.equal(get.json.error, INVALID);
-  const accept = await bia.call("POST", `/api/friends/invites/${code}/accept`);
-  assert.equal(accept.status, 404);
-  assert.equal(accept.json.error, INVALID);
   assert.deepEqual((await bia.call("GET", "/api/friends")).json.friends, []);
 });
 

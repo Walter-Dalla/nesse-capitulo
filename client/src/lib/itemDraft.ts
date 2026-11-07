@@ -1,7 +1,7 @@
 import type { ShelfItem, ShelfPatch } from "./types";
 
 /** Alterações feitas na tela do livro que ainda não foram salvas no servidor. */
-export type ItemDraft = Pick<ShelfPatch, "status" | "rating" | "review" | "startedAt" | "finishedAt" | "readYear">;
+export type ItemDraft = Pick<ShelfPatch, "status" | "rating" | "review" | "startedAt" | "finishedAt" | "readYear" | "currentPage">;
 
 const PREFIX = "estante:rascunho:";
 
