@@ -9,6 +9,7 @@ import { searchRoutes } from "./routes/search.js";
 import { shelfRoutes } from "./routes/shelf.js";
 import { statsRoutes } from "./routes/stats.js";
 import { adsRoutes } from "./routes/ads.js";
+import { friendsRoutes } from "./routes/friends.js";
 import type { AppEnv } from "./types.js";
 
 /** Caminhos que pertencem à API/autenticação (nunca caem no fallback da SPA). */
@@ -33,6 +34,7 @@ export function createApp(db: DB) {
   api.route("/", shelfRoutes(db));
   api.route("/", statsRoutes(db));
   api.route("/", adsRoutes(db));
+  api.route("/", friendsRoutes(db));
   app.route("/", api);
 
   app.notFound((c) => {

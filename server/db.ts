@@ -57,6 +57,30 @@ CREATE TABLE IF NOT EXISTS user_books (
 );
 CREATE INDEX IF NOT EXISTS idx_user_books_user_status ON user_books(user_id, status);
 CREATE INDEX IF NOT EXISTS idx_user_books_user_year ON user_books(user_id, read_year);
+
+-- Amizade: uma linha por par, sempre com user_low < user_high (sem pedido pendente).
+CREATE TABLE IF NOT EXISTS friendships (
+  user_low TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  user_high TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  PRIMARY KEY (user_low, user_high),
+  CHECK (user_low < user_high)
+);
+CREATE INDEX IF NOT EXISTS idx_friendships_high ON friendships(user_high);
+
+-- Convite de amizade por link: uso único, com validade.
+CREATE TABLE IF NOT EXISTS friend_invites (
+  code TEXT PRIMARY KEY,
+  inviter_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  expires_at INTEGER NOT NULL,       -- ms, como sessions.expires_at
+  used_by TEXT REFERENCES users(id) ON DELETE CASCADE,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_friend_invites_inviter ON friend_invites(inviter_id);
+
+-- Badge de amigos: casar o mesmo livro por book_id ou por ISBN sem varrer a tabela.
+CREATE INDEX IF NOT EXISTS idx_user_books_book ON user_books(book_id, status);
+CREATE INDEX IF NOT EXISTS idx_books_isbn_upper ON books(upper(isbn13)) WHERE isbn13 IS NOT NULL;
 `;
 
 export function openDatabase(file = env.databasePath) {

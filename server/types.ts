@@ -55,6 +55,29 @@ export interface ShelfItem {
   book: Book;
 }
 
+/** O que um amigo vê de outro usuário: nunca o e-mail. */
+export interface FriendUser {
+  id: string;
+  name: string | null;
+  picture: string | null;
+}
+
+/** Livro na estante de um amigo: só lendo/lido, sem nota, resenha, datas ou sinopse. */
+export interface FriendBook {
+  status: "reading" | "read";
+  readYear: number | null;
+  book: Book;
+}
+
+export interface FriendSummary extends FriendUser {
+  reading: FriendBook[];
+}
+
+export interface FriendInvitePreview {
+  inviter: FriendUser;
+  alreadyFriends: boolean;
+}
+
 export type AppEnv = {
   Variables: { user: User; sessionId: string; adUnlocked: boolean };
 };

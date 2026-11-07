@@ -15,6 +15,21 @@ const SELECT_ITEM = `
          b.published_year AS b_published_year, b.isbn13 AS b_isbn13, b.cover_ref AS b_cover_ref
   FROM user_books ub JOIN books b ON b.id = ub.book_id`;
 
+/** Monta o `Book` a partir das colunas `b_*` de uma linha. */
+export function rowToBook(r: any): Book {
+  return {
+    id: r.b_id,
+    source: r.b_source,
+    sourceId: r.b_source_id,
+    title: r.b_title,
+    authors: JSON.parse(r.b_authors ?? "[]"),
+    pageCount: r.b_page_count,
+    publishedYear: r.b_published_year,
+    isbn13: r.b_isbn13,
+    coverRef: r.b_cover_ref,
+  };
+}
+
 function rowToItem(r: any): ShelfItem {
   return {
     id: r.id,
@@ -26,17 +41,7 @@ function rowToItem(r: any): ShelfItem {
     readYear: r.read_year,
     createdAt: r.created_at,
     updatedAt: r.updated_at,
-    book: {
-      id: r.b_id,
-      source: r.b_source,
-      sourceId: r.b_source_id,
-      title: r.b_title,
-      authors: JSON.parse(r.b_authors ?? "[]"),
-      pageCount: r.b_page_count,
-      publishedYear: r.b_published_year,
-      isbn13: r.b_isbn13,
-      coverRef: r.b_cover_ref,
-    },
+    book: rowToBook(r),
   };
 }
 
