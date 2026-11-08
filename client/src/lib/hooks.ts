@@ -120,17 +120,26 @@ export const useAddToShelf = () =>
     },
   });
 
+function onItemUpdated(id: string, data: { item: ShelfItem }) {
+  queryClient.setQueryData(["item", id], data);
+  cacheBookAssets(data.item);
+  // o item continua existindo: pode refazer quem dos amigos já leu (ISBN de livro manual pode ter mudado)
+  void queryClient.invalidateQueries({ queryKey: ["friends", "book", id] });
+  void queryClient.invalidateQueries({ queryKey: ["comments", id] });
+  return invalidateShelf();
+}
+
 export const useUpdateItem = (id: string) =>
   useMutation({
     mutationFn: (patch: ShelfPatch) => Api.update(id, patch),
-    onSuccess: (data) => {
-      queryClient.setQueryData(["item", id], data);
-      cacheBookAssets(data.item);
-      // o item continua existindo: pode refazer quem dos amigos já leu (ISBN de livro manual pode ter mudado)
-      void queryClient.invalidateQueries({ queryKey: ["friends", "book", id] });
-      void queryClient.invalidateQueries({ queryKey: ["comments", id] });
-      return invalidateShelf();
-    },
+    onSuccess: (data) => onItemUpdated(id, data),
+  });
+
+/** Mesma atualização, para quem só conhece o id na hora de salvar (AddSheet, que acabou de criar o item). */
+export const useUpdateAnyItem = () =>
+  useMutation({
+    mutationFn: ({ id, patch }: { id: string; patch: ShelfPatch }) => Api.update(id, patch),
+    onSuccess: (data, { id }) => onItemUpdated(id, data),
   });
 
 export const useRemoveItem = () =>

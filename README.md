@@ -6,7 +6,7 @@ Tracker de leituras **mobile-first** (PWA + API) inspirado em apps como o Cabece
 - **Buscar livros** com autocompletar (Google Books, com Open Library como reserva) ou **cadastrar manualmente** sem upload de capa: com o ISBN a capa vem sozinha.
 - **Banco enxuto**: por livro ficam só título, autores, páginas, ano, ISBN, ids curtos e sinopse. Capas não vão para o servidor: vêm da fonte externa e ficam no cache do navegador.
 - **Monetização opcional**: anúncio recompensado uma vez por sessão para criar livros (ver [docs/MONETIZACAO.md](docs/MONETIZACAO.md)).
-- **Quatro listas**: Lendo, Quero ler, Lidos e Abandonados, mais "Ver todos" sem filtro.
+- **Quatro listas**: Lendo, Quero ler, Lidos e Abandonados, mais "Ver todos" sem filtro. Ao adicionar, um toque no status já salva o livro; os detalhes (data, página, ano, nota) são opcionais e podem ser preenchidos ali mesmo ou depois.
 - **Nota de 1 a 5 estrelas** e **resenha** por livro (privadas: nem amigos veem).
 - **Página atual** de quem está lendo, com o progresso nos cartões da Estante.
 - **Comentários** por livro, cada um **privado** (só você) ou **público** (amigos veem).
