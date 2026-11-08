@@ -80,9 +80,9 @@ export function SearchPage() {
         <div className="card p-4 text-sm">
           <p className="font-semibold">Busca indisponível</p>
           <p className="mt-1 text-stone-600 dark:text-stone-300">{(search.error as Error).message}</p>
-          <div className="mt-3 flex gap-2">
-            <button type="button" onClick={() => search.refetch()} className="btn-secondary">Tentar de novo</button>
-            <Link to={manualLink} className="btn-primary">Cadastrar manualmente</Link>
+          <div className="mt-3 flex flex-col gap-2">
+            <Link to={manualLink} className="btn-primary w-full">Cadastrar manualmente</Link>
+            <button type="button" onClick={() => search.refetch()} className="btn-secondary w-full">Tentar de novo</button>
           </div>
         </div>
       ) : (

@@ -181,10 +181,19 @@ export function BookDetailPage() {
       </p>
 
       {dirty && (
-        <div className="fade-in sticky bottom-24 z-20 mt-4 flex gap-2">
-          <button type="button" onClick={save} disabled={update.isPending} className="btn-primary flex-1 shadow-lg">{update.isPending ? "Salvando…" : "Salvar"}</button>
-          <button type="button" onClick={() => setDraft({})} disabled={update.isPending} className="btn-secondary shadow-lg">Cancelar</button>
-        </div>
+        <>
+          {/* espaço para a barra fixa não cobrir o fim da página */}
+          <div className="h-28" aria-hidden />
+          <div className="fade-in fixed inset-x-0 bottom-[calc(4.25rem+env(safe-area-inset-bottom))] z-30 border-t border-stone-200 bg-stone-50/95 backdrop-blur dark:border-stone-800 dark:bg-stone-950/95">
+            <div className="mx-auto max-w-md px-4 pb-3 pt-2.5">
+              <p className="mb-2 text-xs font-semibold text-stone-500 dark:text-stone-400">Alterações não salvas</p>
+              <div className="flex gap-2">
+                <button type="button" onClick={save} disabled={update.isPending} className="btn-primary flex-1">{update.isPending ? "Salvando…" : "Salvar"}</button>
+                <button type="button" onClick={() => setDraft({})} disabled={update.isPending} className="btn-secondary">Cancelar</button>
+              </div>
+            </div>
+          </div>
+        </>
       )}
 
       {confirmRemove && (

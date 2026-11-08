@@ -3,6 +3,8 @@ aliases: [comentários, comentário, público, privado, visibilidade, página at
 ---
 # Comentários e página atual
 
+A página atual também pode ser atualizada direto no cartão da Estante ("+ Página" → `PageSheet`), sem abrir o livro; ver [estante](estante.md).
+
 Na tela do livro, o leitor escreve quantos comentários quiser, cada um **privado** (só ele vê) ou **público** (amigos veem), e pode editar, trocar a visibilidade ou apagar depois. Também informa a página em que está (Lendo) ou parou (Abandonado); os cartões da Estante mostram "Pág. X de Y · Z%" com uma barra de progresso.
 
 ## Símbolos de entrada
