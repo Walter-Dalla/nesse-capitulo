@@ -44,6 +44,12 @@ test("Perfil: excluir conta pede confirmação com link /excluir-conta e volta a
   assert.match(onDelete, /catch \(e\) \{\s*setConfirmDelete\(false\);\s*toast\(/);
 });
 
+test("folha de exclusão cita os livros cadastrados à mão, como a política (deletionDeleted)", () => {
+  assert.match(social.pt["social.profile.deleteWhat"], /livros cadastrados à mão/);
+  assert.match(social.en["social.profile.deleteWhat"], /books you added by hand/);
+  assert.match(social.es["social.profile.deleteWhat"], /libros registrados a mano/);
+});
+
 test("Login: conta suspensa tem mensagem própria", () => {
   assert.match(login, /banned: "social\.login\.error\.banned"/);
 });
