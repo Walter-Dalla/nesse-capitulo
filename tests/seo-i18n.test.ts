@@ -23,13 +23,16 @@ test("sitemap.xml lista a home em PT e ES além das páginas públicas", async (
   assert.deepEqual(locs, [
     "https://estante.example/",
     "https://estante.example/login",
+    "https://estante.example/privacidade",
+    "https://estante.example/termos",
+    "https://estante.example/excluir-conta",
     "https://estante.example/?lang=pt",
     "https://estante.example/?lang=es",
   ]);
 });
 
-test("PUBLIC_PATHS e robots.txt não mudam", async () => {
-  assert.deepEqual([...PUBLIC_PATHS], ["/", "/login"]);
+test("PUBLIC_PATHS tem as páginas legais e robots.txt não cita lang", async () => {
+  assert.deepEqual([...PUBLIC_PATHS], ["/", "/login", "/privacidade", "/termos", "/excluir-conta"]);
   const body = await (await app.request("/robots.txt")).text();
   assert.doesNotMatch(body, /lang=/);
 });
