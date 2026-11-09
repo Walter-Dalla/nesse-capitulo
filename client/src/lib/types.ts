@@ -186,5 +186,16 @@ export const ERROR_CODES = [
   "COMMENT_EMPTY",
   "VALIDATION",
   "TERMS_REQUIRED",
+  "REPORT_INVALID",
 ] as const;
 export type ErrorCode = (typeof ERROR_CODES)[number];
+
+/** Motivo de uma denúncia; espelho de `REPORT_REASONS` de server/types.ts. */
+export type ReportReason = "spam" | "harassment" | "sexual" | "other";
+export const REPORT_REASONS: ReportReason[] = ["spam", "harassment", "sexual", "other"];
+
+/** Alvo de `POST /api/reports`: exatamente um dos dois ids. */
+export type ReportInput = ({ commentId: string; userId?: never } | { userId: string; commentId?: never }) & {
+  reason: ReportReason;
+  details?: string;
+};

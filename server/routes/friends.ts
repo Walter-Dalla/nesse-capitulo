@@ -221,15 +221,16 @@ export function friendsRoutes(db: DB) {
          ORDER BY ub.updated_at DESC`,
       )
       .all(friendId) as any[];
-    // comentários públicos de todos esses livros numa consulta só; nunca os privados
+    // comentários públicos de todos esses livros numa consulta só; nunca os privados nem os que eu denunciei
     const comments = db
       .prepare(
         `SELECT c.item_id, c.id, c.body, c.created_at, c.updated_at
          FROM book_comments c JOIN user_books ub ON ub.id = c.item_id
-         WHERE c.user_id = ? AND c.visibility = 'public' AND ub.status IN ('reading', 'read')
+         WHERE c.user_id = ?1 AND c.visibility = 'public' AND ub.status IN ('reading', 'read')
+           AND NOT EXISTS (SELECT 1 FROM content_reports r WHERE r.comment_id = c.id AND r.reporter_id = ?2)
          ORDER BY c.created_at DESC, c.rowid DESC`,
       )
-      .all(friendId) as any[];
+      .all(friendId, c.var.user.id) as any[];
     const byItem = new Map<string, PublicComment[]>();
     for (const r of comments) {
       const list = byItem.get(r.item_id) ?? [];

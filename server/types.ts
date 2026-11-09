@@ -131,5 +131,14 @@ export const ERROR_CODES = [
   "COMMENT_EMPTY",
   "VALIDATION",
   "TERMS_REQUIRED",
+  "REPORT_INVALID",
 ] as const;
 export type ErrorCode = (typeof ERROR_CODES)[number];
+
+/** Motivo de uma denúncia (`content_reports.reason`). */
+export type ReportReason = "spam" | "harassment" | "sexual" | "other";
+export const REPORT_REASONS: ReportReason[] = ["spam", "harassment", "sexual", "other"];
+
+/** Situação de uma denúncia: aberta, descartada pelo moderador ou com ação tomada. */
+export type ReportStatus = "open" | "dismissed" | "actioned";
+export const REPORT_STATUSES: ReportStatus[] = ["open", "dismissed", "actioned"];

@@ -15,6 +15,7 @@ const SELECT_COMMENT = "SELECT id, body, visibility, created_at, updated_at FROM
 /**
  * Comentários públicos de amigos sobre o mesmo livro do meu item `?2`: mesmo book_id ou mesmo ISBN,
  * em qualquer status da estante deles (quem deixou público quis mostrar). UNION pelo mesmo motivo do selo.
+ * O comentário que eu denunciei some só para mim.
  */
 const FRIEND_COMMENTS_SQL = `WITH ${MY_FRIENDS},
 mine AS (
@@ -39,6 +40,7 @@ SELECT c.id, c.body, c.created_at, c.updated_at, u.id AS u_id, u.name AS u_name,
 FROM items i
 JOIN book_comments c ON c.item_id = i.id AND c.visibility = 'public'
 JOIN users u ON u.id = c.user_id
+WHERE NOT EXISTS (SELECT 1 FROM content_reports r WHERE r.comment_id = c.id AND r.reporter_id = ?1)
 ORDER BY c.created_at DESC, c.rowid DESC`;
 
 function rowToComment(r: any): BookComment {

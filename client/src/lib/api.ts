@@ -4,6 +4,7 @@ import type {
   AddPayload, BookComment, BookInput, CommentVisibility, FriendComment, FriendInvitePreview, FriendShelfItem, FriendSummary, FriendUser,
   Providers, ShelfItem, ShelfPatch, Stats, Status, User,
 } from "./types";
+import type { ReportInput } from "./types";
 
 export const queryClient = new QueryClient({
   defaultOptions: {
@@ -74,6 +75,8 @@ export const Api = {
 
   deleteAccount: () => api<{ ok: true }>("/api/account", { method: "DELETE" }),
   acceptTerms: () => api<{ ok: true }>("/api/terms/accept", { method: "POST" }),
+
+  report: (input: ReportInput) => api<{ ok: true }>("/api/reports", { method: "POST", body: JSON.stringify(input) }),
 };
 
 /** Invalida tudo que depende da estante após uma mutação. */

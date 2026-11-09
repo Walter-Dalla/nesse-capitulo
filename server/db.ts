@@ -104,6 +104,25 @@ WHEN (SELECT source FROM books WHERE id = OLD.book_id) = 'manual'
 BEGIN
   DELETE FROM books WHERE id = OLD.book_id AND NOT EXISTS (SELECT 1 FROM user_books WHERE book_id = OLD.book_id);
 END;
+
+-- Denúncia de comentário público ou de usuário. Guarda o texto do comentário: a denúncia sobrevive à remoção dele.
+-- Some com a conta denunciada; fica (sem reporter_id) se quem denunciou excluir a conta.
+CREATE TABLE IF NOT EXISTS content_reports (
+  id TEXT PRIMARY KEY,
+  reporter_id TEXT REFERENCES users(id) ON DELETE SET NULL,
+  reported_user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  comment_id TEXT REFERENCES book_comments(id) ON DELETE SET NULL,
+  comment_body TEXT,
+  reason TEXT NOT NULL,
+  details TEXT,
+  status TEXT NOT NULL DEFAULT 'open' CHECK (status IN ('open','dismissed','actioned')),
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_content_reports_status ON content_reports(status, created_at);
+-- esconder o comentário de quem denunciou e as chaves estrangeiras (remoção de comentário e de conta) sem varrer a tabela
+CREATE INDEX IF NOT EXISTS idx_content_reports_comment ON content_reports(comment_id, reporter_id);
+CREATE INDEX IF NOT EXISTS idx_content_reports_reporter ON content_reports(reporter_id);
+CREATE INDEX IF NOT EXISTS idx_content_reports_reported ON content_reports(reported_user_id);
 `;
 
 export function openDatabase(file = env.databasePath) {
