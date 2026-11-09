@@ -10,6 +10,7 @@ Tracker de leituras **mobile-first** (PWA + API) inspirado em apps como o Cabece
 - **Nota de 1 a 5 estrelas** e **resenha** por livro (privadas: nem amigos veem).
 - **Página atual** de quem está lendo, com o progresso nos cartões da Estante.
 - **Comentários** por livro, cada um **privado** (só você) ou **público** (amigos veem).
+- **Termos de uso, denúncia, bloqueio e moderação** para o que é público entre amigos; **excluir a conta** no Perfil; política de privacidade, termos e exclusão de conta em páginas públicas.
 - **Amigos** por link de convite (não expira): cada um vê o que o outro está lendo e já leu, o progresso e os comentários públicos. Na tela do livro e nos cartões da Estante e de Por ano, um selo mostra quais amigos já leram aquele livro.
 - **Histórico por ano**, com registro **retroativo**: basta informar o ano (a data exata é opcional). Estatísticas por ano: livros, páginas e nota média.
 - Dados em **SQLite** (um arquivo, WAL, sem servidor de banco). Rápido e simples.
@@ -70,18 +71,19 @@ O caminho mais curto para um PWA é o **Trusted Web Activity (TWA)**:
    ```
 3. Edite `client/public/.well-known/assetlinks.json` com o `package_name` e o SHA-256 da chave de assinatura (o Bubblewrap imprime; ou pegue em *Play Console → Integridade do app*). Faça o deploy de novo — sem isso o app abre com a barra do navegador.
 4. Envie o `.aab` no Play Console. O login com Google acontece dentro da TWA com a sessão normal do Chrome.
+5. No Play Console, use `${BASE_URL}/privacidade` como URL da política de privacidade e `${BASE_URL}/excluir-conta` como URL de exclusão de conta (em produção, `https://nesse-capitulo.walterdalla.uk/...`). O `assetlinks.json` do repo ainda é placeholder (`com.example.estante` e SHA-256 a substituir). Pendências do Console (Segurança dos dados, classificação com conteúdo de usuário, revisão do texto legal) em [docs/PENDENCIAS.md](docs/PENDENCIAS.md).
 
 Se preferir um app nativo (Capacitor/React Native), use a mesma API: faça o Google Sign-In pelo SDK e troque o `idToken` em `POST /auth/google/token`.
 
 ## SEO e descoberta
 
-Só `/` e `/login` são públicos; o resto exige sessão e fica fora dos buscadores. Para visitantes sem sessão, `/` entrega uma home estática (`client/landing.html`, sem JS, indexável); logado, `/` é a estante (SPA). Em dev pelo Vite a landing fica em `/landing.html`. O servidor gera `GET /robots.txt` (bloqueia `/api/`, `/auth/` e as rotas logadas, aponta o sitemap), `GET /sitemap.xml` e `GET /llms.txt` (resumo em Markdown para assistentes de IA, convenção [llmstxt.org](https://llmstxt.org)), todos com a `BASE_URL` do `.env`. O `client/index.html` traz `description`, canonical, Open Graph, Twitter Card e JSON-LD; o placeholder `%SITE_URL%` vira a `BASE_URL` no `npm run build`, então defina-a antes de buildar em produção.
+Só `/`, `/login` e as páginas legais `/privacidade`, `/termos` e `/excluir-conta` são públicos (`PUBLIC_PATHS` em `server/routes/seo.ts`); o resto exige sessão e fica fora dos buscadores. As páginas legais são HTML do servidor, sem JS, nos 3 idiomas (`server/legalText.ts`, contato em `server/contact.ts`), linkadas no rodapé da home, no Login e no Perfil; o service worker não as guarda como o `/` offline. Para visitantes sem sessão, `/` entrega uma home estática (`client/landing.html`, sem JS, indexável); logado, `/` é a estante (SPA). Em dev pelo Vite a landing fica em `/landing.html`. O servidor gera `GET /robots.txt` (bloqueia `/api/`, `/auth/` e as rotas logadas, inclusive `/moderacao`, aponta o sitemap), `GET /sitemap.xml` e `GET /llms.txt` (resumo em Markdown para assistentes de IA, convenção [llmstxt.org](https://llmstxt.org)), todos com a `BASE_URL` do `.env`. O `client/index.html` traz `description`, canonical, Open Graph, Twitter Card e JSON-LD; o placeholder `%SITE_URL%` vira a `BASE_URL` no `npm run build`, então defina-a antes de buildar em produção.
 
 ## API (resumo)
 
 Todas as rotas `/api/*` exigem sessão (cookie `sid`).
 
-Erros de estante, comentários, amigos, anúncios e busca trazem `{ error, code }`: `error` é o texto em português, `code` é estável (`ERROR_CODES` em `server/types.ts`) e é o que o cliente traduz. Respostas de `server/auth.ts` e o 404 de `server/app.ts` não têm `code`.
+Erros de estante, comentários, amigos, denúncias, moderação, anúncios e busca trazem `{ error, code }`: `error` é o texto em português, `code` é estável (`ERROR_CODES` em `server/types.ts`) e é o que o cliente traduz. Respostas de `server/auth.ts` e o 404 de `server/app.ts` não têm `code`, salvo o 403 `ACCOUNT_BANNED` do login de conta banida. Códigos desta fase: `TERMS_REQUIRED` (403, falta aceitar os termos), `REPORT_INVALID` (400, denúncia ou ação de moderação inválida), `ACCOUNT_BANNED`.
 
 Todo HTML sai no idioma negociado: `?lang=`, cookie `lang`, `Accept-Language`, `CF-IPCountry`, `en` (`docs/features/idioma.md`).
 
@@ -90,8 +92,10 @@ Todo HTML sai no idioma negociado: `?lang=`, cookie `lang`, `Accept-Language`, `
 | GET | `/auth/google` → `/auth/google/callback` | Fluxo OAuth web |
 | POST | `/auth/google/token` `{ idToken }` | Login com id_token nativo |
 | POST | `/auth/logout` | Encerra a sessão |
-| GET | `/api/me` | Usuário logado (ou `null`) |
-| GET | `/api/search?q=` | Busca no Google Books (cache 10 min) |
+| GET | `/api/me` | `{ user, adUnlocked, termsAccepted, isModerator }`; `user` é `null` sem sessão |
+| POST | `/api/terms/accept` | Aceita a versão vigente dos termos (idempotente, mantém a data do primeiro aceite) |
+| DELETE | `/api/account` | Exclui a conta e tudo dela; apaga o cookie de sessão |
+| GET | `/api/search?q=` | Busca no Google Books, Open Library como reserva: `{ items, provider }` (cache 10 min) |
 | GET | `/api/shelf?status=&year=` | Estante, filtrável por status (`want`, `reading`, `read`, `abandoned`) e ano de leitura |
 | POST | `/api/shelf` `{ book, status, rating?, review?, startedAt?, finishedAt?, readYear?, currentPage? }` | Adiciona (ou atualiza) um livro |
 | PATCH | `/api/shelf/:id` | Atualização parcial (status, nota, resenha, datas, ano, página atual; `book` para livros manuais) |
@@ -99,22 +103,30 @@ Todo HTML sai no idioma negociado: `?lang=`, cookie `lang`, `Accept-Language`, `
 | GET | `/api/stats` | Totais por status e por ano (livros, páginas, nota média) |
 | GET | `/api/shelf/:id/details` | Sinopse do banco; na falta, busca na fonte e grava |
 | GET | `/api/ads/status` · POST `/api/ads/reward` | Gate de anúncio por sessão (se `ADS_ENABLED=true`) |
-| POST | `/api/friends/invites` | Gera um link de convite: `201 { code }` (uso único, não expira) |
+| POST | `/api/friends/invites` | Gera um link de convite: `201 { code }` (uso único, não expira); `403 TERMS_REQUIRED` sem aceite |
 | GET | `/api/friends/invites/:code` | Prévia do convite: `{ inviter, alreadyFriends }`, sem consumir |
-| POST | `/api/friends/invites/:code/accept` | Confirma: `201 { friend }` criou, `200` se já eram amigos; `404` inválido ou já usado; `400 INVITE_SELF` |
+| POST | `/api/friends/invites/:code/accept` | Confirma: `201 { friend }` criou, `200` se já eram amigos; `404` inválido, já usado, bloqueado ou de conta banida; `400 INVITE_SELF`; `403 TERMS_REQUIRED` |
 | GET | `/api/friends` | Amigos, cada um com o que está lendo: `{ friends: FriendSummary[] }` |
 | GET | `/api/friends/:userId/shelf` | Lendo e Lidos de um amigo, com página atual e comentários públicos; sem nota, resenha, datas nem sinopse; `404` se não for amigo |
 | DELETE | `/api/friends/:userId` | Desfaz a amizade (para os dois) |
+| POST | `/api/friends/:userId/block` | Bloqueia um amigo: desfaz a amizade e impede convites entre os dois; `404` se não for amigo |
+| GET | `/api/friends/blocks` | `{ blocks: FriendUser[] }`: quem eu bloqueei |
+| DELETE | `/api/friends/blocks/:userId` | Desbloqueia (não refaz a amizade); `404` se não havia bloqueio |
 | GET | `/api/shelf/:id/friends` | Amigos que já leram este livro da minha estante; `404` se o item não for meu |
 | GET | `/api/friends/badges` | `{ badges: { [itemId]: quantidade } }` para os cartões, só contagens > 0 |
 | GET | `/api/shelf/:id/comments` | `{ comments, friends }`: meus comentários do item e os públicos de amigos sobre o mesmo livro |
-| POST | `/api/shelf/:id/comments` `{ body, visibility? }` | Novo comentário (`private` por padrão, ou `public`); até 2000 caracteres |
-| PATCH | `/api/comments/:id` `{ body?, visibility? }` | Edita texto ou visibilidade de um comentário meu |
+| POST | `/api/shelf/:id/comments` `{ body, visibility? }` | Novo comentário (`private` por padrão, ou `public`); até 2000 caracteres; público sem aceite dá `403 TERMS_REQUIRED` |
+| PATCH | `/api/comments/:id` `{ body?, visibility? }` | Edita texto ou visibilidade de um comentário meu; mesma regra de aceite para público |
 | DELETE | `/api/comments/:id` | Apaga um comentário meu |
+| POST | `/api/reports` `{ commentId \| userId, reason, details? }` | Denuncia um comentário público de amigo ou um amigo (`reason`: `spam`, `harassment`, `sexual`, `other`); `201`, ou `200` se já havia denúncia aberta igual; `404` fora disso |
+| GET | `/api/mod/reports?status=` | Denúncias por status (`open` padrão, `dismissed`, `actioned`); só moderador, `404` para os demais |
+| POST | `/api/mod/reports/:id/resolve` `{ action }` | `dismiss`, `remove_comment` ou `ban_user`; só moderador |
 
 Regras: ao marcar como **Lido**, o ano vem da data de término, ou do `readYear` informado, ou do ano atual. Mudar para **Quero ler** limpa datas; **Lendo**/**Abandonado** limpam a data de término e o ano. A **página atual** só vale em **Lendo** (onde estou) e **Abandonado** (onde parei); **Quero ler** e **Lido** a limpam. Página acima do total do livro é aceita, porque a edição pode ter mais páginas que a fonte informa.
 
 Comentários: cada um é privado (só o autor vê) ou público (amigos veem). Um comentário público aparece na tela do amigo, nos livros em Lendo e Lidos, e na tela do livro de quem é amigo e tem o mesmo livro (mesmo registro ou ISBN), em qualquer status. Remover o livro da estante apaga os comentários dele.
+
+Termos, denúncia, bloqueio e moderação: depois do login o app pede o aceite dos termos (`TermsGate`); sem ele só o Perfil abre, para quem recusa poder excluir a conta, e o servidor recusa comentário público e convite. Denunciar um comentário o esconde só de quem denunciou; a denúncia guarda uma cópia do texto. Bloquear desfaz a amizade e impede convites nos dois sentidos até desbloquear. O moderador (`MODERATOR_EMAILS` em `server/moderators.ts`, hoje o e-mail de contato) vê as denúncias em `/moderacao` e pode descartar, remover o comentário ou banir; banir grava `users.banned_at`, desfaz as amizades e derruba as sessões, e o login da conta banida volta a `/login?error=banned` (web) ou dá `403 ACCOUNT_BANNED`. O e-mail só é gravado quando o Google o declara verificado. Excluir a conta apaga os dados dela, inclusive livros cadastrados à mão que ninguém mais usa.
 
 Amigos: o convite é um link `/amigos/convite/<código>`, de uso único e sem validade; quem abre vê quem convidou e só vira amigo ao tocar em **Confirmar amizade**. Se a pessoa não estiver logada, o código fica guardado no aparelho por 1 h e o app volta ao convite depois do login (passado esse prazo, basta abrir o link de novo). Amigo vê só livros em **Lendo** e **Lidos** (com o ano e a página atual) e os comentários públicos, nunca nota, resenha, datas, comentários privados, sinopse ou e-mail. O selo "já leu" conta amigos com o livro em **Lido** e casa pelo mesmo registro de livro (mesma fonte e id) ou pelo mesmo ISBN; título e autor iguais não bastam.
 
@@ -128,21 +140,25 @@ Nenhuma imagem vai para o banco. A sinopse é gravada em `books.description` na 
 | Open Library | id da obra (`OL…W`) | `ol:<cover_id>` | `covers.openlibrary.org/b/id/<cover_id>-M.jpg` |
 | Manual | — | — | `covers.openlibrary.org/b/isbn/<isbn>-M.jpg` se houver ISBN; senão placeholder colorido |
 
-A busca só é disparada **1 s depois que o usuário para de digitar** (mínimo de 3 letras) e o servidor limita cada usuário a uma rajada de 5 buscas e depois 1 por segundo, com cache de 10 min por termo.
+A busca só é disparada **1 s depois que o usuário para de digitar** (mínimo de 3 letras) e o servidor limita cada usuário a uma rajada de 5 buscas e depois 1 por segundo, com cache de 10 min por termo. Cada resultado e a tela do livro (fora do cadastro manual) têm o link "Ver no Google Books" ou "Ver no Open Library" (`bookSourceUrl`), e o rodapé da busca atribui a fonte: "Powered by Google" ou "via Open Library" (`searchAttribution`). As chamadas às fontes levam User-Agent com o e-mail de contato.
 
 ## Estrutura
 
 ```
 client/          front (Vite + React)
   public/        manifest, service worker, ícones, .well-known/assetlinks.json
-  src/pages/     Login, Estante, Buscar, Adicionar manual, Livro, Por ano, Amigos, Perfil
+  src/pages/     Login, Estante, Buscar, Adicionar manual, Livro, Por ano, Amigos, Perfil, Moderação
 server/          API Hono
   auth.ts        sessões + Google OAuth
   html.ts        entrega do HTML no idioma negociado
   locale.ts      negociação de idioma
   landingText.ts texto da home nos 3 idiomas
+  legalText.ts   privacidade, termos e exclusão de conta nos 3 idiomas
+  contact.ts     nome do app, desenvolvedor e e-mail de contato
+  terms.ts       versão vigente dos termos
+  moderators.ts  quem modera
   db.ts          schema SQLite
-  routes/        search, shelf, stats, ads, friends, comments
+  routes/        search, shelf, stats, ads, friends, comments, account, reports, moderation, legal, seo
 tests/           testes da API (node:test)
 data/            banco SQLite (ignorado pelo git)
 ```

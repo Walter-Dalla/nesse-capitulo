@@ -1,9 +1,9 @@
 ---
-aliases: [seo, robots, robots.txt, sitemap, llms.txt, open graph, og, meta tags, buscadores, indexação, canonical]
+aliases: [seo, robots, robots.txt, sitemap, llms.txt, open graph, og, meta tags, buscadores, indexação, canonical, páginas públicas]
 ---
 # SEO e descoberta por buscadores e IAs
 
-Só a página inicial e o login são públicos; todo o resto exige sessão e fica fora da indexação. A home para visitantes é uma página estática (`client/landing.html`, HTML + CSS inline, sem JS): o servidor a entrega em `/` quando não há sessão válida e entrega a SPA (estante) quando há. Os arquivos de descoberta são gerados pelo servidor para usarem a `BASE_URL` do `.env`.
+Só a página inicial, o login e as páginas legais (`/privacidade`, `/termos`, `/excluir-conta`) são públicos; todo o resto exige sessão e fica fora da indexação. A home para visitantes é uma página estática (`client/landing.html`, HTML + CSS inline, sem JS): o servidor a entrega em `/` quando não há sessão válida e entrega a SPA (estante) quando há. Os arquivos de descoberta são gerados pelo servidor para usarem a `BASE_URL` do `.env`.
 
 ## Símbolos de entrada
 `hasSession` (`server/auth.ts`) decide em `mountClient` (`server/html.ts`) entre `landing.html` e `index.html` para `GET /`; `/landing.html` redireciona 301 para `/`. As duas páginas são entradas do build em `vite.config.ts` (`rollupOptions.input`).
@@ -18,4 +18,5 @@ Só a página inicial e o login são públicos; todo o resto exige sessão e fic
 ## Interações
 - [idioma](idioma.md): `/` sem cabeçalho sai em EN; PT e ES ficam em `/?lang=`, com `hreflang` e no sitemap; `llms.txt` é em EN.
 - [pwa](pwa.md): `sw.js` guarda `/` no app shell na instalação, então o fallback offline da home é a landing ou a SPA conforme o estado de login na hora de instalar; mesmo `manifest.webmanifest` e ícones; `isApiPath` não inclui essas rotas, mas elas respondem antes do fallback da SPA.
-- [conta](conta.md): rotas logadas (`/livro/*`, `/amigos/*`, `/perfil`, `/anos`, `/buscar`, `/adicionar`) e `/auth/*` estão em `Disallow`.
+- [conta](conta.md): rotas logadas (`/livro/*`, `/amigos/*`, `/perfil`, `/anos`, `/buscar`, `/adicionar`, `/moderacao`) e `/auth/*` estão em `Disallow`.
+- [legal](legal.md): as três páginas estão em `PUBLIC_PATHS` e no `llms.txt`; o rodapé da home linka privacidade e termos; o CTA do topo é "Começar agora".
