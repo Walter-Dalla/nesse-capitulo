@@ -227,7 +227,7 @@ const es: Record<keyof typeof pt, string> = {
   "social.login.googleMissing": "El inicio de sesión con Google no está configurado en este servidor (consulta GOOGLE_CLIENT_ID en .env).",
   "social.login.devMode": "Modo de desarrollo",
   "social.login.devName": "Tu nombre (opcional)",
-  "social.login.devSubmit": "Entrar sin Google",
+  "social.login.devSubmit": "Iniciar sesión sin Google",
   "social.login.privacy": "Tus datos quedan en tu cuenta. Tus amigos ven lo que estás leyendo, lo que ya leíste y los comentarios que dejes públicos.",
   "social.profile.title": "Perfil",
   "social.profile.booksRead": "libros leídos en total",
