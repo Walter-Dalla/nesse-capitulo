@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#f59e0b" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#1c1917" media="(prefers-color-scheme: dark)" />
+    <title>Estante — tracker de leituras: lidos, lendo, quero ler</title>
+    <meta name="description" content="Estante: tracker de leituras gratuito. Registre o que você leu, está lendo, quer ler e abandonou, com nota, resenha e histórico por ano. Veja o que seus amigos já leram." />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="%SITE_URL%/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Estante" />
+    <meta property="og:locale" content="pt_BR" />
+    <meta property="og:title" content="Estante — tracker de leituras" />
+    <meta property="og:description" content="Registre o que você leu, está lendo, quer ler e abandonou. Nota, resenha, histórico por ano e amigos." />
+    <meta property="og:url" content="%SITE_URL%/" />
+    <meta property="og:image" content="%SITE_URL%/icons/icon-512.png" />
+    <meta property="og:image:width" content="512" />
+    <meta property="og:image:height" content="512" />
+    <meta property="og:image:alt" content="Ícone do app Estante" />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="Estante — tracker de leituras" />
+    <meta name="twitter:description" content="Registre o que você leu, está lendo, quer ler e abandonou. Nota, resenha, histórico por ano e amigos." />
+    <meta name="twitter:image" content="%SITE_URL%/icons/icon-512.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="icon" href="/icons/icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "WebApplication",
+            "name": "Estante",
+            "url": "%SITE_URL%/",
+            "description": "Tracker de leituras: registre o que você leu, está lendo, quer ler e abandonou, com nota, resenha e histórico por ano.",
+            "applicationCategory": "LifestyleApplication",
+            "operatingSystem": "Web, Android",
+            "inLanguage": "pt-BR",
+            "offers": { "@type": "Offer", "price": "0", "priceCurrency": "BRL" }
+          },
+          {
+            "@type": "FAQPage",
+            "mainEntity": [
+              { "@type": "Question", "name": "A Estante é gratuita?", "acceptedAnswer": { "@type": "Answer", "text": "Sim. Basta entrar com sua conta Google. Não há plano pago." } },
+              { "@type": "Question", "name": "Preciso instalar um app?", "acceptedAnswer": { "@type": "Answer", "text": "Não. Funciona no navegador do celular e do computador, e pode ser instalado como app (PWA) ou pela Play Store." } },
+              { "@type": "Question", "name": "Minha estante é pública?", "acceptedAnswer": { "@type": "Answer", "text": "Não. Só seus amigos, aceitos por link de convite, veem o que você leu. Comentários podem ser públicos (para amigos) ou privados." } }
+            ]
+          }
+        ]
+      }
+    </script>
+    <style>
+      :root {
+        --bg: #fafaf9; --fg: #1c1917; --muted: #57534e; --card: #fff; --line: #e7e5e4;
+        --accent: #f59e0b; --accent-hover: #fbbf24; --accent-soft: #fef3c7; --on-accent: #0c0a09;
+        color-scheme: light dark;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root { --bg: #0c0a09; --fg: #f5f5f4; --muted: #a8a29e; --card: #1c1917; --line: #292524; --accent-soft: #451a03; }
+      }
+      * { box-sizing: border-box; }
+      html { -webkit-text-size-adjust: 100%; }
+      body { margin: 0; background: var(--bg); color: var(--fg); font: 16px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+      a { color: inherit; }
+      .wrap { max-width: 40rem; margin: 0 auto; padding: 0 1.25rem; }
+      header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1rem 0; }
+      .brand { display: flex; align-items: center; gap: .6rem; font-weight: 800; text-decoration: none; letter-spacing: -.01em; }
+      .brand img { width: 2rem; height: 2rem; border-radius: .6rem; }
+      .btn { display: inline-flex; align-items: center; justify-content: center; min-height: 2.75rem; padding: 0 1.1rem; border-radius: .8rem; font-weight: 600; font-size: .95rem; text-decoration: none; transition: background .15s, transform .1s; }
+      .btn:active { transform: scale(.98); }
+      .btn-primary { background: var(--accent); color: var(--on-accent); }
+      .btn-primary:hover { background: var(--accent-hover); }
+      .btn-ghost { border: 1px solid var(--line); background: var(--card); }
+      .hero { padding: 2.5rem 0 2rem; text-align: center; }
+      .hero img { width: 6rem; height: 6rem; border-radius: 1.5rem; box-shadow: 0 10px 30px rgba(0,0,0,.15); }
+      h1 { font-size: clamp(2rem, 7vw, 2.75rem); line-height: 1.1; letter-spacing: -.02em; margin: 1.25rem 0 .75rem; font-weight: 900; }
+      .lead { color: var(--muted); font-size: 1.1rem; max-width: 30rem; margin: 0 auto; }
+      .cta { display: flex; flex-wrap: wrap; gap: .75rem; justify-content: center; margin-top: 1.75rem; }
+      .statuses { display: flex; flex-wrap: wrap; gap: .5rem; justify-content: center; margin: 2rem 0 0; padding: 0; list-style: none; }
+      .statuses li { padding: .35rem .9rem; border-radius: 999px; font-size: .9rem; font-weight: 500; background: var(--card); border: 1px solid var(--line); }
+      .statuses li.on { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+      section { padding: 2rem 0; }
+      h2 { font-size: 1.4rem; letter-spacing: -.01em; margin: 0 0 1rem; }
+      .grid { display: grid; gap: .75rem; grid-template-columns: 1fr; }
+      @media (min-width: 560px) { .grid { grid-template-columns: 1fr 1fr; } }
+      .card { background: var(--card); border: 1px solid var(--line); border-radius: 1rem; padding: 1rem 1.1rem; }
+      .card h3 { margin: 0 0 .3rem; font-size: 1rem; }
+      .card p { margin: 0; color: var(--muted); font-size: .95rem; }
+      .card .ico { display: inline-block; width: 2rem; height: 2rem; border-radius: .6rem; background: var(--accent-soft); color: var(--accent); text-align: center; line-height: 2rem; font-weight: 800; margin-bottom: .6rem; }
+      ol.steps { margin: 0; padding-left: 1.25rem; color: var(--muted); }
+      ol.steps li { margin: .4rem 0; }
+      ol.steps strong { color: var(--fg); }
+      details { border-top: 1px solid var(--line); padding: .8rem 0; }
+      details:last-of-type { border-bottom: 1px solid var(--line); }
+      summary { cursor: pointer; font-weight: 600; list-style: none; }
+      summary::-webkit-details-marker { display: none; }
+      details p { margin: .5rem 0 0; color: var(--muted); }
+      footer { padding: 2rem 0 3rem; color: var(--muted); font-size: .9rem; text-align: center; }
+      footer a { color: var(--muted); }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header>
+        <a class="brand" href="/"><img src="/icons/icon.svg" alt="" width="32" height="32" /> Estante</a>
+        <a class="btn btn-ghost" href="/login">Entrar</a>
+      </header>
+
+      <main>
+        <section class="hero">
+          <img src="/icons/icon.svg" alt="Ícone do app Estante" width="96" height="96" />
+          <h1>Sua estante de leituras, no bolso</h1>
+          <p class="lead">Registre o que você leu, está lendo, quer ler e abandonou. Com nota, resenha, página atual e histórico por ano.</p>
+          <div class="cta">
+            <a class="btn btn-primary" href="/login">Entrar com Google</a>
+            <a class="btn btn-ghost" href="#como-funciona">Como funciona</a>
+          </div>
+          <ul class="statuses" aria-label="Status de leitura">
+            <li class="on">Lendo</li><li>Quero ler</li><li>Lido</li><li>Abandonado</li>
+          </ul>
+        </section>
+
+        <section id="recursos">
+          <h2>Tudo que um leitor precisa</h2>
+          <div class="grid">
+            <article class="card"><span class="ico" aria-hidden="true">★</span><h3>Nota e resenha</h3><p>De 1 a 5 estrelas, resenha livre, datas de início e fim e a página em que você parou.</p></article>
+            <article class="card"><span class="ico" aria-hidden="true">Q</span><h3>Busca de livros</h3><p>Encontre pelo título, autor ou ISBN no Google Books e na Open Library, ou cadastre à mão.</p></article>
+            <article class="card"><span class="ico" aria-hidden="true">#</span><h3>Histórico por ano</h3><p>Quantos livros e páginas você leu em cada ano, nota média e leituras retroativas.</p></article>
+            <article class="card"><span class="ico" aria-hidden="true">♥</span><h3>Amigos</h3><p>Convide por link, veja um selo em cada livro que um amigo já leu e troque comentários públicos ou privados.</p></article>
+            <article class="card"><span class="ico" aria-hidden="true">↓</span><h3>Funciona offline</h3><p>Instale como app no celular ou pela Play Store. Capas e detalhes ficam em cache.</p></article>
+            <article class="card"><span class="ico" aria-hidden="true">🔒</span><h3>Privado por padrão</h3><p>Sua estante é só sua. Nada é público além do que você mostra aos amigos que aceitou.</p></article>
+          </div>
+        </section>
+
+        <section id="como-funciona">
+          <h2>Como funciona</h2>
+          <ol class="steps">
+            <li><strong>Entre com o Google.</strong> Sem senha nova, sem cadastro.</li>
+            <li><strong>Busque um livro</strong> e toque no status: já está na estante.</li>
+            <li><strong>Acompanhe a leitura</strong> com página atual, nota e resenha quando terminar.</li>
+            <li><strong>Convide amigos</strong> e descubra quem já leu o que você está lendo.</li>
+          </ol>
+        </section>
+
+        <section id="perguntas">
+          <h2>Perguntas frequentes</h2>
+          <details><summary>A Estante é gratuita?</summary><p>Sim. Basta entrar com sua conta Google. Não há plano pago.</p></details>
+          <details><summary>Preciso instalar um app?</summary><p>Não. Funciona no navegador do celular e do computador, e pode ser instalado como app (PWA) ou pela Play Store.</p></details>
+          <details><summary>Minha estante é pública?</summary><p>Não. Só seus amigos, aceitos por link de convite, veem o que você leu. Comentários podem ser públicos (para amigos) ou privados.</p></details>
+        </section>
+      </main>
+
+      <footer>
+        <p><a class="btn btn-primary" href="/login">Começar agora</a></p>
+        <p>Estante · <a href="https://github.com/Walter-Dalla/nesse-capitulo">código aberto</a></p>
+      </footer>
+    </div>
+  </body>
+</html>

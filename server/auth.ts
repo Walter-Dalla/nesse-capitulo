@@ -1,4 +1,4 @@
-import { Hono } from "hono";
+import { Hono, type Context } from "hono";
 import { createMiddleware } from "hono/factory";
 import { getCookie, setCookie, deleteCookie } from "hono/cookie";
 import { randomBytes, randomUUID } from "node:crypto";
@@ -6,7 +6,7 @@ import type { DB } from "./db.js";
 import { env, googleLoginEnabled } from "./env.js";
 import type { AppEnv, User } from "./types.js";
 
-const SESSION_COOKIE = "sid";
+export const SESSION_COOKIE = "sid";
 const STATE_COOKIE = "oauth_state";
 const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 dias
 
@@ -54,6 +54,11 @@ export function findSession(db: DB, sessionId: string | undefined): { user: User
 
 export function findUserBySession(db: DB, sessionId: string | undefined): User | null {
   return findSession(db, sessionId)?.user ?? null;
+}
+
+/** Há uma sessão válida no cookie? (sem exigir login: usado para escolher entre home estática e SPA) */
+export function hasSession(db: DB, c: Context) {
+  return findSession(db, getCookie(c, SESSION_COOKIE)) !== null;
 }
 
 export function upsertGoogleUser(db: DB, p: GoogleProfile): User {
