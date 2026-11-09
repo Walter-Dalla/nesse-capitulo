@@ -81,6 +81,10 @@ Só `/` e `/login` são públicos; o resto exige sessão e fica fora dos buscado
 
 Todas as rotas `/api/*` exigem sessão (cookie `sid`).
 
+Erros de estante, comentários, amigos, anúncios e busca trazem `{ error, code }`: `error` é o texto em português, `code` é estável (`ERROR_CODES` em `server/types.ts`) e é o que o cliente traduz. Respostas de `server/auth.ts` e o 404 de `server/app.ts` não têm `code`.
+
+Todo HTML sai no idioma negociado: `?lang=`, cookie `lang`, `Accept-Language`, `CF-IPCountry`, `en` (`docs/features/idioma.md`).
+
 | Método | Rota | Descrição |
 | --- | --- | --- |
 | GET | `/auth/google` → `/auth/google/callback` | Fluxo OAuth web |
@@ -134,6 +138,9 @@ client/          front (Vite + React)
   src/pages/     Login, Estante, Buscar, Adicionar manual, Livro, Por ano, Amigos, Perfil
 server/          API Hono
   auth.ts        sessões + Google OAuth
+  html.ts        entrega do HTML no idioma negociado
+  locale.ts      negociação de idioma
+  landingText.ts texto da home nos 3 idiomas
   db.ts          schema SQLite
   routes/        search, shelf, stats, ads, friends, comments
 tests/           testes da API (node:test)
