@@ -52,7 +52,7 @@ export function seoRoutes() {
   app.get("/robots.txt", (c) => c.text(`${ROBOTS}Sitemap: ${env.baseUrl}/sitemap.xml\n`, 200, cache));
 
   app.get("/sitemap.xml", (c) => {
-    const urls = [...PUBLIC_PATHS, ...LOCALIZED_HOME_PATHS].map((p) =>`  <url><loc>${env.baseUrl}${p}</loc><changefreq>monthly</changefreq></url>`).join("\n");
+    const urls = [...PUBLIC_PATHS, ...LOCALIZED_HOME_PATHS].map((p) => `  <url><loc>${env.baseUrl}${p}</loc><changefreq>monthly</changefreq></url>`).join("\n");
     const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>\n`;
     return c.body(xml, 200, { ...cache, "Content-Type": "application/xml; charset=utf-8" });
   });
