@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { MESSAGES } from "../client/src/lib/messages/index.ts";
 import { setLocale, t } from "../client/src/lib/i18n.ts";
+import { searchAttribution } from "../client/src/lib/format.ts";
 
 const search = readFileSync("client/src/pages/Search.tsx", "utf8");
 const detail = readFileSync("client/src/pages/BookDetail.tsx", "utf8");
@@ -39,4 +40,16 @@ test("atribuição: rodapé da busca separa Open Library e Google", () => {
   assert.match(search, /attribution === "via" && \(\s*<p[^>]*>\{t\("library\.search\.via"/);
   assert.match(search, /attribution === "poweredByGoogle" && \(\s*<p[^>]*>\{t\("library\.search\.poweredByGoogle"\)/);
   assert.equal(search.match(/t\("library\.search\.poweredByGoogle"\)/g)?.length, 1, "Powered by Google só sai pelo searchAttribution");
+});
+
+test("atribuição: Open Library nunca leva texto do Google, nem vazia", () => {
+  assert.equal(searchAttribution({ provider: "openlibrary", itemCount: 0, failed: false }), null);
+  assert.equal(searchAttribution({ provider: "openlibrary", itemCount: 3, failed: false }), "via");
+});
+
+test("atribuição: Google, antes da busca e erro", () => {
+  assert.equal(searchAttribution({ provider: "google", itemCount: 3, failed: false }), "poweredByGoogle");
+  assert.equal(searchAttribution({ provider: "google", itemCount: 0, failed: false }), "poweredByGoogle");
+  assert.equal(searchAttribution({ provider: null, itemCount: 0, failed: false }), "poweredByGoogle", "antes da primeira busca");
+  assert.equal(searchAttribution({ provider: undefined, itemCount: 0, failed: true }), null, "busca com erro");
 });
