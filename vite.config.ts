@@ -2,6 +2,7 @@ import { defineConfig, loadEnv, type Plugin } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "node:path";
 import tailwindcss from "@tailwindcss/vite";
+import { renderLanding } from "./server/landingText.js";
 
 /** Troca %SITE_URL% no index.html (canonical, og:url, og:image) pela BASE_URL do .env (mesma do servidor). Não usa %BASE_URL% porque o Vite já reserva esse nome para `base`. */
 function htmlBaseUrl(mode: string): Plugin {
@@ -9,9 +10,21 @@ function htmlBaseUrl(mode: string): Plugin {
   return { name: "html-base-url", transformIndexHtml: (html) => html.replaceAll("%SITE_URL%", baseUrl) };
 }
 
+/** `client/landing.html` é modelo com `{{chave}}`, preenchido pelo servidor em produção; no Vite dev, sai em EN. O build não renderiza. */
+function landingDev(): Plugin {
+  return {
+    name: "landing-dev",
+    apply: "serve",
+    transformIndexHtml: {
+      order: "pre",
+      handler: (html, ctx) => (ctx.path === "/landing.html" ? renderLanding(html, "en") : html),
+    },
+  };
+}
+
 export default defineConfig(({ mode }) => ({
   root: "client",
-  plugins: [react(), tailwindcss(), htmlBaseUrl(mode)],
+  plugins: [react(), tailwindcss(), htmlBaseUrl(mode), landingDev()],
   build: {
     outDir: "../dist/client",
     emptyOutDir: true,
