@@ -1,5 +1,6 @@
 /** Idioma corrente e tradução. Sem DOM nem React: os testes importam daqui; o que toca o navegador fica em localeBrowser.ts. */
 import { MESSAGES, type MessageKey } from "./messages/index.js";
+import { ERROR_CODES, type ErrorCode } from "./types.js";
 
 export type Locale = "pt" | "en" | "es";
 export type { MessageKey };
@@ -43,3 +44,12 @@ export function tp(baseKey: PluralKey, n: number, params?: MessageParams): strin
 }
 
 export const intlTag = (): string => INTL_TAG[current];
+
+const isErrorCode = (code: unknown): code is ErrorCode => ERROR_CODES.includes(code as ErrorCode);
+
+/** Texto de um erro da API. Nunca o texto PT do servidor: `code` vem de JSON externo, por isso a checagem na lista e não no dicionário. */
+export function apiErrorMessage(code: string | undefined, status: number): string {
+  if (status === 401) return t("base.error.session");
+  if (isErrorCode(code)) return t(`base.error.${code}`);
+  return t("base.error.generic");
+}
