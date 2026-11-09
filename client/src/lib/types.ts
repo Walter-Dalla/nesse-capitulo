@@ -1,33 +1,35 @@
+import { t } from "./i18n.js";
+
 export type Status = "want" | "reading" | "read" | "abandoned";
 
 export const STATUS_LABEL: Record<Status, string> = {
-  reading: "Lendo",
-  want: "Quero ler",
-  read: "Lidos",
-  abandoned: "Abandonados",
+  get reading() { return t("base.status.label.reading"); },
+  get want() { return t("base.status.label.want"); },
+  get read() { return t("base.status.label.read"); },
+  get abandoned() { return t("base.status.label.abandoned"); },
 };
 
 export const STATUS_ACTION: Record<Status, string> = {
-  reading: "Estou lendo",
-  want: "Quero ler",
-  read: "Já li",
-  abandoned: "Abandonei",
+  get reading() { return t("base.status.action.reading"); },
+  get want() { return t("base.status.action.want"); },
+  get read() { return t("base.status.action.read"); },
+  get abandoned() { return t("base.status.action.abandoned"); },
 };
 
 /** Selo no cartão, no singular e com o mesmo vocabulário dos filtros. */
 export const STATUS_BADGE: Record<Status, string> = {
-  reading: "Lendo",
-  want: "Quero ler",
-  read: "Lido",
-  abandoned: "Abandonado",
+  get reading() { return t("base.status.badge.reading"); },
+  get want() { return t("base.status.badge.want"); },
+  get read() { return t("base.status.badge.read"); },
+  get abandoned() { return t("base.status.badge.abandoned"); },
 };
 
 /** Cabeçalho de cada grupo em "Ver todos"; Lendo sempre primeiro (ordem de STATUS_ORDER). */
 export const STATUS_GROUP: Record<Status, string> = {
-  reading: "Lendo agora",
-  want: "Quero ler",
-  read: "Lidos",
-  abandoned: "Abandonados",
+  get reading() { return t("base.status.group.reading"); },
+  get want() { return t("base.status.group.want"); },
+  get read() { return t("base.status.group.read"); },
+  get abandoned() { return t("base.status.group.abandoned"); },
 };
 
 export const STATUS_ORDER: Status[] = ["reading", "want", "read", "abandoned"];
@@ -62,7 +64,7 @@ export interface Book extends BookInput {
 export const SOURCE_LABEL: Record<BookSource, string> = {
   google: "Google Books",
   openlibrary: "Open Library",
-  manual: "cadastrado manualmente",
+  get manual() { return t("base.source.manual"); },
 };
 
 export interface Providers {
@@ -137,8 +139,8 @@ export interface FriendShelfItem extends FriendBook {
 export type CommentVisibility = "private" | "public";
 
 export const VISIBILITY_LABEL: Record<CommentVisibility, string> = {
-  private: "Privado",
-  public: "Público",
+  get private() { return t("base.visibility.private"); },
+  get public() { return t("base.visibility.public"); },
 };
 
 /** Comentário como amigos o veem (só os públicos saem para eles). */

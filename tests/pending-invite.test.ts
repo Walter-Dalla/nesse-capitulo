@@ -5,6 +5,9 @@ import {
   type InviteStore,
 } from "../client/src/lib/pendingInvite.ts";
 import { displayName, friendsReadChip, friendsReadText } from "../client/src/lib/format.ts";
+import { setLocale } from "../client/src/lib/i18n.ts";
+
+setLocale("pt");
 
 function memory(): InviteStore & { map: Map<string, string> } {
   const map = new Map<string, string>();

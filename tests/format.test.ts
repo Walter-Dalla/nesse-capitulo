@@ -1,6 +1,9 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { formatTimestamp, pageProgressText, readingPercent, updatedAgoText } from "../client/src/lib/format.ts";
+import { setLocale } from "../client/src/lib/i18n.ts";
+
+setLocale("pt");
 
 test("percentual lido", () => {
   assert.equal(readingPercent(120, 300), 40);
