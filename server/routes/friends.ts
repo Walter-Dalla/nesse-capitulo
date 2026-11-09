@@ -86,6 +86,13 @@ export function areFriends(db: DB, a: string, b: string): boolean {
   return !!db.prepare("SELECT 1 FROM friendships WHERE user_low = ? AND user_high = ?").get(low, high);
 }
 
+/** Há bloqueio entre `a` e `b`, em qualquer sentido? */
+export function isBlocked(db: DB, a: string, b: string): boolean {
+  return !!db
+    .prepare("SELECT 1 FROM user_blocks WHERE (blocker_id = ?1 AND blocked_id = ?2) OR (blocker_id = ?2 AND blocked_id = ?1)")
+    .get(a, b);
+}
+
 function findFriendUser(db: DB, id: string): FriendUser | null {
   const row = db.prepare("SELECT id, name, picture FROM users WHERE id = ?").get(id) as FriendUser | undefined;
   return row ? { id: row.id, name: row.name, picture: row.picture } : null;
@@ -121,15 +128,17 @@ export function resolveInvite(db: DB, code: string, me: string): InviteState {
   if (!row) return { state: "invalid" };
   // 2. o convite é meu
   if (row.inviter_id === me) return { state: "self" };
+  // 3. bloqueio entre nós, em qualquer sentido: igual a inexistente, sem revelar o motivo
+  if (isBlocked(db, me, row.inviter_id)) return { state: "invalid" };
   const inviter: FriendUser = { id: row.inviter_id, name: row.name, picture: row.picture };
   const friends = areFriends(db, me, row.inviter_id);
-  // 3. eu já usei: vale enquanto a amizade existir (toque duplo, repetição após queda de rede); desfeita, não refaz
+  // 4. eu já usei: vale enquanto a amizade existir (toque duplo, repetição após queda de rede); desfeita, não refaz
   if (row.used_by === me) return friends ? { state: "already", inviter } : { state: "invalid" };
-  // 4. outra pessoa usou
+  // 5. outra pessoa usou
   if (row.used_by !== null) return { state: "invalid" };
-  // 5. já somos amigos por outro caminho: não consome
+  // 6. já somos amigos por outro caminho: não consome
   if (friends) return { state: "already", inviter };
-  // 6. aberto
+  // 7. aberto
   return { state: "open", inviter };
 }
 
@@ -245,6 +254,40 @@ export function friendsRoutes(db: DB) {
   app.delete("/api/friends/:userId", (c) => {
     const [low, high] = pair(c.var.user.id, c.req.param("userId"));
     const info = db.prepare("DELETE FROM friendships WHERE user_low = ? AND user_high = ?").run(low, high);
+    return info.changes ? c.json({ ok: true }) : c.json(NOT_FOUND, 404);
+  });
+
+  // bloqueia um amigo: desfaz a amizade e impede convites entre os dois até desbloquear
+  app.post("/api/friends/:userId/block", (c) => {
+    const me = c.var.user.id;
+    const other = c.req.param("userId");
+    const blocked = transaction(db, () => {
+      if (!areFriends(db, me, other)) return false;
+      const [low, high] = pair(me, other);
+      db.prepare("DELETE FROM friendships WHERE user_low = ? AND user_high = ?").run(low, high);
+      db.prepare("INSERT OR IGNORE INTO user_blocks (blocker_id, blocked_id) VALUES (?, ?)").run(me, other);
+      return true;
+    });
+    return blocked ? c.json({ ok: true }) : c.json(NOT_FOUND, 404);
+  });
+
+  // quem eu bloqueei (só os meus bloqueios; nunca o e-mail)
+  app.get("/api/friends/blocks", (c) => {
+    const rows = db
+      .prepare(
+        `SELECT u.id, u.name, u.picture
+         FROM user_blocks b JOIN users u ON u.id = b.blocked_id
+         WHERE b.blocker_id = ?
+         ORDER BY u.name IS NULL, u.name COLLATE NOCASE, u.id`,
+      )
+      .all(c.var.user.id) as unknown as FriendUser[];
+    const blocks: FriendUser[] = rows.map((r) => ({ id: r.id, name: r.name, picture: r.picture }));
+    return c.json({ blocks });
+  });
+
+  // desbloqueia; não refaz a amizade (um convite novo volta a funcionar)
+  app.delete("/api/friends/blocks/:userId", (c) => {
+    const info = db.prepare("DELETE FROM user_blocks WHERE blocker_id = ? AND blocked_id = ?").run(c.var.user.id, c.req.param("userId"));
     return info.changes ? c.json({ ok: true }) : c.json(NOT_FOUND, 404);
   });
 

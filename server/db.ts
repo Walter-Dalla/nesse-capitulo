@@ -123,6 +123,15 @@ CREATE INDEX IF NOT EXISTS idx_content_reports_status ON content_reports(status,
 CREATE INDEX IF NOT EXISTS idx_content_reports_comment ON content_reports(comment_id, reporter_id);
 CREATE INDEX IF NOT EXISTS idx_content_reports_reporter ON content_reports(reporter_id);
 CREATE INDEX IF NOT EXISTS idx_content_reports_reported ON content_reports(reported_user_id);
+
+-- Bloqueio: desfaz a amizade e impede convite entre os dois, nos dois sentidos, até desbloquear.
+CREATE TABLE IF NOT EXISTS user_blocks (
+  blocker_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  blocked_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  PRIMARY KEY (blocker_id, blocked_id)
+);
+CREATE INDEX IF NOT EXISTS idx_user_blocks_blocked ON user_blocks(blocked_id);
 `;
 
 export function openDatabase(file = env.databasePath) {

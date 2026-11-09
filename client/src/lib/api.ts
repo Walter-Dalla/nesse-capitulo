@@ -76,6 +76,9 @@ export const Api = {
   deleteAccount: () => api<{ ok: true }>("/api/account", { method: "DELETE" }),
   acceptTerms: () => api<{ ok: true }>("/api/terms/accept", { method: "POST" }),
 
+  blockFriend: (userId: string) => api<{ ok: true }>(`/api/friends/${encodeURIComponent(userId)}/block`, { method: "POST" }),
+  blocks: () => api<{ blocks: FriendUser[] }>("/api/friends/blocks"),
+  unblock: (userId: string) => api<{ ok: true }>(`/api/friends/blocks/${encodeURIComponent(userId)}`, { method: "DELETE" }),
   report: (input: ReportInput) => api<{ ok: true }>("/api/reports", { method: "POST", body: JSON.stringify(input) }),
 };
 
