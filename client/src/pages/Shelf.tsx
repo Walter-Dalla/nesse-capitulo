@@ -23,10 +23,11 @@ export function ShelfPage() {
   useEffect(() => {
     if (!loaded) return;
     preloadOnce(() => {
-      void import("./Search");
-      void import("./BookDetail");
-      void import("./Years");
-      void import("../components/AddSheet");
+      // falha (offline) é ignorada: a navegação baixa o chunk de novo
+      import("./Search").catch(() => {});
+      import("./BookDetail").catch(() => {});
+      import("./Years").catch(() => {});
+      import("../components/AddSheet").catch(() => {});
     }, { idle: window.requestIdleCallback?.bind(window), saveData: (navigator as { connection?: { saveData?: boolean } }).connection?.saveData });
   }, [loaded]);
 
