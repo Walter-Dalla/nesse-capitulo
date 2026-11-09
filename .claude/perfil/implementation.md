@@ -10,6 +10,8 @@ Suíte: `npm test 2>&1 | grep -E "^# (pass|fail)|not ok"`. [package.json]
 Item que muda `server/db.ts` (schema, `migrate`, gatilho) roda também a suíte: fixture antiga em `tests/` pode quebrar. Linha de `db.prepare().get/all` em `deepEqual`: espalhar `{ ...row }` (protótipo nulo). [retro play-store]
 Aceite de item = teste de área que só fica verde com o item feito; teste novo em `tests/<area>.test.ts` quando não há. Banco em memória: `createApp(openDatabase(":memory:"))`; login dev por `POST /auth/dev` com `ALLOW_DEV_LOGIN=true`, `NODE_ENV=test`. [tests/api.test.ts]
 Relógio e aleatoriedade: não injetados; — [inferido]
+Módulo do client que usa DOM (`window`, `caches`, `Image`) entra no teste por caminho não literal com tipo local; import literal quebra o typecheck dos tests (sem lib DOM, exige `.js`). [retro har-melhorias]
+CSP/allowlist: cada host de cadeia de redirect entra literal na diretiva (`*.dominio` não cobre `dominio` nu); o teste confere host a host, não só a string do cabeçalho. [retro har-melhorias]
 
 ## Checks
 `npm run typecheck > /dev/null 2>&1; echo tc=$?` (front, server e tests) — por item e QA final; com `| tail` o exit é do filtro. [package.json, ci: ci.yml, retro play-store]
