@@ -71,6 +71,8 @@ export const Api = {
   updateComment: (id: string, patch: { body?: string; visibility?: CommentVisibility }) =>
     api<{ comment: BookComment }>(`/api/comments/${encodeURIComponent(id)}`, { method: "PATCH", body: JSON.stringify(patch) }),
   removeComment: (id: string) => api<{ ok: true }>(`/api/comments/${encodeURIComponent(id)}`, { method: "DELETE" }),
+
+  deleteAccount: () => api<{ ok: true }>("/api/account", { method: "DELETE" }),
 };
 
 /** Invalida tudo que depende da estante após uma mutação. */
