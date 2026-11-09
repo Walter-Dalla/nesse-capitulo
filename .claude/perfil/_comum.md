@@ -22,7 +22,7 @@ QA visual/e2e: a partir de `3108`, primeira livre. [confirmado pelo dono]
 A API aceita `PORT=<porta>`; o Vite dev fixa 5173 e faz proxy de `/api` e `/auth` para `localhost:3000` (serviço isolado = API servindo `dist/client`, sem Vite). [server/env.ts, vite.config.ts]
 
 ## Navegação
-`.codegraph/` ausente; CLI `codegraph` instalada. Indexar é decisão do dono: `codegraph init -y .`. Até lá: `grep`/`Read`. [ls, inferido]
+`.codegraph/` presente na raiz do clone (ignorado pelo git; worktree nasce sem). `codegraph explore` antes de `grep`/`Read`. [ls]
 Mapa de pastas em `CLAUDE.md`; rotas em `server/routes/*.ts` e `server/auth.ts`; telas em `client/src/pages/`. [CLAUDE.md]
 
 ## Docs

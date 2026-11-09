@@ -4,6 +4,7 @@
 `npm run build 2>&1 | tail -30` (Vite + `tsc -p server/tsconfig.json`; gera `dist/client` e `dist/server`). [package.json]
 
 ## Testes
+Armadilha: `node --test` sai 0 quando nenhum teste casa com `--test-name-pattern` e quando recebe arquivo inexistente junto de um existente. Aceitação = arquivo de teste novo, sozinho na 1ª chamada. [retros i18n-pt-en-es]
 Área: `node --test --import tsx --test-name-pattern "<filtro>" tests/*.test.ts` (filtro = trecho do nome do `test("…")`). [package.json, inferido]
 Suíte: `npm test 2>&1 | grep -E "^# (pass|fail)|not ok"`. [package.json]
 Aceite de item = teste de área que só fica verde com o item feito; teste novo em `tests/<area>.test.ts` quando não há. Banco em memória: `createApp(openDatabase(":memory:"))`; login dev por `POST /auth/dev` com `ALLOW_DEV_LOGIN=true`, `NODE_ENV=test`. [tests/api.test.ts]
@@ -14,7 +15,7 @@ Relógio e aleatoriedade: não injetados; — [inferido]
 Lint/formatação: — (não há ESLint/Prettier no repo). [package.json]
 
 ## Serviço descartável
-Subir: `npm run build:client && PORT=<porta> DATABASE_PATH=/tmp/estante-<slug>.db ALLOW_DEV_LOGIN=true NODE_ENV=development BASE_URL=http://localhost:<porta> npx tsx server/index.ts > /tmp/estante-<slug>.log 2>&1 &` (serve API + front na mesma porta). [server/index.ts, server/env.ts, confirmado pelo dono]
+Subir: `npm run build && PORT=<porta> DATABASE_PATH=/tmp/estante-<slug>.db ALLOW_DEV_LOGIN=true NODE_ENV=development BASE_URL=http://localhost:<porta> node dist/server/index.js > /tmp/estante-<slug>.log 2>&1 &` (serve API + front na mesma porta). [server/index.ts, server/env.ts, confirmado pelo dono]
 Health: `curl -s http://localhost:<porta>/api/health` → `{"ok":true}`. [server/app.ts]
 Parar: `fuser -k <porta>/tcp`. Fixtures: — (banco nasce vazio; login dev cria o usuário). [confirmado pelo dono]
 Portas: `_comum § Portas`.
@@ -48,4 +49,4 @@ Glossário: `docs/GLOSSARIO.md`. Mapa de features: `/wh:feature-docs`. Limpeza: 
 — [padrão da skill]
 
 ## Comandos na worktree
-— [primeiro perfil]
+`npm ci --no-audit --no-fund` uma vez, antes da 1ª Aceitação (worktree nasce sem `node_modules`). git só por caminho absoluto: `<git> -C <worktree> …`, um comando por chamada; `-C .` é recusado. [retros i18n-pt-en-es]
