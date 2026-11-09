@@ -106,7 +106,7 @@ test("amigo com o mesmo livro em duas linhas conta 1; vários amigos somam e vê
 test("item alheio ou inexistente dá 404", async () => {
   const { ana, bia } = await twoFriends();
   const anaItem = await addBook(ana, { source: "google", sourceId: "alheio", title: "Da Ana" }, "read");
-  assert.deepEqual(await bia.call("GET", `/api/shelf/${anaItem.id}/friends`), { status: 404, json: { error: "Não encontrado" } });
+  assert.deepEqual(await bia.call("GET", `/api/shelf/${anaItem.id}/friends`), { status: 404, json: { error: "Não encontrado", code: "NOT_FOUND" } });
   assert.equal((await bia.call("GET", "/api/shelf/nao-existe/friends")).status, 404);
 });
 

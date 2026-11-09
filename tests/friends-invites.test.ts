@@ -72,7 +72,7 @@ test("passo 1: código inexistente dá 404 nas duas rotas", async () => {
   for (const path of ["/api/friends/invites/nao-existe", "/api/friends/invites/nao-existe/accept"]) {
     const r = await bia.call(path.endsWith("accept") ? "POST" : "GET", path);
     assert.equal(r.status, 404);
-    assert.deepEqual(r.json, { error: INVALID });
+    assert.deepEqual(r.json, { error: INVALID, code: "INVITE_INVALID" });
   }
   assert.deepEqual((await bia.call("GET", "/api/friends")).json.friends, []);
 });

@@ -4,9 +4,9 @@ import { transaction, type DB } from "../db.js";
 import type { AppEnv, FriendBook, FriendShelfItem, FriendSummary, FriendUser, PublicComment } from "../types.js";
 import { getItem, rowToBook } from "./shelf.js";
 
-const INVALID_INVITE = { error: "Convite inválido ou já usado" };
+const INVALID_INVITE = { error: "Convite inválido ou já usado", code: "INVITE_INVALID" };
 const SELF_INVITE = { error: "Este convite é seu", code: "INVITE_SELF" };
-const NOT_FOUND = { error: "Não encontrado" };
+const NOT_FOUND = { error: "Não encontrado", code: "NOT_FOUND" };
 
 /** CTE com os ids dos amigos de `?1`. A amizade é guardada uma vez por par (user_low < user_high). */
 export const MY_FRIENDS = `my_friends(id) AS (
