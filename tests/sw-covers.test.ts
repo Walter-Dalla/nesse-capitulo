@@ -124,6 +124,24 @@ test("capa fora do cache é buscada e gravada com carimbo", async () => {
   assert.ok(Number(await stamp.text()) >= before);
 });
 
+test("sair da conta apaga sinopses, capas e carimbos das capas", async () => {
+  const deleted: string[] = [];
+  const fakeCaches = { delete: async (name: string) => (deleted.push(name), true) };
+  const globals = globalThis as unknown as Record<string, unknown>;
+  globals.window = { caches: fakeCaches };
+  globals.caches = fakeCaches;
+  try {
+    // Caminho em variável: o tsconfig de tests não tem tipos de DOM e não deve checar bookCache.ts por aqui.
+    const bookCachePath = "../client/src/lib/bookCache.ts";
+    const { clearBookCaches } = (await import(bookCachePath)) as { clearBookCaches: () => Promise<void> };
+    await clearBookCaches();
+  } finally {
+    delete globals.window;
+    delete globals.caches;
+  }
+  assert.deepEqual(deleted.sort(), ["estante-covers", "estante-covers-meta", "estante-details"]);
+});
+
 test("activate preserva o cache de carimbos das capas", async () => {
   const sw = loadServiceWorker();
   for (const name of ["estante-v1", "estante-covers", "estante-covers-meta", "estante-details", "estante-v0"]) sw.open(name);
