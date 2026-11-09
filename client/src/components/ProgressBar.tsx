@@ -1,3 +1,5 @@
+import { t } from "../lib/i18n";
+
 /** Barra fina de progresso de leitura (0 a 100). */
 export function ProgressBar({ percent, className = "" }: { percent: number; className?: string }) {
   return (
@@ -7,7 +9,7 @@ export function ProgressBar({ percent, className = "" }: { percent: number; clas
       aria-valuenow={percent}
       aria-valuemin={0}
       aria-valuemax={100}
-      aria-label={`${percent}% lido`}
+      aria-label={t("library.progress.read", { percent })}
     >
       <div className="h-full rounded-full bg-accent-500" style={{ width: `${percent}%` }} />
     </div>

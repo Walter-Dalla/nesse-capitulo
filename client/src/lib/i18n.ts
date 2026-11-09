@@ -73,3 +73,10 @@ export function resolveInitialLocale(input: { cookie?: string; dataLocale?: stri
 export function localeCookie(locale: Locale, https: boolean): string {
   return `lang=${locale}; Path=/; Max-Age=31536000; SameSite=Lax${https ? "; Secure" : ""}`;
 }
+
+/** `?lang=` já virou cookie no servidor; deixá-lo na URL desfaria uma escolha posterior ao recarregar. */
+export function urlWithoutLang(href: string): string {
+  const url = new URL(href);
+  url.searchParams.delete("lang");
+  return `${url.pathname}${url.search}${url.hash}`;
+}

@@ -83,3 +83,8 @@ export function invalidateShelf() {
     queryClient.invalidateQueries({ queryKey: ["friends", "badges"] }),
   ]);
 }
+
+/** O texto de um ApiError é montado ao lançar e fica no cache, que sobrevive à troca de idioma: consulta com erro busca de novo. */
+export function resetErroredQueries() {
+  void queryClient.resetQueries({ predicate: (query) => query.state.status === "error" });
+}

@@ -3,6 +3,7 @@ import { Link } from "react-router";
 import { STATUS_BADGE, type ShelfItem, type Status } from "../lib/types";
 import { formatAuthors, formatDate, friendsReadChip, pageProgressText, readingPercent, updatedAgoText } from "../lib/format";
 import { useFriendBadges } from "../lib/hooks";
+import { t, tp } from "../lib/i18n";
 import { BookCover } from "./BookCover";
 import { IconPlus } from "./Icons";
 import { PageSheet } from "./PageSheet";
@@ -39,12 +40,12 @@ export function BookCard({ item, showStatus = false }: { item: ShelfItem; showSt
                 {item.finishedAt ? formatDate(item.finishedAt) : item.readYear}
               </span>
             )}
-            {item.status === "reading" && item.startedAt && <span>Desde {formatDate(item.startedAt)}</span>}
+            {item.status === "reading" && item.startedAt && <span>{t("library.card.since", { date: formatDate(item.startedAt) })}</span>}
             {item.status === "reading" && item.currentPage != null ? (
               <span>{pageProgressText(item.currentPage, book.pageCount)}</span>
             ) : item.status === "abandoned" && item.currentPage != null ? (
-              <span>Parei na pág. {item.currentPage}</span>
-            ) : book.pageCount ? <span>{book.pageCount} pág.</span> : null}
+              <span>{t("library.card.stoppedAt", { page: item.currentPage })}</span>
+            ) : book.pageCount ? <span>{tp("library.pagesShort", book.pageCount)}</span> : null}
             {friendsRead > 0 && (
               <span className="rounded-md bg-sky-100 px-1.5 py-0.5 font-semibold text-sky-700 dark:bg-sky-900/40 dark:text-sky-200">
                 {friendsReadChip(friendsRead)}
@@ -60,7 +61,7 @@ export function BookCard({ item, showStatus = false }: { item: ShelfItem; showSt
         <div className="mt-2.5 flex items-center justify-between gap-2 border-t border-stone-100 pt-2.5 dark:border-stone-800">
           <span className="truncate text-xs text-stone-500 dark:text-stone-400">{updatedAgoText(item.updatedAt)}</span>
           <button type="button" onClick={() => setEditPage(true)} className="inline-flex min-h-8 shrink-0 items-center gap-1 rounded-lg bg-stone-100 px-3 text-xs font-semibold text-stone-800 transition hover:bg-stone-200 active:scale-[0.98] dark:bg-stone-800 dark:text-stone-100 dark:hover:bg-stone-700">
-            <IconPlus width={14} height={14} /> Página
+            <IconPlus width={14} height={14} /> {t("library.card.page")}
           </button>
         </div>
       )}

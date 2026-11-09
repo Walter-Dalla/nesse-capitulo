@@ -5,6 +5,7 @@ import { Spinner } from "./components/Layout";
 import { Toaster } from "./components/Toast";
 import { queryClient } from "./lib/api";
 import { useMe } from "./lib/hooks";
+import { useLocale } from "./lib/localeBrowser";
 import { browserInviteStore, inviteCodeFromPath, pendingInviteRedirect, savePendingInvite } from "./lib/pendingInvite";
 import { ShelfPage } from "./pages/Shelf";
 
@@ -38,9 +39,10 @@ function RequireAuth() {
 }
 
 export function App() {
+  const locale = useLocale();
   return (
     <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
+      <BrowserRouter key={locale}>
         <Suspense fallback={<div className="flex min-h-dvh items-center justify-center"><Spinner /></div>}>
         <Routes>
           <Route path="/login" element={<LoginPage />} />

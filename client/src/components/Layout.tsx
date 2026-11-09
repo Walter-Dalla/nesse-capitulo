@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { useLocation, useNavigate } from "react-router";
+import { t } from "../lib/i18n";
 import { BottomNav } from "./BottomNav";
 import { IconBack } from "./Icons";
 
@@ -27,7 +28,7 @@ export function Page({ title, action, children, nav = true, padded = true }: Pag
       {(title || showBack || action) && (
         <header className="sticky top-0 z-30 flex min-h-14 items-center gap-2 bg-stone-50/90 px-3 backdrop-blur dark:bg-stone-950/90">
           {showBack && (
-            <button type="button" onClick={() => (canGoBack ? navigate(-1) : navigate("/", { replace: true }))} className="-ml-1 rounded-xl p-2 text-stone-700 hover:bg-stone-200/60 dark:text-stone-200 dark:hover:bg-stone-800" aria-label="Voltar">
+            <button type="button" onClick={() => (canGoBack ? navigate(-1) : navigate("/", { replace: true }))} className="-ml-1 rounded-xl p-2 text-stone-700 hover:bg-stone-200/60 dark:text-stone-200 dark:hover:bg-stone-800" aria-label={t("social.back")}>
               <IconBack />
             </button>
           )}
@@ -43,7 +44,7 @@ export function Page({ title, action, children, nav = true, padded = true }: Pag
 
 export function Spinner({ className = "" }: { className?: string }) {
   return (
-    <div className={`flex justify-center py-10 ${className}`} role="status" aria-label="Carregando">
+    <div className={`flex justify-center py-10 ${className}`} role="status" aria-label={t("social.loading")}>
       <div className="h-7 w-7 animate-spin rounded-full border-[3px] border-stone-300 border-t-accent-500 dark:border-stone-700 dark:border-t-accent-400" />
     </div>
   );
@@ -63,9 +64,9 @@ export function Empty({ title, hint, action }: { title: string; hint?: string; a
 export function ErrorBox({ error, retry }: { error: unknown; retry?: () => void }) {
   return (
     <div className="card my-4 p-4 text-sm">
-      <p className="font-semibold text-red-700 dark:text-red-300">Algo deu errado</p>
-      <p className="mt-1 text-stone-600 dark:text-stone-300">{(error as Error)?.message ?? "Erro desconhecido"}</p>
-      {retry && <button type="button" onClick={retry} className="btn-secondary mt-3">Tentar de novo</button>}
+      <p className="font-semibold text-red-700 dark:text-red-300">{t("social.error.title")}</p>
+      <p className="mt-1 text-stone-600 dark:text-stone-300">{(error as Error)?.message ?? t("base.error.generic")}</p>
+      {retry && <button type="button" onClick={retry} className="btn-secondary mt-3">{t("base.retry")}</button>}
     </div>
   );
 }

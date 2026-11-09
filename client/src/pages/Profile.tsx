@@ -1,6 +1,8 @@
 import { useNavigate } from "react-router";
+import { LanguageSwitch } from "../components/LanguageSwitch";
 import { Page } from "../components/Layout";
 import { useLogout, useMe, useStats } from "../lib/hooks";
+import { intlTag, t } from "../lib/i18n";
 import { STATUS_LABEL, STATUS_ORDER } from "../lib/types";
 
 export function ProfilePage() {
@@ -13,7 +15,7 @@ export function ProfilePage() {
   const totalPages = stats.data?.years.reduce((a, y) => a + y.pages, 0) ?? 0;
 
   return (
-    <Page title="Perfil">
+    <Page title={t("social.profile.title")}>
       <section className="card flex items-center gap-4 p-4">
         {user?.picture ? (
           <img src={user.picture} alt="" referrerPolicy="no-referrer" className="h-16 w-16 rounded-full" />
@@ -21,14 +23,14 @@ export function ProfilePage() {
           <span className="flex h-16 w-16 items-center justify-center rounded-full bg-accent-500 text-2xl font-bold text-stone-950">{(user?.name ?? "?").slice(0, 1).toUpperCase()}</span>
         )}
         <div className="min-w-0">
-          <p className="truncate text-lg font-bold">{user?.name ?? "Leitor(a)"}</p>
+          <p className="truncate text-lg font-bold">{user?.name ?? t("base.reader")}</p>
           <p className="truncate text-sm text-stone-500 dark:text-stone-400">{user?.email}</p>
         </div>
       </section>
 
       <section className="mt-4 grid grid-cols-2 gap-3">
-        <div className="card p-4"><p className="text-3xl font-black tabular-nums">{totalRead}</p><p className="text-xs text-stone-500">livros lidos no total</p></div>
-        <div className="card p-4"><p className="text-3xl font-black tabular-nums">{totalPages.toLocaleString("pt-BR")}</p><p className="text-xs text-stone-500">páginas lidas</p></div>
+        <div className="card p-4"><p className="text-3xl font-black tabular-nums">{totalRead}</p><p className="text-xs text-stone-500">{t("social.profile.booksRead")}</p></div>
+        <div className="card p-4"><p className="text-3xl font-black tabular-nums">{totalPages.toLocaleString(intlTag())}</p><p className="text-xs text-stone-500">{t("social.profile.pagesRead")}</p></div>
       </section>
 
       <section className="card mt-4 divide-y divide-stone-100 dark:divide-stone-800">
@@ -40,9 +42,14 @@ export function ProfilePage() {
         ))}
       </section>
 
+      <section className="card mt-4 flex items-center justify-between p-4">
+        <span className="text-sm">{t("base.language.label")}</span>
+        <LanguageSwitch />
+      </section>
+
       <section className="mt-6 space-y-3">
         <p className="text-center text-xs text-stone-500">
-          No celular, use “Adicionar à tela inicial” no menu do navegador para instalar o app.
+          {t("social.profile.installHint")}
         </p>
         <button
           type="button"
@@ -50,7 +57,7 @@ export function ProfilePage() {
           disabled={logout.isPending}
           className="btn-danger w-full"
         >
-          Sair da conta
+          {t("social.profile.logout")}
         </button>
       </section>
     </Page>

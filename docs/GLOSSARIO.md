@@ -65,6 +65,17 @@ Vocabulário de negócio ↔ identificadores do código. Coluna "Evite" só traz
 | Provedor de anúncio | `AD_PROVIDER` (`simulated`, `adsense`) | |
 | Estatísticas | `GET /api/stats`, `useStats`, `statsRoutes` | totais por status e por ano: livros, páginas, nota média |
 
+## Idioma
+
+| Negócio | Código | Evite / nota |
+| --- | --- | --- |
+| Idioma | `Locale` (`pt`, `en`, `es`), `negotiateLocale`, `initialLocale` | `pt` = pt-BR; `es` neutro |
+| Seletor de idioma | `LanguageSwitch`, `changeLocale` | na home são links `/?lang=` |
+| Escolha salva | cookie `lang` | por aparelho; não existe coluna em `users` |
+| Texto traduzido | `t`, `tp`, `client/src/lib/messages/` | |
+| Código de erro | `code`, `ERROR_CODES`, `apiErrorMessage` | `error` segue em PT, para compatibilidade |
+| Nota (em espanhol) | "valoración", "valorar" | "nota", "calificar" |
+
 ## Armadilhas
 
 | No código | Significa | Por quê |

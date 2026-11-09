@@ -2,6 +2,7 @@ import { Fragment, useState } from "react";
 import { Link } from "react-router";
 import { displayName, friendsReadText } from "../lib/format";
 import { useBookFriends } from "../lib/hooks";
+import { t, tp } from "../lib/i18n";
 import type { FriendUser } from "../lib/types";
 
 const SIZES = { sm: "h-7 w-7 text-xs", md: "h-11 w-11 text-base", lg: "h-20 w-20 text-3xl" } as const;
@@ -30,8 +31,8 @@ export function FriendBadge({ itemId }: { itemId: string }) {
   // os dois primeiros nomes viram links; o resto entra como "mais N"
   const named = friends.slice(0, friends.length <= 2 ? friends.length : 2);
   const text = friendsReadText(friends.map(displayName));
-  const tail = friends.length > 2 ? ` e mais ${friends.length - 2}` : "";
-  const suffix = friends.length === 1 ? " já leu" : " já leram";
+  const tail = friends.length > 2 ? t("social.badge.more", { count: friends.length - 2 }) : "";
+  const suffix = tp("social.badge.suffix", friends.length);
 
   return (
     <section className="card fade-in mt-4 flex items-center gap-3 p-3" aria-label={text}>
@@ -45,7 +46,7 @@ export function FriendBadge({ itemId }: { itemId: string }) {
       <p className="min-w-0 text-sm text-stone-700 dark:text-stone-200">
         {named.map((f, i) => (
           <Fragment key={f.id}>
-            {i > 0 && (friends.length === 2 ? " e " : ", ")}
+            {i > 0 && (friends.length === 2 ? t("social.badge.and") : ", ")}
             <Link to={`/amigos/${f.id}`} className="font-semibold hover:underline">{displayName(f)}</Link>
           </Fragment>
         ))}

@@ -13,6 +13,7 @@ import { YearSelect } from "../components/YearSelect";
 import { useDetails, useItem, useRemoveItem, useUpdateItem } from "../lib/hooks";
 import { DateField } from "../components/DateField";
 import { currentYear, formatAuthors, readingPercent } from "../lib/format";
+import { t, tp } from "../lib/i18n";
 import { changedFields, readDraft, writeDraft, type ItemDraft } from "../lib/itemDraft";
 import { SOURCE_LABEL, STATUS_ACTION, STATUS_ORDER } from "../lib/types";
 
@@ -52,7 +53,7 @@ export function BookDetailPage() {
     try {
       await update.mutateAsync(changedFields(item, draft));
       setDraft({});
-      toast("Alterações salvas");
+      toast(t("library.book.changesSaved"));
     } catch (e) {
       toast((e as Error).message, "error");
     }
@@ -63,7 +64,7 @@ export function BookDetailPage() {
     try {
       await remove.mutateAsync(item.id);
       writeDraft(id, {});
-      toast("Removido da estante");
+      toast(t("library.book.removed"));
       navigate("/", { replace: true });
     } catch (e) {
       setConfirmRemove(false);
@@ -72,7 +73,7 @@ export function BookDetailPage() {
   }
 
   if (query.isPending) return <Page><Spinner /></Page>;
-  if (query.isError || !item) return <Page><ErrorBox error={query.error ?? new Error("Livro não encontrado")} /></Page>;
+  if (query.isError || !item) return <Page><ErrorBox error={query.error ?? new Error(t("library.book.notFound"))} /></Page>;
 
   const { book } = item;
   const current = { ...item, ...draft };
@@ -81,14 +82,14 @@ export function BookDetailPage() {
   const percent = readingPercent(current.currentPage, book.pageCount);
 
   return (
-    <Page action={<button type="button" onClick={() => setConfirmRemove(true)} className="rounded-xl p-2 text-stone-500 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/40" aria-label="Remover da estante"><IconTrash /></button>}>
+    <Page action={<button type="button" onClick={() => setConfirmRemove(true)} className="rounded-xl p-2 text-stone-500 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/40" aria-label={t("library.book.removeTitle")}><IconTrash /></button>}>
       <section className="flex gap-4">
         <BookCover book={book} size="L" className="w-28" />
         <div className="min-w-0 flex-1 py-1">
           <h1 className="text-xl font-bold leading-tight">{book.title}</h1>
           <p className="mt-1 text-stone-600 dark:text-stone-300">{formatAuthors(book.authors)}</p>
           <p className="mt-2 text-xs text-stone-500 dark:text-stone-400">
-            {[book.publishedYear, book.pageCount ? `${book.pageCount} páginas` : null, book.isbn13 ? `ISBN ${book.isbn13}` : null].filter(Boolean).join(" · ")}
+            {[book.publishedYear, book.pageCount ? tp("library.book.pages", book.pageCount) : null, book.isbn13 ? `ISBN ${book.isbn13}` : null].filter(Boolean).join(" · ")}
           </p>
           <div className="mt-3">
             <Stars value={current.rating} onChange={(v) => change({ rating: v })} size="lg" />
@@ -100,8 +101,8 @@ export function BookDetailPage() {
       <FriendBadge itemId={item.id} />
 
       <section className="mt-6">
-        <span className="label">Status</span>
-        <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-label="Status">
+        <span className="label">{t("library.statusLabel")}</span>
+        <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-label={t("library.statusLabel")}>
           {STATUS_ORDER.map((s) => (
             <button key={s} type="button" role="radio" aria-checked={current.status === s} disabled={update.isPending} onClick={() => change({ status: s })} className={current.status === s ? "btn-primary" : "btn-secondary"}>
               {STATUS_ACTION[s]}
@@ -113,12 +114,12 @@ export function BookDetailPage() {
       {current.status !== "want" && (
         <section className="card fade-in mt-4 grid grid-cols-2 gap-3 p-4">
           <div className={current.status === "read" ? "" : "col-span-2"}>
-            <label className="label" htmlFor="d-start">Comecei em</label>
+            <label className="label" htmlFor="d-start">{t("library.field.startedAt")}</label>
             <DateField id="d-start" value={current.startedAt} onCommit={(v) => change({ startedAt: v })} />
           </div>
           {tracksPage && (
             <div className="col-span-2">
-              <label className="label" htmlFor="d-page">{current.status === "reading" ? "Estou na página" : "Parei na página"}</label>
+              <label className="label" htmlFor="d-page">{current.status === "reading" ? t("library.field.pageReading") : t("library.field.pageAbandoned")}</label>
               <div className="flex items-center gap-3">
                 <input
                   id="d-page"
@@ -132,7 +133,7 @@ export function BookDetailPage() {
                   onChange={(e) => change({ currentPage: parsePage(e.target.value) })}
                 />
                 <span className="text-sm text-stone-500 dark:text-stone-400">
-                  {book.pageCount ? `de ${book.pageCount}` : "sem total de páginas"}
+                  {book.pageCount ? t("library.page.ofTotal", { total: book.pageCount }) : t("library.page.noTotal")}
                   {percent !== null && <span className="ml-2 font-semibold text-stone-700 dark:text-stone-200">{percent}%</span>}
                 </span>
               </div>
@@ -142,13 +143,13 @@ export function BookDetailPage() {
           {current.status === "read" && (
             <>
               <div>
-                <label className="label" htmlFor="d-finish">Terminei em</label>
+                <label className="label" htmlFor="d-finish">{t("library.field.finishedAt")}</label>
                 <DateField id="d-finish" value={current.finishedAt} onCommit={(v) => change({ finishedAt: v, ...(v ? { readYear: Number(v.slice(0, 4)) } : {}) })} />
               </div>
               <div className="col-span-2">
-                <label className="label" htmlFor="d-year">Conta como leitura de</label>
+                <label className="label" htmlFor="d-year">{t("library.book.countsAs")}</label>
                 <YearSelect id="d-year" value={current.readYear ?? currentYear()} onChange={(y) => change({ readYear: y, ...(current.finishedAt && Number(current.finishedAt.slice(0, 4)) !== y ? { finishedAt: null } : {}) })} />
-                <p className="mt-1 text-xs text-stone-500">Não lembra a data exata? Só o ano já basta para o histórico.</p>
+                <p className="mt-1 text-xs text-stone-500">{t("library.book.yearHint")}</p>
               </div>
             </>
           )}
@@ -156,11 +157,11 @@ export function BookDetailPage() {
       )}
 
       <section className="mt-6">
-        <label className="label" htmlFor="d-review">Resenha</label>
+        <label className="label" htmlFor="d-review">{t("library.book.review")}</label>
         <textarea
           id="d-review"
           className="input min-h-32 resize-y py-3"
-          placeholder="O que você achou? Só você vê."
+          placeholder={t("library.book.reviewPlaceholder")}
           value={current.review ?? ""}
           onChange={(e) => change({ review: e.target.value || null })}
         />
@@ -170,14 +171,14 @@ export function BookDetailPage() {
 
       {details.data?.description && (
         <section className="mt-6 fade-in">
-          <span className="label">Sinopse</span>
+          <span className="label">{t("library.book.synopsis")}</span>
           <p className={`text-sm leading-relaxed text-stone-600 dark:text-stone-300 ${showDesc ? "" : "line-clamp-4"}`}>{details.data.description}</p>
-          <button type="button" onClick={() => setShowDesc((v) => !v)} className="mt-1 text-sm font-semibold text-accent-700 dark:text-accent-400">{showDesc ? "Mostrar menos" : "Ler mais"}</button>
+          <button type="button" onClick={() => setShowDesc((v) => !v)} className="mt-1 text-sm font-semibold text-accent-700 dark:text-accent-400">{showDesc ? t("library.book.showLess") : t("library.book.readMore")}</button>
         </section>
       )}
 
       <p className="mt-8 text-center text-xs text-stone-400">
-        {book.source === "manual" ? "Livro cadastrado manualmente" : `Dados e capa: ${SOURCE_LABEL[book.source]}`}
+        {book.source === "manual" ? t("library.book.sourceManual") : t("library.book.sourceData", { source: SOURCE_LABEL[book.source] })}
       </p>
 
       {dirty && (
@@ -186,10 +187,10 @@ export function BookDetailPage() {
           <div className="h-28" aria-hidden />
           <div className="fade-in fixed inset-x-0 bottom-[calc(4.25rem+env(safe-area-inset-bottom))] z-30 border-t border-stone-200 bg-stone-50/95 backdrop-blur dark:border-stone-800 dark:bg-stone-950/95">
             <div className="mx-auto max-w-md px-4 pb-3 pt-2.5">
-              <p className="mb-2 text-xs font-semibold text-stone-500 dark:text-stone-400">Alterações não salvas</p>
+              <p className="mb-2 text-xs font-semibold text-stone-500 dark:text-stone-400">{t("library.book.unsaved")}</p>
               <div className="flex gap-2">
-                <button type="button" onClick={save} disabled={update.isPending} className="btn-primary flex-1">{update.isPending ? "Salvando…" : "Salvar"}</button>
-                <button type="button" onClick={() => setDraft({})} disabled={update.isPending} className="btn-secondary">Cancelar</button>
+                <button type="button" onClick={save} disabled={update.isPending} className="btn-primary flex-1">{update.isPending ? t("library.saving") : t("base.save")}</button>
+                <button type="button" onClick={() => setDraft({})} disabled={update.isPending} className="btn-secondary">{t("base.cancel")}</button>
               </div>
             </div>
           </div>
@@ -197,11 +198,11 @@ export function BookDetailPage() {
       )}
 
       {confirmRemove && (
-        <Sheet title="Remover da estante" onClose={() => setConfirmRemove(false)}>
-          <p className="text-sm text-stone-600 dark:text-stone-300">Remover “{book.title}” da sua estante? Nota, resenha, datas, página e comentários deste livro serão apagados.</p>
+        <Sheet title={t("library.book.removeTitle")} onClose={() => setConfirmRemove(false)}>
+          <p className="text-sm text-stone-600 dark:text-stone-300">{t("library.book.removeConfirm", { title: book.title })}</p>
           <div className="mt-5 flex gap-2">
-            <button type="button" onClick={() => setConfirmRemove(false)} disabled={remove.isPending} className="btn-secondary flex-1">Cancelar</button>
-            <button type="button" onClick={onRemove} disabled={remove.isPending} className="btn-primary flex-1 !bg-red-600 hover:!bg-red-700">{remove.isPending ? "Removendo…" : "Remover"}</button>
+            <button type="button" onClick={() => setConfirmRemove(false)} disabled={remove.isPending} className="btn-secondary flex-1">{t("base.cancel")}</button>
+            <button type="button" onClick={onRemove} disabled={remove.isPending} className="btn-primary flex-1 !bg-red-600 hover:!bg-red-700">{remove.isPending ? t("library.book.removing") : t("library.book.remove")}</button>
           </div>
         </Sheet>
       )}
