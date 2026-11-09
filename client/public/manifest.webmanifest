@@ -1,8 +1,8 @@
 {
-  "name": "Estante — tracker de leituras",
+  "name": "Estante — reading tracker",
   "short_name": "Estante",
-  "description": "Registre o que você leu, está lendo, quer ler e abandonou. Notas, resenhas e histórico por ano.",
-  "lang": "pt-BR",
+  "description": "Log what you have read, are reading, want to read and abandoned. Ratings, reviews and history by year.",
+  "lang": "en",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
