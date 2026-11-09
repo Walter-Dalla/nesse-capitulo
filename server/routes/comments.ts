@@ -5,6 +5,7 @@ import { COMMENT_VISIBILITIES, type AppEnv, type BookComment, type CommentVisibi
 import { ValidationError, optStr } from "../validate.js";
 import { MY_FRIENDS, rowToPublicComment } from "./friends.js";
 import { getItem } from "./shelf.js";
+import { hasAcceptedTerms, TERMS_REQUIRED } from "../terms.js";
 
 export const COMMENT_MAX = 2000;
 const NOT_FOUND = { error: "Não encontrado", code: "NOT_FOUND" };
@@ -95,6 +96,7 @@ export function commentsRoutes(db: DB) {
     const input = (await c.req.json().catch(() => ({}))) as Record<string, unknown>;
     const body = parseBody(input.body);
     const visibility = input.visibility === undefined ? "private" : parseVisibility(input.visibility);
+    if (visibility === "public" && !hasAcceptedTerms(c.var.user)) return c.json(TERMS_REQUIRED, 403);
     const id = randomUUID();
     db.prepare("INSERT INTO book_comments (id, item_id, user_id, body, visibility) VALUES (?, ?, ?, ?, ?)").run(id, itemId, me, body, visibility);
     return c.json({ comment: findMyComment(db, me, id) }, 201);
@@ -109,6 +111,7 @@ export function commentsRoutes(db: DB) {
     const has = (k: string) => Object.prototype.hasOwnProperty.call(input, k);
     const body = has("body") ? parseBody(input.body) : current.body;
     const visibility = has("visibility") ? parseVisibility(input.visibility) : current.visibility;
+    if (visibility === "public" && !hasAcceptedTerms(c.var.user)) return c.json(TERMS_REQUIRED, 403);
     db.prepare("UPDATE book_comments SET body = ?, visibility = ?, updated_at = datetime('now') WHERE id = ?").run(body, visibility, current.id);
     return c.json({ comment: findMyComment(db, me, current.id) });
   });

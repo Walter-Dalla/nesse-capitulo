@@ -33,7 +33,7 @@ async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
 }
 
 export const Api = {
-  me: () => api<{ user: User | null; adUnlocked: boolean }>("/api/me"),
+  me: () => api<{ user: User | null; adUnlocked: boolean; termsAccepted: boolean }>("/api/me"),
   providers: () => api<Providers>("/auth/providers"),
   adReward: (provider: string) => api<{ unlocked: boolean }>("/api/ads/reward", { method: "POST", body: JSON.stringify({ provider, outcome: "viewed" }) }),
   devLogin: (name: string, email: string) => api<{ user: User }>("/auth/dev", { method: "POST", body: JSON.stringify({ name, email }) }),
@@ -71,6 +71,9 @@ export const Api = {
   updateComment: (id: string, patch: { body?: string; visibility?: CommentVisibility }) =>
     api<{ comment: BookComment }>(`/api/comments/${encodeURIComponent(id)}`, { method: "PATCH", body: JSON.stringify(patch) }),
   removeComment: (id: string) => api<{ ok: true }>(`/api/comments/${encodeURIComponent(id)}`, { method: "DELETE" }),
+
+  deleteAccount: () => api<{ ok: true }>("/api/account", { method: "DELETE" }),
+  acceptTerms: () => api<{ ok: true }>("/api/terms/accept", { method: "POST" }),
 };
 
 /** Invalida tudo que depende da estante após uma mutação. */

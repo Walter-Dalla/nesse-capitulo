@@ -10,7 +10,9 @@ CREATE TABLE IF NOT EXISTS users (
   email TEXT,
   name TEXT,
   picture TEXT,
-  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  terms_version INTEGER,             -- versão dos termos aceita; null = ainda não aceitou
+  terms_accepted_at TEXT             -- quando aceitou essa versão
 );
 
 CREATE TABLE IF NOT EXISTS sessions (
@@ -94,6 +96,14 @@ CREATE TABLE IF NOT EXISTS book_comments (
 );
 CREATE INDEX IF NOT EXISTS idx_book_comments_item ON book_comments(item_id, created_at);
 CREATE INDEX IF NOT EXISTS idx_book_comments_user ON book_comments(user_id);
+
+-- Livro manual nunca é reaproveitado: sem item na estante, o título digitado pela pessoa sai do banco.
+-- user_books.book_id não cascateia; o gatilho cobre a remoção do item e a cascata de users.
+CREATE TRIGGER IF NOT EXISTS trg_user_books_manual_orphan AFTER DELETE ON user_books
+WHEN (SELECT source FROM books WHERE id = OLD.book_id) = 'manual'
+BEGIN
+  DELETE FROM books WHERE id = OLD.book_id AND NOT EXISTS (SELECT 1 FROM user_books WHERE book_id = OLD.book_id);
+END;
 `;
 
 export function openDatabase(file = env.databasePath) {
@@ -125,6 +135,11 @@ function migrate(db: DatabaseSync) {
   if (!cols("user_books").includes("current_page")) db.exec("ALTER TABLE user_books ADD COLUMN current_page INTEGER");
   // convites deixaram de expirar: a coluna de validade sai, e os convites antigos voltam a valer
   if (cols("friend_invites").includes("expires_at")) db.exec("ALTER TABLE friend_invites DROP COLUMN expires_at");
+  // livros manuais que ficaram sem item antes do gatilho trg_user_books_manual_orphan
+  db.exec("DELETE FROM books WHERE source = 'manual' AND id NOT IN (SELECT book_id FROM user_books)");
+  const users = cols("users");
+  if (!users.includes("terms_version")) db.exec("ALTER TABLE users ADD COLUMN terms_version INTEGER");
+  if (!users.includes("terms_accepted_at")) db.exec("ALTER TABLE users ADD COLUMN terms_accepted_at TEXT");
 }
 
 export type DB = DatabaseSync;
