@@ -3,6 +3,7 @@ import { apiErrorMessage } from "./i18n.js";
 import type {
   AddPayload, BookComment, BookInput, CommentVisibility, FriendComment, FriendInvitePreview, FriendShelfItem, FriendSummary, FriendUser,
   Providers, ShelfItem, ShelfPatch, Stats, Status, User,
+  ModerationAction, ModReport, ReportInput, ReportStatus,
 } from "./types";
 
 export const queryClient = new QueryClient({
@@ -74,6 +75,14 @@ export const Api = {
 
   deleteAccount: () => api<{ ok: true }>("/api/account", { method: "DELETE" }),
   acceptTerms: () => api<{ ok: true }>("/api/terms/accept", { method: "POST" }),
+
+  blockFriend: (userId: string) => api<{ ok: true }>(`/api/friends/${encodeURIComponent(userId)}/block`, { method: "POST" }),
+  blocks: () => api<{ blocks: FriendUser[] }>("/api/friends/blocks"),
+  unblock: (userId: string) => api<{ ok: true }>(`/api/friends/blocks/${encodeURIComponent(userId)}`, { method: "DELETE" }),
+  report: (input: ReportInput) => api<{ ok: true }>("/api/reports", { method: "POST", body: JSON.stringify(input) }),
+  modReports: (status: ReportStatus = "open") => api<{ reports: ModReport[] }>(`/api/mod/reports?status=${status}`),
+  resolveReport: (id: string, action: ModerationAction) =>
+    api<{ ok: true }>(`/api/mod/reports/${encodeURIComponent(id)}/resolve`, { method: "POST", body: JSON.stringify({ action }) }),
 };
 
 /** Invalida tudo que depende da estante após uma mutação. */

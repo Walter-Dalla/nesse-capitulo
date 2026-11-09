@@ -53,6 +53,7 @@ const pt = {
   "base.error.COMMENT_EMPTY": "Escreva o comentário",
   "base.error.VALIDATION": "Algo deu errado. Tente de novo.",
   "base.error.TERMS_REQUIRED": "Aceite os termos de uso para continuar",
+  "base.error.REPORT_INVALID": "Motivo ou ação inválida",
   "base.language.label": "Idioma",
   "base.title": "Estante — tracker de leituras: lidos, lendo, quero ler",
 } as const;
@@ -112,6 +113,7 @@ const en: Record<keyof typeof pt, string> = {
   "base.error.COMMENT_EMPTY": "Write your comment",
   "base.error.VALIDATION": "Something went wrong. Please try again.",
   "base.error.TERMS_REQUIRED": "Accept the terms of use to continue",
+  "base.error.REPORT_INVALID": "Invalid reason or action",
   "base.language.label": "Language",
   "base.title": "Estante — reading tracker: read, reading, want to read",
 };
@@ -171,6 +173,7 @@ const es: Record<keyof typeof pt, string> = {
   "base.error.COMMENT_EMPTY": "Escribe tu comentario",
   "base.error.VALIDATION": "Algo salió mal. Inténtalo de nuevo.",
   "base.error.TERMS_REQUIRED": "Acepta los términos de uso para continuar",
+  "base.error.REPORT_INVALID": "Motivo o acción no válidos",
   "base.language.label": "Idioma",
   "base.title": "Estante — registro de lecturas: leídos, leyendo, quiero leer",
 };

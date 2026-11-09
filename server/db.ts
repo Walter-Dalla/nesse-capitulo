@@ -12,7 +12,8 @@ CREATE TABLE IF NOT EXISTS users (
   picture TEXT,
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   terms_version INTEGER,             -- versão dos termos aceita; null = ainda não aceitou
-  terms_accepted_at TEXT             -- quando aceitou essa versão
+  terms_accepted_at TEXT,            -- quando aceitou essa versão
+  banned_at TEXT                     -- banida pela moderação; null = conta ativa
 );
 
 CREATE TABLE IF NOT EXISTS sessions (
@@ -104,6 +105,34 @@ WHEN (SELECT source FROM books WHERE id = OLD.book_id) = 'manual'
 BEGIN
   DELETE FROM books WHERE id = OLD.book_id AND NOT EXISTS (SELECT 1 FROM user_books WHERE book_id = OLD.book_id);
 END;
+
+-- Denúncia de comentário público ou de usuário. Guarda o texto do comentário: a denúncia sobrevive à remoção dele.
+-- Some com a conta denunciada; fica (sem reporter_id) se quem denunciou excluir a conta.
+CREATE TABLE IF NOT EXISTS content_reports (
+  id TEXT PRIMARY KEY,
+  reporter_id TEXT REFERENCES users(id) ON DELETE SET NULL,
+  reported_user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  comment_id TEXT REFERENCES book_comments(id) ON DELETE SET NULL,
+  comment_body TEXT,
+  reason TEXT NOT NULL,
+  details TEXT,
+  status TEXT NOT NULL DEFAULT 'open' CHECK (status IN ('open','dismissed','actioned')),
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_content_reports_status ON content_reports(status, created_at);
+-- esconder o comentário de quem denunciou e as chaves estrangeiras (remoção de comentário e de conta) sem varrer a tabela
+CREATE INDEX IF NOT EXISTS idx_content_reports_comment ON content_reports(comment_id, reporter_id);
+CREATE INDEX IF NOT EXISTS idx_content_reports_reporter ON content_reports(reporter_id);
+CREATE INDEX IF NOT EXISTS idx_content_reports_reported ON content_reports(reported_user_id);
+
+-- Bloqueio: desfaz a amizade e impede convite entre os dois, nos dois sentidos, até desbloquear.
+CREATE TABLE IF NOT EXISTS user_blocks (
+  blocker_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  blocked_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  PRIMARY KEY (blocker_id, blocked_id)
+);
+CREATE INDEX IF NOT EXISTS idx_user_blocks_blocked ON user_blocks(blocked_id);
 `;
 
 export function openDatabase(file = env.databasePath) {
@@ -140,6 +169,7 @@ function migrate(db: DatabaseSync) {
   const users = cols("users");
   if (!users.includes("terms_version")) db.exec("ALTER TABLE users ADD COLUMN terms_version INTEGER");
   if (!users.includes("terms_accepted_at")) db.exec("ALTER TABLE users ADD COLUMN terms_accepted_at TEXT");
+  if (!users.includes("banned_at")) db.exec("ALTER TABLE users ADD COLUMN banned_at TEXT");
 }
 
 export type DB = DatabaseSync;
