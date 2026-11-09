@@ -1,3 +1,4 @@
+import { t, tp } from "../lib/i18n";
 import { IconStar } from "./Icons";
 
 interface Props {
@@ -15,7 +16,7 @@ export function Stars({ value, onChange, size = "md", className = "" }: Props) {
   const v = value ?? 0;
   const interactive = Boolean(onChange);
   return (
-    <div className={`inline-flex items-center ${interactive ? "gap-1" : "gap-0.5"} ${className}`} role={interactive ? "radiogroup" : undefined} aria-label={interactive ? "Avaliação" : `Avaliação: ${v} de 5`}>
+    <div className={`inline-flex items-center ${interactive ? "gap-1" : "gap-0.5"} ${className}`} role={interactive ? "radiogroup" : undefined} aria-label={interactive ? t("library.stars.rating") : t("library.stars.value", { value: v })}>
       {[1, 2, 3, 4, 5].map((n) => {
         const filled = n <= v;
         const cls = `${filled ? "text-accent-500" : "text-stone-300 dark:text-stone-600"}`;
@@ -26,7 +27,7 @@ export function Stars({ value, onChange, size = "md", className = "" }: Props) {
             type="button"
             role="radio"
             aria-checked={v === n}
-            aria-label={`${n} ${n === 1 ? "estrela" : "estrelas"}`}
+            aria-label={tp("library.stars.option", n)}
             onClick={() => onChange?.(v === n ? null : n)}
             className={`-m-1 rounded-lg p-1 transition active:scale-90 ${cls}`}
           >
