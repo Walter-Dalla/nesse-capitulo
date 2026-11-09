@@ -217,7 +217,7 @@ const ES: Record<LegalKey, string> = {
   retentionBody: "Los datos se guardan mientras exista la cuenta.",
   backupRetention: "Los datos borrados pueden seguir en copias de seguridad (backups) hasta 30 días.",
   retentionReport: "Una denuncia abierta guarda una copia del comentario denunciado, aunque su autor lo borre. Esa copia desaparece si el autor elimina su cuenta.",
-  retentionBan: "Una cuenta bloqueada por moderación queda retenida para impedir que la persona vuelva.",
+  retentionBan: "Una cuenta expulsada por moderación queda retenida para impedir que la persona vuelva.",
   deletionTitle: "Eliminación de la cuenta",
   deletionDeleted: "La eliminación borra la cuenta, la estantería, los comentarios, las amistades, las invitaciones y los libros registrados a mano.",
   deletionKept: "Los libros del catálogo (Google Books y Open Library) quedan, sin vínculo contigo.",
