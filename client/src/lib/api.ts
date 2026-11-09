@@ -3,9 +3,8 @@ import { apiErrorMessage } from "./i18n.js";
 import type {
   AddPayload, BookComment, BookInput, CommentVisibility, FriendComment, FriendInvitePreview, FriendShelfItem, FriendSummary, FriendUser,
   Providers, ShelfItem, ShelfPatch, Stats, Status, User,
+  ModerationAction, ModReport, ReportInput, ReportStatus,
 } from "./types";
-import type { ReportInput } from "./types";
-import type { ModerationAction, ModReport, ReportStatus } from "./types";
 
 export const queryClient = new QueryClient({
   defaultOptions: {
