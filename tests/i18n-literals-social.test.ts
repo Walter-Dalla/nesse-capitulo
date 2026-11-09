@@ -1,6 +1,8 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { QueryObserver, type QueryClient } from "@tanstack/react-query";
+import { apiErrorMessage, setLocale } from "../client/src/lib/i18n.ts";
 import { social } from "../client/src/lib/messages/social.ts";
 import { findLiterals } from "./i18n-literals.ts";
 
@@ -21,6 +23,10 @@ const FILES = [
 ];
 
 const read = (file: string) => readFileSync(file, "utf8");
+
+// caminho em variável: o tsconfig de tests (node16) não aceita os imports sem extensão de api.ts
+const API_MODULE = "../client/src/lib/api.ts";
+const { queryClient, resetErroredQueries } = (await import(API_MODULE)) as { queryClient: QueryClient; resetErroredQueries: () => void };
 
 for (const file of FILES) {
   test(`sem texto solto: ${file}`, () => {
@@ -58,4 +64,40 @@ test("social: as variáveis de cada frase são as mesmas nos três idiomas", () 
     assert.deepEqual(slots(social.en[key as keyof typeof social.pt]), slots(message), `en ${key}`);
     assert.deepEqual(slots(social.es[key as keyof typeof social.pt]), slots(message), `es ${key}`);
   }
+});
+
+test("erro em cache é refeito no idioma novo; consulta sem erro fica como está", async () => {
+  setLocale("en");
+  const ok = ["ok"];
+  queryClient.setQueryData(ok, "kept");
+  const observer = new QueryObserver<string, Error>(queryClient, {
+    queryKey: ["failing"],
+    retry: false,
+    queryFn: () => { throw new Error(apiErrorMessage("NOT_FOUND", 404)); },
+  });
+  const errorSeen = () => new Promise<string>((resolve) => {
+    const stop = observer.subscribe((result) => {
+      if (result.status === "error") { stop(); resolve(result.error.message); }
+    });
+  });
+  const keepActive = observer.subscribe(() => {});
+  try {
+    assert.equal(await errorSeen(), "Not found");
+    setLocale("es");
+    const next = errorSeen();
+    resetErroredQueries();
+    assert.equal(await next, "No se encontró");
+    assert.equal(queryClient.getQueryData(ok), "kept");
+  } finally {
+    keepActive();
+    queryClient.clear();
+    setLocale("en");
+  }
+});
+
+test("main.tsx liga o reset à troca de idioma, depois de aplicar o inicial", () => {
+  const main = read("client/src/main.tsx");
+  const wired = main.indexOf("subscribe(resetErroredQueries)");
+  assert.ok(wired > main.indexOf("applyLocale(initialLocale())"));
+  assert.ok(wired < main.indexOf(".render("));
 });
