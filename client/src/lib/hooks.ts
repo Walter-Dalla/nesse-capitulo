@@ -9,8 +9,8 @@ import type { AddPayload, BookComment, CommentVisibility, ModerationAction, Repo
 export const useMe = () => useQuery({ queryKey: ["me"], queryFn: Api.me, staleTime: 5 * 60_000 });
 export const useProviders = () => useQuery({ queryKey: ["providers"], queryFn: Api.providers, staleTime: Infinity });
 export const useStats = () => useQuery({ queryKey: ["stats"], queryFn: Api.stats });
-export const useShelf = (params: { status?: Status; year?: number } = {}) =>
-  useQuery({ queryKey: ["shelf", params], queryFn: () => Api.shelf(params) });
+export const useShelf = (params: { status?: Status; year?: number } = {}, options: { enabled?: boolean } = {}) =>
+  useQuery({ queryKey: ["shelf", params], queryFn: () => Api.shelf(params), enabled: options.enabled ?? true });
 export const useItem = (id: string) => useQuery({ queryKey: ["item", id], queryFn: () => Api.item(id) });
 
 // ---------- amigos ----------
