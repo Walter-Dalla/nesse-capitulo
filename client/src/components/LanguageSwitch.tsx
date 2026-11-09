@@ -20,7 +20,7 @@ export function LanguageSwitch() {
             }
           }}
           onClick={() => {
-            refocus = option;
+            if (option !== locale) refocus = option;
             changeLocale(option);
           }}
           className={locale === option ? "chip-on" : "chip-off"}
