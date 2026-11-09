@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import { env } from "../env.js";
-import type { AppEnv, BookDetails, BookInput } from "../types.js";
+import type { AppEnv, BookDetails, BookInput, ErrorCode } from "../types.js";
 
 /**
  * Busca de livros em repositórios públicos. Nada disso é persistido além do que o
@@ -143,7 +143,7 @@ export async function searchBooks(q: string): Promise<{ items: BookInput[]; prov
         new Error(status === 429
           ? "Busca temporariamente indisponível (limite das fontes externas). Tente de novo em instantes ou cadastre o livro manualmente."
           : "Não foi possível consultar as fontes de livros agora."),
-        { status: 503 },
+        { status: 503, code: (status === 429 ? "SEARCH_SOURCES_LIMITED" : "SEARCH_UNAVAILABLE") satisfies ErrorCode },
       );
     }
   }
@@ -187,14 +187,14 @@ export function searchRoutes() {
   app.get("/api/search", async (c) => {
     const q = (c.req.query("q") ?? "").trim().replace(/\s+/g, " ");
     if (q.length < 3) return c.json({ items: [], provider: null });
-    if (!allowSearch(c.var.user.id)) return c.json({ error: "Muitas buscas em sequência. Aguarde um instante." }, 429);
+    if (!allowSearch(c.var.user.id)) return c.json({ error: "Muitas buscas em sequência. Aguarde um instante.", code: "SEARCH_RATE_LIMITED" }, 429);
     try {
       const { items, provider } = await searchBooks(q.slice(0, 120));
       c.header("Cache-Control", "private, max-age=300");
       return c.json({ items, provider });
     } catch (e) {
-      const err = e as Error & { status?: number };
-      return c.json({ error: err.message }, (err.status ?? 502) as 502 | 503);
+      const err = e as Error & { status?: number; code?: ErrorCode };
+      return c.json({ error: err.message, code: err.code ?? "SEARCH_UNAVAILABLE" }, (err.status ?? 502) as 502 | 503);
     }
   });
 

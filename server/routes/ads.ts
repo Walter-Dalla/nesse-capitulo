@@ -22,8 +22,8 @@ export function adsRoutes(db: DB) {
     if (!env.ads.enabled) return c.json({ unlocked: true });
     const body = (await c.req.json().catch(() => ({}))) as { provider?: string; outcome?: string };
     // Só aceita recompensas do provedor configurado e com resultado de "visto até o fim"
-    if (body.provider !== env.ads.provider) return c.json({ error: "Provedor de anúncio inválido" }, 400);
-    if (body.outcome !== "viewed") return c.json({ error: "Anúncio não concluído" }, 400);
+    if (body.provider !== env.ads.provider) return c.json({ error: "Provedor de anúncio inválido", code: "AD_PROVIDER_INVALID" }, 400);
+    if (body.outcome !== "viewed") return c.json({ error: "Anúncio não concluído", code: "AD_NOT_COMPLETED" }, 400);
     db.prepare("UPDATE sessions SET ad_unlocked = 1 WHERE id = ?").run(c.var.sessionId);
     return c.json({ unlocked: true });
   });
