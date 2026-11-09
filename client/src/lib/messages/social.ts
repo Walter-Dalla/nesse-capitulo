@@ -88,6 +88,18 @@ const pt = {
   "social.comments.deleteTitle": "Apagar comentário",
   "social.comments.deleting": "Apagando…",
   "social.comments.deleted": "Comentário apagado",
+  "social.ad.title": "Um anúncio rápido",
+  "social.ad.intro": "O Estante é gratuito. Para adicionar livros novos à estante, assista a um anúncio curto {once}. Editar, avaliar e resenhar nunca pede anúncio.",
+  "social.ad.introOnce": "uma vez por sessão",
+  "social.ad.watch": "Assistir anúncio",
+  "social.ad.loading": "Carregando…",
+  "social.ad.loadingAd": "Carregando anúncio…",
+  "social.ad.simulated": "Anúncio simulado",
+  "social.ad.wait": "Aguarde o fim do anúncio para liberar.",
+  "social.ad.unlocked": "Liberado! ✅",
+  "social.ad.thanks": "Obrigado! Livros liberados nesta sessão.",
+  "social.ad.blocked": "Não foi possível carregar o anúncio. Se você usa um bloqueador de anúncios, desative-o para este site e tente de novo.",
+  "social.ad.notCompleted": "O anúncio não foi concluído. Tente de novo para liberar a criação de livros.",
 } as const;
 
 const en: Record<keyof typeof pt, string> = {
@@ -180,6 +192,18 @@ const en: Record<keyof typeof pt, string> = {
   "social.comments.deleteTitle": "Delete comment",
   "social.comments.deleting": "Deleting…",
   "social.comments.deleted": "Comment deleted",
+  "social.ad.title": "A quick ad",
+  "social.ad.intro": "Estante is free. To add new books to your shelf, watch a short ad {once}. Editing, rating and reviewing never ask for an ad.",
+  "social.ad.introOnce": "once per session",
+  "social.ad.watch": "Watch ad",
+  "social.ad.loading": "Loading…",
+  "social.ad.loadingAd": "Loading ad…",
+  "social.ad.simulated": "Simulated ad",
+  "social.ad.wait": "Wait for the ad to finish to unlock.",
+  "social.ad.unlocked": "Unlocked! ✅",
+  "social.ad.thanks": "Thanks! Books unlocked for this session.",
+  "social.ad.blocked": "Couldn't load the ad. If you use an ad blocker, disable it for this site and try again.",
+  "social.ad.notCompleted": "The ad wasn't completed. Try again to unlock adding books.",
 };
 
 const es: Record<keyof typeof pt, string> = {
@@ -272,6 +296,18 @@ const es: Record<keyof typeof pt, string> = {
   "social.comments.deleteTitle": "Eliminar comentario",
   "social.comments.deleting": "Eliminando…",
   "social.comments.deleted": "Comentario eliminado",
+  "social.ad.title": "Un anuncio rápido",
+  "social.ad.intro": "Estante es gratis. Para agregar libros nuevos a la estantería, mira un anuncio corto {once}. Editar, calificar y reseñar nunca pide un anuncio.",
+  "social.ad.introOnce": "una vez por sesión",
+  "social.ad.watch": "Ver anuncio",
+  "social.ad.loading": "Cargando…",
+  "social.ad.loadingAd": "Cargando anuncio…",
+  "social.ad.simulated": "Anuncio simulado",
+  "social.ad.wait": "Espera a que termine el anuncio para desbloquear.",
+  "social.ad.unlocked": "¡Desbloqueado! ✅",
+  "social.ad.thanks": "¡Gracias! Libros desbloqueados en esta sesión.",
+  "social.ad.blocked": "No se pudo cargar el anuncio. Si usas un bloqueador de anuncios, desactívalo para este sitio e inténtalo de nuevo.",
+  "social.ad.notCompleted": "El anuncio no se completó. Inténtalo de nuevo para desbloquear la creación de libros.",
 };
 
 export const social = { pt, en, es };
