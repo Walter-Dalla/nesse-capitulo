@@ -3,16 +3,17 @@ import { useNavigate, useParams } from "react-router";
 import { BookCover } from "../components/BookCover";
 import { Avatar } from "../components/FriendBadge";
 import { Empty, ErrorBox, Page, Spinner } from "../components/Layout";
+import { ReportSheet } from "../components/ReportSheet";
 import { Sheet } from "../components/Sheet";
 import { toast } from "../components/Toast";
 import { ProgressBar } from "../components/ProgressBar";
 import { displayName, formatAuthors, formatTimestamp, pageProgressText, readingPercent } from "../lib/format";
-import { useFriendShelf, useRemoveFriend } from "../lib/hooks";
+import { useBlock, useFriendShelf, useRemoveFriend } from "../lib/hooks";
 import { t, tp } from "../lib/i18n";
 import type { FriendShelfItem } from "../lib/types";
 
 /** Livro de um amigo: sem link para /livro/:id (não é meu item), sem nota, resenha ou datas; só comentários públicos. */
-function FriendBookRow({ item }: { item: FriendShelfItem }) {
+function FriendBookRow({ item, onReport }: { item: FriendShelfItem; onReport: (commentId: string) => void }) {
   const { book } = item;
   const percent = item.status === "reading" ? readingPercent(item.currentPage, book.pageCount) : null;
   return (
@@ -38,7 +39,10 @@ function FriendBookRow({ item }: { item: FriendShelfItem }) {
           {item.comments.map((c) => (
             <li key={c.id} className="text-sm">
               <p className="whitespace-pre-wrap break-words leading-relaxed">{c.body}</p>
-              <p className="mt-0.5 text-xs text-stone-500 dark:text-stone-400">{formatTimestamp(c.createdAt)}</p>
+              <p className="mt-0.5 flex items-center justify-between gap-2 text-xs text-stone-500 dark:text-stone-400">
+                <span>{formatTimestamp(c.createdAt)}</span>
+                <button type="button" onClick={() => onReport(c.id)} className="font-semibold hover:underline">{t("social.report.action")}</button>
+              </p>
             </li>
           ))}
         </ul>
@@ -52,7 +56,21 @@ export function FriendDetailPage() {
   const navigate = useNavigate();
   const query = useFriendShelf(id);
   const remove = useRemoveFriend();
+  const block = useBlock();
   const [confirmRemove, setConfirmRemove] = useState(false);
+  const [confirmBlock, setConfirmBlock] = useState(false);
+  const [reportTarget, setReportTarget] = useState<{ commentId: string } | { userId: string } | null>(null);
+
+  async function onBlock() {
+    try {
+      await block.mutateAsync(id);
+      toast(t("social.block.done"));
+      navigate("/amigos", { replace: true });
+    } catch (e) {
+      setConfirmBlock(false);
+      toast((e as Error).message, "error");
+    }
+  }
 
   async function onRemove() {
     try {
@@ -73,6 +91,7 @@ export function FriendDetailPage() {
   const reading = items.filter((i) => i.status === "reading");
   // mais recentes primeiro; o servidor já ordena por atualização dentro do mesmo ano
   const read = items.filter((i) => i.status === "read").sort((a, b) => (b.readYear ?? 0) - (a.readYear ?? 0));
+  const reportComment = (commentId: string) => setReportTarget({ commentId });
 
   return (
     <Page>
@@ -91,21 +110,39 @@ export function FriendDetailPage() {
           {reading.length > 0 && (
             <section className="mt-6">
               <h2 className="label">{t("base.status.label.reading")}</h2>
-              <ul className="space-y-3">{reading.map((i) => <FriendBookRow key={i.book.id} item={i} />)}</ul>
+              <ul className="space-y-3">{reading.map((i) => <FriendBookRow key={i.book.id} item={i} onReport={reportComment} />)}</ul>
             </section>
           )}
           {read.length > 0 && (
             <section className="mt-6">
               <h2 className="label">{t("base.status.label.read")}</h2>
-              <ul className="space-y-3">{read.map((i) => <FriendBookRow key={i.book.id} item={i} />)}</ul>
+              <ul className="space-y-3">{read.map((i) => <FriendBookRow key={i.book.id} item={i} onReport={reportComment} />)}</ul>
             </section>
           )}
         </>
       )}
 
-      <section className="mt-8 pb-4">
+      <section className="mt-8 space-y-3 pb-4">
         <button type="button" onClick={() => setConfirmRemove(true)} className="btn-danger w-full">{t("social.friend.remove")}</button>
+        <div className="flex gap-2">
+          <button type="button" onClick={() => setReportTarget({ userId: id })} className="btn-secondary flex-1">{t("social.report.action")}</button>
+          <button type="button" onClick={() => setConfirmBlock(true)} className="btn-secondary flex-1 !text-red-700 dark:!text-red-300">{t("social.block.action")}</button>
+        </div>
       </section>
+
+      {reportTarget && <ReportSheet target={reportTarget} onClose={() => setReportTarget(null)} />}
+
+      {confirmBlock && (
+        <Sheet title={t("social.block.action")} onClose={() => setConfirmBlock(false)}>
+          <p className="text-sm text-stone-600 dark:text-stone-300">{t("social.block.confirm", { name })}</p>
+          <div className="mt-5 flex gap-2">
+            <button type="button" onClick={() => setConfirmBlock(false)} disabled={block.isPending} className="btn-secondary flex-1">{t("base.cancel")}</button>
+            <button type="button" onClick={onBlock} disabled={block.isPending} className="btn-primary flex-1 !bg-red-600 hover:!bg-red-700">
+              {block.isPending ? t("social.block.blocking") : t("social.block.action")}
+            </button>
+          </div>
+        </Sheet>
+      )}
 
       {confirmRemove && (
         <Sheet title={t("social.friend.remove")} onClose={() => setConfirmRemove(false)}>

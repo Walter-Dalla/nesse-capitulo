@@ -5,6 +5,7 @@ import { useAddComment, useComments, useRemoveComment, useUpdateComment } from "
 import { t, type MessageKey } from "../lib/i18n";
 import { VISIBILITY_LABEL, type BookComment, type CommentVisibility } from "../lib/types";
 import { Avatar } from "./FriendBadge";
+import { ReportSheet } from "./ReportSheet";
 import { Sheet } from "./Sheet";
 import { toast } from "./Toast";
 
@@ -43,6 +44,8 @@ export function Comments({ itemId }: { itemId: string }) {
   const [visibility, setVisibility] = useState<CommentVisibility>("private");
   const [editing, setEditing] = useState<{ id: string; body: string } | null>(null);
   const [deleting, setDeleting] = useState<BookComment | null>(null);
+  // id do comentário de amigo sendo denunciado; os meus nunca têm "Denunciar"
+  const [reporting, setReporting] = useState<string | null>(null);
 
   async function submit(e: FormEvent) {
     e.preventDefault();
@@ -159,12 +162,17 @@ export function Comments({ itemId }: { itemId: string }) {
                     {" · "}{formatTimestamp(c.createdAt)}
                   </p>
                   <p className="mt-1 whitespace-pre-wrap break-words leading-relaxed">{c.body}</p>
+                  <div className="mt-1.5 flex justify-end">
+                    <button type="button" onClick={() => setReporting(c.id)} className="text-xs font-semibold text-stone-500 hover:underline dark:text-stone-400">{t("social.report.action")}</button>
+                  </div>
                 </div>
               </li>
             ))}
           </ul>
         </div>
       )}
+
+      {reporting && <ReportSheet target={{ commentId: reporting }} onClose={() => setReporting(null)} />}
 
       {deleting && (
         <Sheet title={t("social.comments.deleteTitle")} onClose={() => setDeleting(null)}>

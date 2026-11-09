@@ -4,7 +4,7 @@ import { Api, invalidateShelf, queryClient } from "./api";
 import { clearBookCaches, forgetDetails, loadDetails, preloadCovers } from "./bookCache";
 import { clearDrafts } from "./itemDraft";
 import { browserInviteStore, clearPendingInvite } from "./pendingInvite";
-import type { AddPayload, BookComment, CommentVisibility, ShelfItem, ShelfPatch, Status } from "./types";
+import type { AddPayload, BookComment, CommentVisibility, ReportInput, ShelfItem, ShelfPatch, Status } from "./types";
 
 export const useMe = () => useQuery({ queryKey: ["me"], queryFn: Api.me, staleTime: 5 * 60_000 });
 export const useProviders = () => useQuery({ queryKey: ["providers"], queryFn: Api.providers, staleTime: Infinity });
@@ -48,6 +48,39 @@ export const useRemoveFriend = () =>
         queryClient.invalidateQueries({ queryKey: ["friends"], predicate: (q) => !(q.queryKey[1] === "detail" && q.queryKey[2] === userId) }),
         queryClient.invalidateQueries({ queryKey: ["comments"] }),
       ]),
+  });
+
+// ---------- denúncia e bloqueio ----------
+
+export const useBlocks = () => useQuery({ queryKey: ["friends", "blocks"], queryFn: Api.blocks });
+
+/** O alvo denunciado some para quem denunciou: comentários e estante do amigo são refeitos. */
+export const useReport = () =>
+  useMutation({
+    mutationFn: (input: ReportInput) => Api.report(input),
+    onSuccess: () => Promise.all([
+      queryClient.invalidateQueries({ queryKey: ["comments"] }),
+      queryClient.invalidateQueries({ queryKey: ["friends"] }),
+    ]),
+  });
+
+/** Bloquear desfaz a amizade: mesmo cuidado de useRemoveFriend com a tela do ex-amigo. */
+export const useBlock = () =>
+  useMutation({
+    mutationFn: (userId: string) => Api.blockFriend(userId),
+    onSuccess: (_data, userId) =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["friends", "detail", userId], refetchType: "none" }),
+        queryClient.invalidateQueries({ queryKey: ["friends"], predicate: (q) => !(q.queryKey[1] === "detail" && q.queryKey[2] === userId) }),
+        queryClient.invalidateQueries({ queryKey: ["comments"] }),
+      ]),
+  });
+
+/** Desbloquear não refaz a amizade; só a lista de bloqueados muda. */
+export const useUnblock = () =>
+  useMutation({
+    mutationFn: (userId: string) => Api.unblock(userId),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["friends"] }),
   });
 
 // ---------- comentários ----------
