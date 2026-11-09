@@ -16,7 +16,6 @@ export const LANDING_TEXT: Record<Locale, Record<string, string>> = {
     signIn: "Entrar",
     heroTitle: "Sua estante de leituras, no bolso",
     heroLead: "Registre o que você leu, está lendo, quer ler e abandonou. Com nota, resenha, página atual e histórico por ano.",
-    signInGoogle: "Entrar com Google",
     howItWorks: "Como funciona",
     statusesLabel: "Status de leitura",
     statusReading: "Lendo",
@@ -53,6 +52,8 @@ export const LANDING_TEXT: Record<Locale, Record<string, string>> = {
     faq3Answer: "Não. Só seus amigos, aceitos por link de convite, veem o que você leu. Comentários podem ser públicos (para amigos) ou privados.",
     startNow: "Começar agora",
     openSource: "código aberto",
+    privacy: "Privacidade",
+    terms: "Termos de uso",
   },
   en: {
     ogLocale: "en_US",
@@ -66,7 +67,6 @@ export const LANDING_TEXT: Record<Locale, Record<string, string>> = {
     signIn: "Sign in",
     heroTitle: "Your reading shelf, in your pocket",
     heroLead: "Log what you have read, are reading, want to read and abandoned. With rating, review, current page and history by year.",
-    signInGoogle: "Sign in with Google",
     howItWorks: "How it works",
     statusesLabel: "Reading status",
     statusReading: "Reading",
@@ -103,6 +103,8 @@ export const LANDING_TEXT: Record<Locale, Record<string, string>> = {
     faq3Answer: "No. Only your friends, accepted by invite link, see what you have read. Comments can be public (for friends) or private.",
     startNow: "Get started",
     openSource: "open source",
+    privacy: "Privacy",
+    terms: "Terms of use",
   },
   es: {
     ogLocale: "es_ES",
@@ -116,7 +118,6 @@ export const LANDING_TEXT: Record<Locale, Record<string, string>> = {
     signIn: "Entrar",
     heroTitle: "Tu estantería de lecturas, en el bolsillo",
     heroLead: "Registra lo que leíste, estás leyendo, quieres leer y abandonaste. Con valoración, reseña, página actual e historial por año.",
-    signInGoogle: "Entrar con Google",
     howItWorks: "Cómo funciona",
     statusesLabel: "Estado de lectura",
     statusReading: "Leyendo",
@@ -153,6 +154,8 @@ export const LANDING_TEXT: Record<Locale, Record<string, string>> = {
     faq3Answer: "No. Solo tus amigos, aceptados por enlace de invitación, ven lo que leíste. Los comentarios pueden ser públicos (para amigos) o privados.",
     startNow: "Empezar ahora",
     openSource: "código abierto",
+    privacy: "Privacidad",
+    terms: "Términos de uso",
   },
 };
 
