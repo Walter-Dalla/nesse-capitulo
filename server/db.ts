@@ -10,7 +10,9 @@ CREATE TABLE IF NOT EXISTS users (
   email TEXT,
   name TEXT,
   picture TEXT,
-  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  terms_version INTEGER,             -- versão dos termos aceita; null = ainda não aceitou
+  terms_accepted_at TEXT             -- quando aceitou essa versão
 );
 
 CREATE TABLE IF NOT EXISTS sessions (
@@ -135,6 +137,9 @@ function migrate(db: DatabaseSync) {
   if (cols("friend_invites").includes("expires_at")) db.exec("ALTER TABLE friend_invites DROP COLUMN expires_at");
   // livros manuais que ficaram sem item antes do gatilho trg_user_books_manual_orphan
   db.exec("DELETE FROM books WHERE source = 'manual' AND id NOT IN (SELECT book_id FROM user_books)");
+  const users = cols("users");
+  if (!users.includes("terms_version")) db.exec("ALTER TABLE users ADD COLUMN terms_version INTEGER");
+  if (!users.includes("terms_accepted_at")) db.exec("ALTER TABLE users ADD COLUMN terms_accepted_at TEXT");
 }
 
 export type DB = DatabaseSync;

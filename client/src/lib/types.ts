@@ -185,5 +185,6 @@ export const ERROR_CODES = [
   "ISBN_INVALID",
   "COMMENT_EMPTY",
   "VALIDATION",
+  "TERMS_REQUIRED",
 ] as const;
 export type ErrorCode = (typeof ERROR_CODES)[number];

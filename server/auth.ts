@@ -4,6 +4,7 @@ import { getCookie, setCookie, deleteCookie } from "hono/cookie";
 import { randomBytes, randomUUID } from "node:crypto";
 import type { DB } from "./db.js";
 import { env, googleLoginEnabled } from "./env.js";
+import { hasAcceptedTerms } from "./terms.js";
 import type { AppEnv, User } from "./types.js";
 
 export const SESSION_COOKIE = "sid";
@@ -42,7 +43,7 @@ export function findSession(db: DB, sessionId: string | undefined): { user: User
   if (!sessionId) return null;
   const row = db
     .prepare(
-      `SELECT u.id, u.google_sub, u.email, u.name, u.picture, s.ad_unlocked
+      `SELECT u.id, u.google_sub, u.email, u.name, u.picture, u.terms_version, s.ad_unlocked
        FROM sessions s JOIN users u ON u.id = s.user_id
        WHERE s.id = ? AND s.expires_at > ?`,
     )
@@ -78,6 +79,7 @@ export function upsertGoogleUser(db: DB, p: GoogleProfile): User {
     email: p.email ?? null,
     name: p.name ?? null,
     picture: p.picture ?? null,
+    terms_version: null,
   };
   db.prepare("INSERT INTO users (id, google_sub, email, name, picture) VALUES (?, ?, ?, ?, ?)").run(
     user.id, user.google_sub, user.email, user.name, user.picture,
@@ -223,8 +225,12 @@ export function authRoutes(db: DB) {
 
   app.get("/api/me", (c) => {
     const session = findSession(db, getCookie(c, SESSION_COOKIE));
-    if (!session) return c.json({ user: null, adUnlocked: false });
-    return c.json({ user: publicUser(session.user), adUnlocked: !env.ads.enabled || session.adUnlocked });
+    if (!session) return c.json({ user: null, adUnlocked: false, termsAccepted: false });
+    return c.json({
+      user: publicUser(session.user),
+      adUnlocked: !env.ads.enabled || session.adUnlocked,
+      termsAccepted: hasAcceptedTerms(session.user),
+    });
   });
 
   return app;

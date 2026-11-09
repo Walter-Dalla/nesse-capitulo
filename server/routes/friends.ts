@@ -3,6 +3,7 @@ import { randomBytes } from "node:crypto";
 import { transaction, type DB } from "../db.js";
 import type { AppEnv, FriendBook, FriendShelfItem, FriendSummary, FriendUser, PublicComment } from "../types.js";
 import { getItem, rowToBook } from "./shelf.js";
+import { hasAcceptedTerms, TERMS_REQUIRED } from "../terms.js";
 
 const INVALID_INVITE = { error: "Convite inválido ou já usado", code: "INVITE_INVALID" };
 const SELF_INVITE = { error: "Este convite é seu", code: "INVITE_SELF" };
@@ -137,6 +138,7 @@ export function friendsRoutes(db: DB) {
 
   // gera um link de convite novo: uso único e sem validade; vários convites abertos convivem
   app.post("/api/friends/invites", (c) => {
+    if (!hasAcceptedTerms(c.var.user)) return c.json(TERMS_REQUIRED, 403);
     const code = randomBytes(16).toString("base64url");
     db.prepare("INSERT INTO friend_invites (code, inviter_id) VALUES (?, ?)").run(code, c.var.user.id);
     return c.json({ code }, 201);
@@ -152,6 +154,7 @@ export function friendsRoutes(db: DB) {
 
   // confirma o convite: cria a amizade e consome o código
   app.post("/api/friends/invites/:code/accept", (c) => {
+    if (!hasAcceptedTerms(c.var.user)) return c.json(TERMS_REQUIRED, 403);
     const me = c.var.user.id;
     const code = c.req.param("code");
     const result = transaction(db, () => {

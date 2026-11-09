@@ -7,6 +7,8 @@ export interface User {
   email: string | null;
   name: string | null;
   picture: string | null;
+  /** Versão dos termos de uso aceita; null = ainda não aceitou. */
+  terms_version: number | null;
 }
 
 export type BookSource = "google" | "openlibrary" | "manual";
@@ -128,5 +130,6 @@ export const ERROR_CODES = [
   "ISBN_INVALID",
   "COMMENT_EMPTY",
   "VALIDATION",
+  "TERMS_REQUIRED",
 ] as const;
 export type ErrorCode = (typeof ERROR_CODES)[number];
