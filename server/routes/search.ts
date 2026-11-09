@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import { APP_NAME, CONTACT_EMAIL } from "../contact.js";
 import { env } from "../env.js";
 import type { AppEnv, BookDetails, BookInput, ErrorCode } from "../types.js";
 
@@ -12,6 +13,7 @@ const GOOGLE_BOOKS_URL = "https://www.googleapis.com/books/v1/volumes";
 const OPEN_LIBRARY_SEARCH_URL = "https://openlibrary.org/search.json";
 const OPEN_LIBRARY_URL = "https://openlibrary.org";
 const FETCH_TIMEOUT_MS = 8000;
+const USER_AGENT = `${APP_NAME}/0.1 (book tracker; contact: ${CONTACT_EMAIL})`;
 
 // ---------- cache simples em memória (LRU-ish por tamanho) ----------
 function makeCache<T>(max: number, ttlMs: number) {
@@ -48,7 +50,7 @@ export function allowSearch(userId: string, now = Date.now()): boolean {
 }
 
 function fetchJson(url: string): Promise<Response> {
-  return fetch(url, { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS), headers: { "User-Agent": "Estante/0.1 (book tracker)" } });
+  return fetch(url, { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS), headers: { "User-Agent": USER_AGENT } });
 }
 
 // ---------- Google Books ----------
