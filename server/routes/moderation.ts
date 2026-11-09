@@ -87,6 +87,10 @@ export function moderationRoutes(db: DB) {
       .get(c.req.param("id")) as { status: string; comment_id: string | null; reported_user_id: string; reported_email: string | null } | undefined;
     if (!report) return c.json(NOT_FOUND, 404);
     if (report.status !== "open") return c.json({ ok: true });
+    // denúncia de usuário, ou comentário já apagado pelo autor: não há o que remover
+    if (action === "remove_comment" && !report.comment_id) {
+      throw new ValidationError("Denúncia sem comentário para remover", "REPORT_INVALID");
+    }
     if (action === "ban_user" && isModerator({ email: report.reported_email })) {
       throw new ValidationError("Moderador não pode ser banido", "REPORT_INVALID");
     }
@@ -98,7 +102,7 @@ export function moderationRoutes(db: DB) {
       }
       if (action === "remove_comment") {
         // comment_body fica na denúncia; a chave estrangeira zera comment_id
-        if (report.comment_id) db.prepare("DELETE FROM book_comments WHERE id = ?").run(report.comment_id);
+        db.prepare("DELETE FROM book_comments WHERE id = ?").run(report.comment_id);
       } else {
         const who = report.reported_user_id;
         db.prepare("UPDATE users SET banned_at = datetime('now') WHERE id = ? AND banned_at IS NULL").run(who);

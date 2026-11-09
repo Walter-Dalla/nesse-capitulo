@@ -92,6 +92,19 @@ test("remove_comment: apaga o comentário, status actioned, comment_body fica", 
   assert.equal((await bia.call("GET", "/api/me")).status, 200);
 });
 
+test("remove_comment sem comentário (denúncia de usuário ou comentário já apagado) dá 400 REPORT_INVALID", async () => {
+  const { db, ana, bia, mod, report, comment } = await scene();
+  await ana.call("POST", "/api/reports", { userId: bia.user.id, reason: "spam" });
+  const userReport = (await mod.call("GET", "/api/mod/reports")).json.reports.find((r: any) => r.commentId === null);
+  assert.equal(await bia.call("DELETE", `/api/comments/${comment.id}`).then((r) => r.status), 200);
+  for (const id of [userReport.id, report.id]) {
+    const r = await mod.call("POST", `/api/mod/reports/${id}/resolve`, { action: "remove_comment" });
+    assert.equal(r.status, 400);
+    assert.equal(r.json.code, "REPORT_INVALID");
+    assert.equal(reportRow(db, id).status, "open");
+  }
+});
+
 test("ação inválida 400 REPORT_INVALID; denúncia inexistente 404", async () => {
   const { mod, report } = await scene();
   for (const body of [{ action: "apagar" }, {}]) {
