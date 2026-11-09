@@ -73,6 +73,10 @@ O caminho mais curto para um PWA é o **Trusted Web Activity (TWA)**:
 
 Se preferir um app nativo (Capacitor/React Native), use a mesma API: faça o Google Sign-In pelo SDK e troque o `idToken` em `POST /auth/google/token`.
 
+## SEO e descoberta
+
+Só `/` e `/login` são públicos; o resto exige sessão e fica fora dos buscadores. O servidor gera `GET /robots.txt` (bloqueia `/api/`, `/auth/` e as rotas logadas, aponta o sitemap), `GET /sitemap.xml` e `GET /llms.txt` (resumo em Markdown para assistentes de IA, convenção [llmstxt.org](https://llmstxt.org)), todos com a `BASE_URL` do `.env`. O `client/index.html` traz `description`, canonical, Open Graph, Twitter Card e JSON-LD; o placeholder `%SITE_URL%` vira a `BASE_URL` no `npm run build`, então defina-a antes de buildar em produção.
+
 ## API (resumo)
 
 Todas as rotas `/api/*` exigem sessão (cookie `sid`).

@@ -11,6 +11,7 @@ import { statsRoutes } from "./routes/stats.js";
 import { adsRoutes } from "./routes/ads.js";
 import { friendsRoutes } from "./routes/friends.js";
 import { commentsRoutes } from "./routes/comments.js";
+import { seoRoutes } from "./routes/seo.js";
 import type { AppEnv } from "./types.js";
 
 /** Caminhos que pertencem à API/autenticação (nunca caem no fallback da SPA). */
@@ -28,6 +29,7 @@ export function createApp(db: DB) {
 
   app.get("/api/health", (c) => c.json({ ok: true }));
   app.route("/", authRoutes(db));
+  app.route("/", seoRoutes());
 
   const api = new Hono<AppEnv>();
   api.use("/api/*", requireAuth(db));
