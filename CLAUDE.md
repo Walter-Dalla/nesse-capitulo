@@ -32,4 +32,4 @@ CI (`.github/workflows/ci.yml`): `npm ci`, `typecheck`, `test`, `build` no Node 
 - `docs/GLOSSARIO.md` e `docs/features/` — vocabulário e mapa de features (hook do harness).
 - `docs/PENDENCIAS.md` — o que só o dono resolve (deploy, Play Console, revisão legal).
 - `docs/relatorios/` — relatórios das tarefas do `/wh:implementation`.
-- `.claude/perfil/` — fatos do projeto para as skills `wh`.
+- `.claude/profile/` — fatos do projeto para as skills `wh`.

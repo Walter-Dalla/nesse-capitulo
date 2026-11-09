@@ -15,13 +15,13 @@ Principal: `main`. Remote: `origin` (`https://github.com/Walter-Dalla/nesse-capi
 Sem branch protegida declarada; identidade local `Walter Dalla`, push HTTPS no próprio WSL. [git config, inferido]
 Checkout compartilhado com outras sessões: `git branch --show-current` antes de commitar. [COMUM.md]
 
-## Portas
+## Ports
 Dono: `3000` (API) e `5173` (Vite). [server/env.ts, vite.config.ts]
 Agentes do `/wh:implementation` (6 portas): `3100–3105`. [confirmado pelo dono]
 QA visual/e2e: a partir de `3108`, primeira livre. [confirmado pelo dono]
 A API aceita `PORT=<porta>`; o Vite dev fixa 5173 e faz proxy de `/api` e `/auth` para `localhost:3000` (serviço isolado = API servindo `dist/client`, sem Vite). [server/env.ts, vite.config.ts]
 
-## Navegação
+## Navigation
 `.codegraph/` presente na raiz do clone (ignorado pelo git; worktree nasce sem). `codegraph explore` antes de `grep`/`Read`. [ls]
 Mapa de pastas em `CLAUDE.md`; rotas em `server/routes/*.ts` e `server/auth.ts`; telas em `client/src/pages/`. [CLAUDE.md]
 
@@ -32,7 +32,7 @@ Mapa de pastas em `CLAUDE.md`; rotas em `server/routes/*.ts` e `server/auth.ts`;
 `docs/GLOSSARIO.md` — vocabulário negócio ↔ código. [adotar]
 `docs/features/README.md` — mapa de features. [adotar]
 
-## Limites
+## Limits
 Produção: `https://nesse-capitulo.walterdalla.uk` (deploy pelo dono); nada a tocar pelos agentes. Segredos: `.env` (ignorado), `GOOGLE_CLIENT_SECRET`, `ADSENSE_CLIENT_ID`. [.env.example, .gitignore]
 Banco do dono: `data/estante.db` (nunca usar em teste; usar `DATABASE_PATH` próprio ou `:memory:`). [server/env.ts, tests/api.test.ts]
 Portas `3000` e `5173` do dono. APIs externas (Google Books, Open Library, OAuth) não são chamadas em teste automatizado. [inferido]
