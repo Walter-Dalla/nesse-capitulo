@@ -54,6 +54,7 @@ const pt = {
   "base.error.VALIDATION": "Algo deu errado. Tente de novo.",
   "base.error.TERMS_REQUIRED": "Aceite os termos de uso para continuar",
   "base.error.REPORT_INVALID": "Motivo ou ação inválida",
+  "base.error.ACCOUNT_BANNED": "Esta conta foi suspensa por violar os termos de uso.",
   "base.language.label": "Idioma",
   "base.title": "Estante — tracker de leituras: lidos, lendo, quero ler",
 } as const;
@@ -114,6 +115,7 @@ const en: Record<keyof typeof pt, string> = {
   "base.error.VALIDATION": "Something went wrong. Please try again.",
   "base.error.TERMS_REQUIRED": "Accept the terms of use to continue",
   "base.error.REPORT_INVALID": "Invalid reason or action",
+  "base.error.ACCOUNT_BANNED": "This account was suspended for violating the terms of use.",
   "base.language.label": "Language",
   "base.title": "Estante — reading tracker: read, reading, want to read",
 };
@@ -174,6 +176,7 @@ const es: Record<keyof typeof pt, string> = {
   "base.error.VALIDATION": "Algo salió mal. Inténtalo de nuevo.",
   "base.error.TERMS_REQUIRED": "Acepta los términos de uso para continuar",
   "base.error.REPORT_INVALID": "Motivo o acción no válidos",
+  "base.error.ACCOUNT_BANNED": "Esta cuenta fue suspendida por infringir los términos de uso.",
   "base.language.label": "Idioma",
   "base.title": "Estante — registro de lecturas: leídos, leyendo, quiero leer",
 };

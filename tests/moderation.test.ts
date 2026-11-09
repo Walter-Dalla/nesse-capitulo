@@ -135,6 +135,7 @@ test("ban_user: banido perde a sessão (401), novo login dá 403, amigo deixa de
   const again = await client(db)("POST", "/auth/dev", { name: "Bia", email: "bia@x.com" });
   assert.equal(again.status, 403);
   assert.ok(again.json.error);
+  assert.equal(again.json.code, "ACCOUNT_BANNED");
 
   for (const [s, item] of [[ana, anaItem], [caio, caioItem]] as const) {
     assert.deepEqual(((await s.call("GET", "/api/friends")).json.friends as any[]).map((f) => f.id), []);
@@ -229,7 +230,7 @@ test("banido no login nativo: POST /auth/google/token dá 403 sem criar sessão"
     const before = sessionCount(db);
     const again = await client(db)("POST", "/auth/google/token", { idToken: "qualquer" });
     assert.equal(again.status, 403);
-    assert.deepEqual(Object.keys(again.json), ["error"]);
+    assert.deepEqual(again.json, { error: "Conta suspensa por violar os termos de uso", code: "ACCOUNT_BANNED" });
     assert.equal(sessionCount(db), before);
   } finally {
     restore();

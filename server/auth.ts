@@ -11,7 +11,7 @@ import type { AppEnv, User } from "./types.js";
 export const SESSION_COOKIE = "sid";
 const STATE_COOKIE = "oauth_state";
 const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 dias
-const BANNED = { error: "Conta suspensa por violar os termos de uso" };
+const BANNED = { error: "Conta suspensa por violar os termos de uso", code: "ACCOUNT_BANNED" } as const;
 
 export interface GoogleProfile {
   sub: string;

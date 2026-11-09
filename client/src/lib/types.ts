@@ -187,6 +187,7 @@ export const ERROR_CODES = [
   "VALIDATION",
   "TERMS_REQUIRED",
   "REPORT_INVALID",
+  "ACCOUNT_BANNED",
 ] as const;
 export type ErrorCode = (typeof ERROR_CODES)[number];
 
