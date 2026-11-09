@@ -21,6 +21,11 @@ export function today() {
 
 export const currentYear = () => new Date().getFullYear();
 
+/** Ano em que a tela Anos abre: o mais recente com livros lidos (`GET /api/stats` lista os anos em ordem decrescente); sem livros lidos, o ano atual. */
+export function initialYear(years: { year: number }[], now: number): number {
+  return years[0]?.year ?? now;
+}
+
 export function plural(n: number, singular: string, pluralForm: string) {
   return `${n} ${n === 1 ? singular : pluralForm}`;
 }
