@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { today } from "../lib/format";
+import { t } from "../lib/i18n";
 import { toast } from "./Toast";
 
 interface Props {
@@ -12,8 +13,8 @@ interface Props {
 const MIN_YEAR = 1000;
 
 function dateProblem(value: string): string | null {
-  if (Number(value.slice(0, 4)) < MIN_YEAR) return "Ano inválido: nada foi alterado.";
-  if (value > today()) return "Data no futuro: nada foi alterado.";
+  if (Number(value.slice(0, 4)) < MIN_YEAR) return t("library.date.yearInvalid");
+  if (value > today()) return t("library.date.future");
   return null;
 }
 
@@ -39,7 +40,7 @@ export function DateField({ id, value, onCommit }: Props) {
   function commit(input: HTMLInputElement) {
     if (input.validity.badInput) {
       restore(input);
-      toast("Data incompleta: nada foi alterado.", "error");
+      toast(t("library.date.incomplete"), "error");
       return;
     }
     if (draft === saved) return;

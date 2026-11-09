@@ -6,6 +6,7 @@ import { IconClose, IconPlus, IconSearch } from "../components/Icons";
 import { Empty, Page } from "../components/Layout";
 import { SEARCH_MIN_CHARS, useSearch } from "../lib/hooks";
 import { formatAuthors } from "../lib/format";
+import { t, tp } from "../lib/i18n";
 import { SOURCE_LABEL, type BookInput } from "../lib/types";
 
 /**
@@ -40,7 +41,7 @@ export function SearchPage() {
   }
 
   return (
-    <Page title={defaultYear ? `Li em ${defaultYear}` : "Buscar livro"}>
+    <Page title={defaultYear ? t("library.search.title", { year: defaultYear }) : t("library.searchBook")}>
       <div className="relative mb-3">
         <IconSearch className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" width={20} height={20} />
         <input
@@ -52,7 +53,7 @@ export function SearchPage() {
           aria-activedescendant={active >= 0 ? `sug-${active}` : undefined}
           aria-autocomplete="list"
           className="input pl-10 pr-10"
-          placeholder="Título, autor ou ISBN"
+          placeholder={t("library.search.placeholder")}
           value={q}
           onChange={(e) => { setQ(e.target.value); setActive(-1); }}
           onKeyDown={onKeyDown}
@@ -61,10 +62,10 @@ export function SearchPage() {
           spellCheck={false}
         />
         {(search.waiting || search.isFetching) && (
-          <span className="absolute right-10 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin rounded-full border-2 border-stone-300 border-t-accent-500" aria-label="Buscando" />
+          <span className="absolute right-10 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin rounded-full border-2 border-stone-300 border-t-accent-500" aria-label={t("library.search.searching")} />
         )}
         {q && (
-          <button type="button" onClick={() => { setQ(""); inputRef.current?.focus(); }} className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg p-1 text-stone-400 hover:text-stone-700" aria-label="Limpar">
+          <button type="button" onClick={() => { setQ(""); inputRef.current?.focus(); }} className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg p-1 text-stone-400 hover:text-stone-700" aria-label={t("library.search.clear")}>
             <IconClose width={20} height={20} />
           </button>
         )}
@@ -72,23 +73,23 @@ export function SearchPage() {
 
       {!showList ? (
         <Empty
-          title={typing ? `Digite pelo menos ${SEARCH_MIN_CHARS} letras` : "Procure um livro"}
-          hint="As sugestões aparecem assim que você parar de digitar. Dados e capas vêm do Google Books e da Open Library."
-          action={<Link to={manualLink} className="btn-secondary mt-2"><IconPlus width={18} height={18} /> Cadastrar manualmente</Link>}
+          title={typing ? t("library.search.minChars", { min: SEARCH_MIN_CHARS }) : t("library.search.prompt")}
+          hint={t("library.search.hint")}
+          action={<Link to={manualLink} className="btn-secondary mt-2"><IconPlus width={18} height={18} /> {t("library.search.addManually")}</Link>}
         />
       ) : search.isError ? (
         <div className="card p-4 text-sm">
-          <p className="font-semibold">Busca indisponível</p>
+          <p className="font-semibold">{t("library.search.unavailable")}</p>
           <p className="mt-1 text-stone-600 dark:text-stone-300">{(search.error as Error).message}</p>
           <div className="mt-3 flex flex-col gap-2">
-            <Link to={manualLink} className="btn-primary w-full">Cadastrar manualmente</Link>
-            <button type="button" onClick={() => search.refetch()} className="btn-secondary w-full">Tentar de novo</button>
+            <Link to={manualLink} className="btn-primary w-full">{t("library.search.addManually")}</Link>
+            <button type="button" onClick={() => search.refetch()} className="btn-secondary w-full">{t("base.retry")}</button>
           </div>
         </div>
       ) : (
-        <ul id="search-suggestions" role="listbox" aria-label="Sugestões" className="card fade-in divide-y divide-stone-100 overflow-hidden dark:divide-stone-800">
+        <ul id="search-suggestions" role="listbox" aria-label={t("library.search.suggestions")} className="card fade-in divide-y divide-stone-100 overflow-hidden dark:divide-stone-800">
           {search.isPending && (
-            <li className="px-4 py-3 text-sm text-stone-500">Buscando “{search.debounced}”…</li>
+            <li className="px-4 py-3 text-sm text-stone-500">{t("library.search.searchingFor", { q: search.debounced })}</li>
           )}
           {items.map((b, i) => (
             <li
@@ -103,25 +104,25 @@ export function SearchPage() {
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-semibold">{b.title}</p>
                 <p className="truncate text-xs text-stone-500 dark:text-stone-400">
-                  {formatAuthors(b.authors)}{b.publishedYear ? ` · ${b.publishedYear}` : ""}{b.pageCount ? ` · ${b.pageCount} pág.` : ""}
+                  {formatAuthors(b.authors)}{b.publishedYear ? ` · ${b.publishedYear}` : ""}{b.pageCount ? ` · ${tp("library.pagesShort", b.pageCount)}` : ""}
                 </p>
               </div>
               <IconPlus width={20} height={20} className="shrink-0 text-accent-600" />
             </li>
           ))}
           {search.isSuccess && items.length === 0 && (
-            <li className="px-4 py-3 text-sm text-stone-500">Nenhum livro encontrado para “{search.debounced}”.</li>
+            <li className="px-4 py-3 text-sm text-stone-500">{t("library.search.noResults", { q: search.debounced })}</li>
           )}
           <li>
             <Link to={manualLink} className="flex items-center gap-3 px-3 py-3 text-sm font-semibold text-accent-700 hover:bg-stone-50 dark:text-accent-400 dark:hover:bg-stone-800/60">
-              <IconPlus width={20} height={20} /> Não achou? Cadastrar “{q.trim()}” manualmente
+              <IconPlus width={20} height={20} /> {t("library.search.notFoundAdd", { q: q.trim() })}
             </Link>
           </li>
         </ul>
       )}
 
       {search.data?.provider && items.length > 0 && (
-        <p className="mt-3 text-center text-xs text-stone-400">Resultados via {SOURCE_LABEL[search.data.provider]}</p>
+        <p className="mt-3 text-center text-xs text-stone-400">{t("library.search.via", { source: SOURCE_LABEL[search.data.provider] })}</p>
       )}
 
       {picked && <AddSheet book={picked} defaultYear={defaultYear} onClose={() => setPicked(null)} />}

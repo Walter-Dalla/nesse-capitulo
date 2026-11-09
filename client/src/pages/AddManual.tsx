@@ -2,6 +2,7 @@ import { useState, type FormEvent } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 import { AddSheet } from "../components/AddSheet";
 import { Page } from "../components/Layout";
+import { t } from "../lib/i18n";
 import type { BookInput } from "../lib/types";
 
 /** Cadastro manual de um livro que não foi encontrado na busca (sem upload de capa: só metadados). */
@@ -30,32 +31,32 @@ export function AddManualPage() {
   }
 
   return (
-    <Page title="Adicionar manualmente">
+    <Page title={t("library.manual.title")}>
       <form onSubmit={submit} className="space-y-4">
         <div>
-          <label className="label" htmlFor="m-title">Título *</label>
+          <label className="label" htmlFor="m-title">{t("library.manual.bookTitle")}</label>
           <input id="m-title" className="input" required value={title} onChange={(e) => setTitle(e.target.value)} autoFocus />
         </div>
         <div>
-          <label className="label" htmlFor="m-authors">Autor(es)</label>
-          <input id="m-authors" className="input" placeholder="Separe por vírgula" value={authors} onChange={(e) => setAuthors(e.target.value)} />
+          <label className="label" htmlFor="m-authors">{t("library.manual.authors")}</label>
+          <input id="m-authors" className="input" placeholder={t("library.manual.authorsHint")} value={authors} onChange={(e) => setAuthors(e.target.value)} />
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="label" htmlFor="m-pages">Páginas</label>
+            <label className="label" htmlFor="m-pages">{t("library.manual.pages")}</label>
             <input id="m-pages" className="input" type="number" inputMode="numeric" min={1} max={100000} value={pages} onChange={(e) => setPages(e.target.value)} />
           </div>
           <div>
-            <label className="label" htmlFor="m-year">Ano de publicação</label>
+            <label className="label" htmlFor="m-year">{t("library.manual.year")}</label>
             <input id="m-year" className="input" type="number" inputMode="numeric" min={0} max={3000} value={year} onChange={(e) => setYear(e.target.value)} />
           </div>
         </div>
         <div>
-          <label className="label" htmlFor="m-isbn">ISBN (opcional)</label>
+          <label className="label" htmlFor="m-isbn">{t("library.manual.isbn")}</label>
           <input id="m-isbn" className="input" inputMode="numeric" placeholder="978…" value={isbn} onChange={(e) => setIsbn(e.target.value)} />
-          <p className="mt-1 text-xs text-stone-500">Com o ISBN a capa é buscada automaticamente na Open Library. Sem capa, o livro ganha uma capa colorida com o título.</p>
+          <p className="mt-1 text-xs text-stone-500">{t("library.manual.isbnHint")}</p>
         </div>
-        <button type="submit" className="btn-primary w-full">Continuar</button>
+        <button type="submit" className="btn-primary w-full">{t("library.manual.continue")}</button>
       </form>
       {/* adicionado: sai do formulário para não cadastrar o mesmo livro duas vezes sem querer */}
       {book && <AddSheet book={book} defaultYear={defaultYear} onClose={(added) => (added ? navigate(defaultYear ? `/anos?ano=${defaultYear}` : "/", { replace: true }) : setBook(null))} />}
