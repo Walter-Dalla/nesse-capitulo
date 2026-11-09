@@ -32,7 +32,7 @@ export function createApp(db: DB) {
   // style-src 'unsafe-inline': <style> da landing e das páginas legais e style= do ProgressBar.
   // Sem hosts de anúncio: docs/MONETIZACAO.md manda estender ao ativar o AdSense.
   // *.googleusercontent.com também em connect-src: books.google.com pode redirecionar a capa para lá.
-  const coverHosts = ["https://books.google.com", "https://covers.openlibrary.org", "https://*.archive.org", "https://*.googleusercontent.com"];
+  const coverHosts = ["https://books.google.com", "https://covers.openlibrary.org", "https://archive.org", "https://*.archive.org", "https://*.googleusercontent.com"];
   app.use(
     secureHeaders({
       crossOriginEmbedderPolicy: false,
