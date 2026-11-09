@@ -181,3 +181,78 @@ test("arquivo antigo sem banned_at abre e ganha a coluna", () => {
     fs.rmSync(dir, { recursive: true, force: true });
   }
 });
+
+/** Bane `userId` direto no banco (o caminho do moderador já é coberto acima). */
+function ban(db: DB, userId: string) {
+  db.prepare("UPDATE users SET banned_at = datetime('now') WHERE id = ?").run(userId);
+}
+
+function sessionCount(db: DB) {
+  return (db.prepare("SELECT COUNT(*) AS n FROM sessions").get() as { n: number }).n;
+}
+
+/** Troca `fetch` por um stub que responde `body` em JSON, sem rede; devolve a função que restaura. */
+function stubFetch(body: unknown) {
+  const original = globalThis.fetch;
+  globalThis.fetch = (async () => new Response(JSON.stringify(body), { status: 200, headers: { "Content-Type": "application/json" } })) as typeof fetch;
+  return () => { globalThis.fetch = original; };
+}
+
+const { env } = await import("../server/env.ts");
+const { createApp } = await import("../server/app.ts");
+
+test("banido no login nativo: POST /auth/google/token dá 403 sem criar sessão", async () => {
+  const db = openDatabase(":memory:");
+  const prevId = env.google.clientId;
+  env.google.clientId = "app-client";
+  const restore = stubFetch({
+    sub: "g-banido", email: "ban@x.com", email_verified: "true", name: "Ban",
+    aud: "app-client", iss: "https://accounts.google.com", exp: String(Math.floor(Date.now() / 1000) + 3600),
+  });
+  try {
+    const first = await client(db)("POST", "/auth/google/token", { idToken: "qualquer" });
+    assert.equal(first.status, 200);
+    ban(db, first.json.user.id);
+    const before = sessionCount(db);
+    const again = await client(db)("POST", "/auth/google/token", { idToken: "qualquer" });
+    assert.equal(again.status, 403);
+    assert.deepEqual(Object.keys(again.json), ["error"]);
+    assert.equal(sessionCount(db), before);
+  } finally {
+    restore();
+    env.google.clientId = prevId;
+  }
+});
+
+test("banido no callback do Google: redireciona /login?error=banned sem criar sessão", async () => {
+  const db = openDatabase(":memory:");
+  const restore = stubFetch({ id_token: idToken({ sub: "g-cb", email: "cb@x.com", email_verified: true, name: "Cb" }) });
+  const app = createApp(db);
+  const callback = () => app.request("/auth/google/callback?code=c&state=s", { headers: { Cookie: "oauth_state=s", Host: "localhost:3000" } });
+  try {
+    const ok = await callback();
+    assert.equal(ok.status, 302);
+    assert.equal(ok.headers.get("location"), "/");
+    const user = db.prepare("SELECT id FROM users WHERE google_sub = 'g-cb'").get() as { id: string };
+    ban(db, user.id);
+    db.prepare("DELETE FROM sessions").run();
+    const banned = await callback();
+    assert.equal(banned.status, 302);
+    assert.equal(banned.headers.get("location"), "/login?error=banned");
+    assert.equal(sessionCount(db), 0);
+  } finally {
+    restore();
+  }
+});
+
+test("convite de quem foi banido dá 404 INVITE_INVALID no GET e no accept", async () => {
+  const db = openDatabase(":memory:");
+  const ana = await login(db, "Ana");
+  const bia = await login(db, "Bia");
+  const code = await invite(ana);
+  ban(db, ana.user.id);
+  const expected = { status: 404, json: { error: "Convite inválido ou já usado", code: "INVITE_INVALID" } };
+  assert.deepEqual(await bia.call("GET", `/api/friends/invites/${code}`), expected);
+  assert.deepEqual(await bia.call("POST", `/api/friends/invites/${code}/accept`), expected);
+  assert.equal(db.prepare("SELECT 1 FROM friendships").get(), undefined);
+});
