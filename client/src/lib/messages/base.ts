@@ -52,6 +52,8 @@ const pt = {
   "base.error.ISBN_INVALID": "ISBN deve ter 10 ou 13 dígitos",
   "base.error.COMMENT_EMPTY": "Escreva o comentário",
   "base.error.VALIDATION": "Algo deu errado. Tente de novo.",
+  "base.language.label": "Idioma",
+  "base.title": "Estante — tracker de leituras: lidos, lendo, quero ler",
 } as const;
 
 const en: Record<keyof typeof pt, string> = {
@@ -108,6 +110,8 @@ const en: Record<keyof typeof pt, string> = {
   "base.error.ISBN_INVALID": "ISBN must have 10 or 13 digits",
   "base.error.COMMENT_EMPTY": "Write your comment",
   "base.error.VALIDATION": "Something went wrong. Please try again.",
+  "base.language.label": "Language",
+  "base.title": "Estante — reading tracker: read, reading, want to read",
 };
 
 const es: Record<keyof typeof pt, string> = {
@@ -164,6 +168,8 @@ const es: Record<keyof typeof pt, string> = {
   "base.error.ISBN_INVALID": "El ISBN debe tener 10 o 13 dígitos",
   "base.error.COMMENT_EMPTY": "Escribe tu comentario",
   "base.error.VALIDATION": "Algo salió mal. Inténtalo de nuevo.",
+  "base.language.label": "Idioma",
+  "base.title": "Estante — registro de lecturas: leídos, leyendo, quiero leer",
 };
 
 export const base = { pt, en, es };
