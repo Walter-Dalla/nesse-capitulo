@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router";
 import { BookCard } from "../components/BookCard";
 import { IconPlus } from "../components/Icons";
@@ -16,6 +16,11 @@ export function YearsPage() {
   const year = chosen ?? (stats.data ? initialYear(stats.data.years, now) : stats.isError ? now : null);
   const shelf = useShelf({ year: year ?? now }, { enabled: year !== null });
   const [custom, setCustom] = useState(false);
+
+  // fixa na URL o ano resolvido pelas estatísticas: um refetch delas não troca o ano aberto
+  useEffect(() => {
+    if (chosen === null && year !== null) setParams({ ano: String(year) }, { replace: true });
+  }, [chosen, year, setParams]);
 
   const years = Array.from(new Set([now, ...(stats.data?.years.map((y) => y.year) ?? []), year ?? now])).sort((a, b) => b - a);
   const y = stats.data?.years.find((s) => s.year === year);
