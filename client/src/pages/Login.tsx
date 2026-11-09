@@ -12,6 +12,7 @@ const ERRORS: Record<string, MessageKey> = {
   state: "social.login.error.state",
   token: "social.login.error.token",
   access_denied: "social.login.error.accessDenied",
+  banned: "social.login.error.banned",
 };
 
 export function LoginPage() {
@@ -76,6 +77,11 @@ export function LoginPage() {
         )}
 
         <p className="pt-2 text-center text-xs text-stone-400">{t("social.login.privacy")}</p>
+        {/* páginas públicas fora do SPA: navegação completa, o roteador mandaria para "/" */}
+        <p className="flex justify-center gap-4 text-xs text-stone-500">
+          <a href="/privacidade" className="underline">{t("social.legal.privacy")}</a>
+          <a href="/termos" className="underline">{t("social.legal.terms")}</a>
+        </p>
       </div>
     </div>
   );

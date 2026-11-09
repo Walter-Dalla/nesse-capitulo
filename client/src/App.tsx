@@ -2,6 +2,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Suspense, lazy } from "react";
 import { BrowserRouter, Navigate, Outlet, Route, Routes, useLocation } from "react-router";
 import { Spinner } from "./components/Layout";
+import { TermsGate } from "./components/TermsGate";
 import { Toaster } from "./components/Toast";
 import { queryClient } from "./lib/api";
 import { useMe } from "./lib/hooks";
@@ -19,6 +20,7 @@ const ProfilePage = lazy(() => import("./pages/Profile").then((m) => ({ default:
 const FriendsPage = lazy(() => import("./pages/Friends").then((m) => ({ default: m.FriendsPage })));
 const FriendDetailPage = lazy(() => import("./pages/FriendDetail").then((m) => ({ default: m.FriendDetailPage })));
 const FriendInvitePage = lazy(() => import("./pages/FriendInvite").then((m) => ({ default: m.FriendInvitePage })));
+const ModerationPage = lazy(() => import("./pages/Moderation").then((m) => ({ default: m.ModerationPage })));
 
 /**
  * Único ponto que faz o link de convite sobreviver ao login: deslogado numa rota de convite,
@@ -33,6 +35,8 @@ function RequireAuth() {
     if (code) savePendingInvite(browserInviteStore(), code);
     return <Navigate to="/login" replace />;
   }
+  // antes do convite guardado: /perfil (exclusão da conta) fica aberto, senão o convite devolveria ao gate em ciclo
+  if (!me.data.termsAccepted) return pathname === "/perfil" ? <Outlet /> : <TermsGate />;
   const to = pendingInviteRedirect(browserInviteStore(), pathname);
   if (to) return <Navigate to={to} replace />;
   return <Outlet />;
@@ -56,6 +60,7 @@ export function App() {
             <Route path="/amigos" element={<FriendsPage />} />
             <Route path="/amigos/:id" element={<FriendDetailPage />} />
             <Route path="/amigos/convite/:code" element={<FriendInvitePage />} />
+            <Route path="/moderacao" element={<ModerationPage />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

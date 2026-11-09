@@ -4,7 +4,7 @@ import { Api, invalidateShelf, queryClient } from "./api";
 import { clearBookCaches, forgetDetails, loadDetails, preloadCovers } from "./bookCache";
 import { clearDrafts } from "./itemDraft";
 import { browserInviteStore, clearPendingInvite } from "./pendingInvite";
-import type { AddPayload, BookComment, CommentVisibility, ShelfItem, ShelfPatch, Status } from "./types";
+import type { AddPayload, BookComment, CommentVisibility, ModerationAction, ReportInput, ShelfItem, ShelfPatch, Status } from "./types";
 
 export const useMe = () => useQuery({ queryKey: ["me"], queryFn: Api.me, staleTime: 5 * 60_000 });
 export const useProviders = () => useQuery({ queryKey: ["providers"], queryFn: Api.providers, staleTime: Infinity });
@@ -48,6 +48,51 @@ export const useRemoveFriend = () =>
         queryClient.invalidateQueries({ queryKey: ["friends"], predicate: (q) => !(q.queryKey[1] === "detail" && q.queryKey[2] === userId) }),
         queryClient.invalidateQueries({ queryKey: ["comments"] }),
       ]),
+  });
+
+// ---------- denúncia e bloqueio ----------
+
+export const useBlocks = () => useQuery({ queryKey: ["friends", "blocks"], queryFn: Api.blocks });
+
+/** O alvo denunciado some para quem denunciou: comentários e estante do amigo são refeitos. */
+export const useReport = () =>
+  useMutation({
+    mutationFn: (input: ReportInput) => Api.report(input),
+    onSuccess: () => Promise.all([
+      queryClient.invalidateQueries({ queryKey: ["comments"] }),
+      queryClient.invalidateQueries({ queryKey: ["friends"] }),
+    ]),
+  });
+
+/** Bloquear desfaz a amizade: mesmo cuidado de useRemoveFriend com a tela do ex-amigo. */
+export const useBlock = () =>
+  useMutation({
+    mutationFn: (userId: string) => Api.blockFriend(userId),
+    onSuccess: (_data, userId) =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["friends", "detail", userId], refetchType: "none" }),
+        queryClient.invalidateQueries({ queryKey: ["friends"], predicate: (q) => !(q.queryKey[1] === "detail" && q.queryKey[2] === userId) }),
+        queryClient.invalidateQueries({ queryKey: ["comments"] }),
+      ]),
+  });
+
+/** Desbloquear não refaz a amizade; só a lista de bloqueados muda. */
+export const useUnblock = () =>
+  useMutation({
+    mutationFn: (userId: string) => Api.unblock(userId),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["friends"] }),
+  });
+
+// ---------- moderação ----------
+// Só para moderador: os outros recebem 404, então a consulta nem sai sem isModerator.
+
+export const useModReports = (enabled: boolean) =>
+  useQuery({ queryKey: ["mod", "reports"], queryFn: () => Api.modReports(), enabled, retry: false });
+
+export const useResolveReport = () =>
+  useMutation({
+    mutationFn: ({ id, action }: { id: string; action: ModerationAction }) => Api.resolveReport(id, action),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["mod"] }),
   });
 
 // ---------- comentários ----------
@@ -108,6 +153,10 @@ function cacheBookAssets(item: ShelfItem) {
   void queryClient.prefetchQuery({ queryKey: ["details", item.id], queryFn: () => loadDetails(item.id), staleTime: DETAILS_STALE_MS });
 }
 
+/** Refaz ["me"]: com termsAccepted verdadeiro, RequireAuth troca o TermsGate pela rota pedida. */
+export const useAcceptTerms = () =>
+  useMutation({ mutationFn: Api.acceptTerms, onSuccess: () => queryClient.invalidateQueries({ queryKey: ["me"] }) });
+
 export const useAdReward = () =>
   useMutation({ mutationFn: (provider: string) => Api.adReward(provider), onSuccess: () => queryClient.invalidateQueries({ queryKey: ["me"] }) });
 
@@ -151,18 +200,20 @@ export const useRemoveItem = () =>
     },
   });
 
-export const useLogout = () =>
-  useMutation({
-    mutationFn: Api.logout,
-    onSuccess: () => {
-      // primeiro derruba o usuário (RequireAuth redireciona), depois limpa o resto sem refetch
-      queryClient.setQueryData(["me"], { user: null, adUnlocked: false });
-      queryClient.removeQueries({ predicate: (q) => q.queryKey[0] !== "me" });
-      void clearBookCaches();
-      clearDrafts();
-      clearPendingInvite(browserInviteStore());
-    },
-  });
+/** Tira do aparelho tudo da conta que saiu (logout ou exclusão). */
+function clearLocalAccount() {
+  // primeiro derruba o usuário (RequireAuth redireciona), depois limpa o resto sem refetch
+  queryClient.setQueryData(["me"], { user: null, adUnlocked: false });
+  queryClient.removeQueries({ predicate: (q) => q.queryKey[0] !== "me" });
+  void clearBookCaches();
+  clearDrafts();
+  clearPendingInvite(browserInviteStore());
+}
+
+export const useLogout = () => useMutation({ mutationFn: Api.logout, onSuccess: clearLocalAccount });
+
+/** Erro não limpa nada: a conta continua existindo. */
+export const useDeleteAccount = () => useMutation({ mutationFn: Api.deleteAccount, onSuccess: clearLocalAccount });
 
 export function useDebounced<T>(value: T, ms: number) {
   const [v, setV] = useState(value);
