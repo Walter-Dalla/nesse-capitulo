@@ -15,7 +15,7 @@ mountClient(app, db, path.resolve("client"));
 const EXPECTED_CSP =
   "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; " +
   "img-src 'self' data: https://books.google.com https://covers.openlibrary.org https://*.archive.org https://*.googleusercontent.com; " +
-  "connect-src 'self' https://books.google.com https://covers.openlibrary.org https://*.archive.org; " +
+  "connect-src 'self' https://books.google.com https://covers.openlibrary.org https://*.archive.org https://*.googleusercontent.com; " +
   "font-src 'self'; manifest-src 'self'; worker-src 'self'; frame-src 'none'; object-src 'none'; " +
   "base-uri 'self'; form-action 'self'; frame-ancestors 'none'";
 

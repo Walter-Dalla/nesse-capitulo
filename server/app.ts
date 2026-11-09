@@ -31,7 +31,8 @@ export function createApp(db: DB) {
   // connect-src inclui os hosts de capa porque a CSP vale também para o script do service worker, e o fetch dele obedece a connect-src.
   // style-src 'unsafe-inline': <style> da landing e das páginas legais e style= do ProgressBar.
   // Sem hosts de anúncio: docs/MONETIZACAO.md manda estender ao ativar o AdSense.
-  const coverHosts = ["https://books.google.com", "https://covers.openlibrary.org", "https://*.archive.org"];
+  // *.googleusercontent.com também em connect-src: books.google.com pode redirecionar a capa para lá.
+  const coverHosts = ["https://books.google.com", "https://covers.openlibrary.org", "https://*.archive.org", "https://*.googleusercontent.com"];
   app.use(
     secureHeaders({
       crossOriginEmbedderPolicy: false,
@@ -39,7 +40,7 @@ export function createApp(db: DB) {
         defaultSrc: ["'self'"],
         scriptSrc: ["'self'"],
         styleSrc: ["'self'", "'unsafe-inline'"],
-        imgSrc: ["'self'", "data:", ...coverHosts, "https://*.googleusercontent.com"],
+        imgSrc: ["'self'", "data:", ...coverHosts],
         connectSrc: ["'self'", ...coverHosts],
         fontSrc: ["'self'"],
         manifestSrc: ["'self'"],
