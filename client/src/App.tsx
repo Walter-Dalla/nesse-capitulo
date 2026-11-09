@@ -20,6 +20,7 @@ const ProfilePage = lazy(() => import("./pages/Profile").then((m) => ({ default:
 const FriendsPage = lazy(() => import("./pages/Friends").then((m) => ({ default: m.FriendsPage })));
 const FriendDetailPage = lazy(() => import("./pages/FriendDetail").then((m) => ({ default: m.FriendDetailPage })));
 const FriendInvitePage = lazy(() => import("./pages/FriendInvite").then((m) => ({ default: m.FriendInvitePage })));
+const ModerationPage = lazy(() => import("./pages/Moderation").then((m) => ({ default: m.ModerationPage })));
 
 /**
  * Único ponto que faz o link de convite sobreviver ao login: deslogado numa rota de convite,
@@ -59,6 +60,7 @@ export function App() {
             <Route path="/amigos" element={<FriendsPage />} />
             <Route path="/amigos/:id" element={<FriendDetailPage />} />
             <Route path="/amigos/convite/:code" element={<FriendInvitePage />} />
+            <Route path="/moderacao" element={<ModerationPage />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

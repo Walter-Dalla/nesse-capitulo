@@ -6,7 +6,8 @@ import { Sheet } from "./Sheet";
 import { toast } from "./Toast";
 
 const DETAILS_MAX = 500;
-const REASON_LABEL: Record<ReportReason, MessageKey> = {
+/** Rótulo de cada motivo; também usado na moderação. */
+export const REASON_LABEL: Record<ReportReason, MessageKey> = {
   spam: "social.report.reason.spam",
   harassment: "social.report.reason.harassment",
   sexual: "social.report.reason.sexual",

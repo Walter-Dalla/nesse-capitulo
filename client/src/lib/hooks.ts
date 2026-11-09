@@ -4,7 +4,7 @@ import { Api, invalidateShelf, queryClient } from "./api";
 import { clearBookCaches, forgetDetails, loadDetails, preloadCovers } from "./bookCache";
 import { clearDrafts } from "./itemDraft";
 import { browserInviteStore, clearPendingInvite } from "./pendingInvite";
-import type { AddPayload, BookComment, CommentVisibility, ReportInput, ShelfItem, ShelfPatch, Status } from "./types";
+import type { AddPayload, BookComment, CommentVisibility, ModerationAction, ReportInput, ShelfItem, ShelfPatch, Status } from "./types";
 
 export const useMe = () => useQuery({ queryKey: ["me"], queryFn: Api.me, staleTime: 5 * 60_000 });
 export const useProviders = () => useQuery({ queryKey: ["providers"], queryFn: Api.providers, staleTime: Infinity });
@@ -81,6 +81,18 @@ export const useUnblock = () =>
   useMutation({
     mutationFn: (userId: string) => Api.unblock(userId),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["friends"] }),
+  });
+
+// ---------- moderação ----------
+// Só para moderador: os outros recebem 404, então a consulta nem sai sem isModerator.
+
+export const useModReports = (enabled: boolean) =>
+  useQuery({ queryKey: ["mod", "reports"], queryFn: () => Api.modReports(), enabled, retry: false });
+
+export const useResolveReport = () =>
+  useMutation({
+    mutationFn: ({ id, action }: { id: string; action: ModerationAction }) => Api.resolveReport(id, action),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["mod"] }),
   });
 
 // ---------- comentários ----------

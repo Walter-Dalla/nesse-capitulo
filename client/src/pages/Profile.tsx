@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { LanguageSwitch } from "../components/LanguageSwitch";
 import { Page } from "../components/Layout";
 import { Sheet } from "../components/Sheet";
@@ -67,6 +67,9 @@ export function ProfilePage() {
       <section className="card mt-4 divide-y divide-stone-100 text-sm dark:divide-stone-800">
         <a href="/privacidade" className="block px-4 py-3 hover:underline">{t("social.legal.privacy")}</a>
         <a href="/termos" className="block px-4 py-3 hover:underline">{t("social.legal.terms")}</a>
+        {me.data?.isModerator && (
+          <Link to="/moderacao" className="block px-4 py-3 font-semibold hover:underline">{t("social.mod.title")}</Link>
+        )}
       </section>
 
       <section className="mt-6 space-y-3">

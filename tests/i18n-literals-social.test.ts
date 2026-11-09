@@ -22,6 +22,7 @@ const FILES = [
   "client/src/pages/Friends.tsx",
   "client/src/pages/FriendDetail.tsx",
   "client/src/pages/FriendInvite.tsx",
+  "client/src/pages/Moderation.tsx",
 ];
 
 const read = (file: string) => readFileSync(file, "utf8");
