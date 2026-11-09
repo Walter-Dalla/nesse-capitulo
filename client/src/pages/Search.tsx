@@ -5,7 +5,7 @@ import { BookCover } from "../components/BookCover";
 import { IconClose, IconPlus, IconSearch } from "../components/Icons";
 import { Empty, Page } from "../components/Layout";
 import { SEARCH_MIN_CHARS, useSearch } from "../lib/hooks";
-import { bookSourceUrl, formatAuthors } from "../lib/format";
+import { bookSourceUrl, formatAuthors, searchAttribution } from "../lib/format";
 import { t, tp } from "../lib/i18n";
 import { SOURCE_LABEL, type BookInput } from "../lib/types";
 
@@ -30,6 +30,7 @@ export function SearchPage() {
   const manualLink = `/adicionar?${new URLSearchParams({ ...(q.trim() ? { titulo: q.trim() } : {}), ...(defaultYear ? { ano: String(defaultYear) } : {}) })}`;
   const typing = q.trim().length > 0 && q.trim().length < SEARCH_MIN_CHARS;
   const showList = search.debounced.length >= SEARCH_MIN_CHARS;
+  const attribution = searchAttribution({ provider: showList ? search.data?.provider : null, itemCount: items.length, failed: showList && search.isError });
 
   function onKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
     if (e.key === "Enter" && active < 0) { e.preventDefault(); search.flush(); return; }
@@ -130,10 +131,11 @@ export function SearchPage() {
         </ul>
       )}
 
-      {/* atribuição: Open Library só com resultados dela; nunca "Powered by Google" junto de resultados da Open Library */}
-      {search.data?.provider === "openlibrary" && items.length > 0 ? (
-        <p className="mt-3 text-center text-xs text-stone-400">{t("library.search.via", { source: SOURCE_LABEL[search.data.provider] })}</p>
-      ) : showList && search.isError ? null : (
+      {/* atribuição pela fonte da resposta: nunca "Powered by Google" quando quem respondeu foi a Open Library */}
+      {attribution === "via" && (
+        <p className="mt-3 text-center text-xs text-stone-400">{t("library.search.via", { source: SOURCE_LABEL.openlibrary })}</p>
+      )}
+      {attribution === "poweredByGoogle" && (
         <p className="mt-3 text-center text-xs text-stone-400">{t("library.search.poweredByGoogle")}</p>
       )}
 

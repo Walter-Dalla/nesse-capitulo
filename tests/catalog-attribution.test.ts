@@ -35,7 +35,8 @@ test("atribuição: link do resultado não abre a folha de adicionar", () => {
 });
 
 test("atribuição: rodapé da busca separa Open Library e Google", () => {
-  assert.match(search, /provider === "openlibrary" && items\.length > 0/);
-  assert.match(search, /t\("library\.search\.via"/);
-  assert.match(search, /t\("library\.search\.poweredByGoogle"\)/);
+  assert.match(search, /searchAttribution\(/);
+  assert.match(search, /attribution === "via" && \(\s*<p[^>]*>\{t\("library\.search\.via"/);
+  assert.match(search, /attribution === "poweredByGoogle" && \(\s*<p[^>]*>\{t\("library\.search\.poweredByGoogle"\)/);
+  assert.equal(search.match(/t\("library\.search\.poweredByGoogle"\)/g)?.length, 1, "Powered by Google só sai pelo searchAttribution");
 });
