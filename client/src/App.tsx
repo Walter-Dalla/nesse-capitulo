@@ -37,7 +37,7 @@ function RequireAuth() {
   }
   // antes do convite guardado: /perfil (exclusão da conta) fica aberto, senão o convite devolveria ao gate em ciclo
   if (!me.data.termsAccepted) return pathname === "/perfil" ? <Outlet /> : <TermsGate />;
-  const to =pendingInviteRedirect(browserInviteStore(), pathname);
+  const to = pendingInviteRedirect(browserInviteStore(), pathname);
   if (to) return <Navigate to={to} replace />;
   return <Outlet />;
 }
