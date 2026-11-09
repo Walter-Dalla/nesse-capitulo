@@ -37,6 +37,7 @@ Provedores:
      <script>window.adsbygoogle = window.adsbygoogle || []; const adBreak = adConfig = function (o) { adsbygoogle.push(o); };</script>
      ```
   3. `AD_PROVIDER=adsense` e `ADSENSE_CLIENT_ID=ca-pub-XXXX` no `.env`.
+  4. Estender a CSP em `server/app.ts` (`secureHeaders` → `contentSecurityPolicy`): `script-src` com `https://pagead2.googlesyndication.com` e o hash do snippet inline acima, `frame-src` e `connect-src` com os hosts que a documentação da Ad Placement API listar na data da ativação. Sem isso o navegador bloqueia o script e o `AdGate` cai em "blocked".
 
   O `AdGate` já chama `adBreak` com `beforeReward`, `adViewed`, `adDismissed` e `adBreakDone`; só libera se `adViewed` disparar.
 

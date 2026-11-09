@@ -5,6 +5,7 @@ import type { ShelfItem } from "./types";
 /** Sinopses ficam aqui; capas ficam em COVERS_CACHE, preenchido por client/public/sw.js. */
 const DETAILS_CACHE = "estante-details";
 const COVERS_CACHE = "estante-covers"; // mesmo nome usado em client/public/sw.js
+const COVERS_META_CACHE = "estante-covers-meta"; // mesmo nome usado em client/public/sw.js
 
 type Details = { description: string | null };
 
@@ -51,5 +52,5 @@ export async function forgetDetails(itemId: string) {
 /** Ao sair da conta: capas e sinopses revelam o que a pessoa lê num aparelho compartilhado. */
 export async function clearBookCaches() {
   if (!("caches" in window)) return;
-  await Promise.all([caches.delete(DETAILS_CACHE), caches.delete(COVERS_CACHE)]).catch(() => {});
+  await Promise.all([caches.delete(DETAILS_CACHE), caches.delete(COVERS_CACHE), caches.delete(COVERS_META_CACHE)]).catch(() => {});
 }

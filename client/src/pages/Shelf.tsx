@@ -1,9 +1,11 @@
+import { useEffect } from "react";
 import { Link, useSearchParams } from "react-router";
 import { BookCard } from "../components/BookCard";
 import { IconPlus } from "../components/Icons";
 import { Empty, ErrorBox, Page, Spinner } from "../components/Layout";
 import { useMe, useShelf, useStats } from "../lib/hooks";
 import { t } from "../lib/i18n";
+import { preloadOnce } from "../lib/preload";
 import { STATUS_GROUP, STATUS_LABEL, STATUS_ORDER, type Status } from "../lib/types";
 
 export function ShelfPage() {
@@ -15,6 +17,19 @@ export function ShelfPage() {
   const stats = useStats();
   const me = useMe();
   const total = stats.data ? STATUS_ORDER.reduce((sum, s) => sum + stats.data.counts[s], 0) : 0;
+  const loaded = shelf.data !== undefined;
+
+  // depois do primeiro render da Estante, baixa em idle as telas mais abertas a partir dela (busca, detalhe do livro, anos, folha de adicionar)
+  useEffect(() => {
+    if (!loaded) return;
+    preloadOnce(() => {
+      // falha (offline) é ignorada: a navegação baixa o chunk de novo
+      import("./Search").catch(() => {});
+      import("./BookDetail").catch(() => {});
+      import("./Years").catch(() => {});
+      import("../components/AddSheet").catch(() => {});
+    }, { idle: window.requestIdleCallback?.bind(window), saveData: (navigator as { connection?: { saveData?: boolean } }).connection?.saveData });
+  }, [loaded]);
 
   return (
     <Page

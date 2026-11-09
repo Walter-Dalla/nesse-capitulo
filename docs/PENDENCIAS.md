@@ -5,6 +5,7 @@ Levantadas em 2026-11-06, no deploy em produção e no diagnóstico do `/wh:adot
 ## Deploy em produção
 
 - [x] Adicionar o bloco `networks` de `deploy/compose.prod.yaml` à Stack `estante` no Komodo e fazer **Deploy**. Em 2026-11-09 a produção respondeu `200` em `/api/health`; o `502` não se repete.
+- [ ] Redeployar a Stack `estante`: a produção está em commit anterior a `821ad8b` (falta `currentPage` no `/api/shelf`, `Cache-Control: no-cache` no HTML e as páginas legais). Constatado no HAR de 2026-11-09.
 - [ ] Redeployar a Stack do cloudflared, se a entrada de `nesse-capitulo.walterdalla.uk` foi adicionada depois do último deploy dela: o container só lê o `config.yml` ao iniciar.
 - [ ] Testar pelo túnel: `/api/health`, `/auth/providers` e o redirect de `/auth/google`.
 - [ ] Testar o login Google de ponta a ponta. O redirect cadastrado precisa ser `https://nesse-capitulo.walterdalla.uk/auth/google/callback`.
