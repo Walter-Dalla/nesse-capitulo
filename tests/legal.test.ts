@@ -132,4 +132,14 @@ test("conferência das afirmações: o que o amigo vê e a validade da sessão",
   assert.ok(ttl, "SESSION_TTL_MS não encontrado");
   const ms = ttl.split("*").reduce((total, factor) => total * Number(factor), 1);
   assert.equal(ms, 30 * 24 * 60 * 60 * 1000);
+
+  // oauth_state: 10 minutos
+  const stateCookie = /setCookie\(c, STATE_COOKIE, state, \{[\s\S]*?\}\);/.exec(auth)?.[0];
+  assert.ok(stateCookie, "cookie oauth_state não encontrado");
+  assert.match(auth, /const STATE_COOKIE = "oauth_state";/);
+  assert.match(stateCookie, /maxAge: 600\b/);
+
+  // convite guardado no aparelho: 1 hora
+  const invite = readFileSync("client/src/lib/pendingInvite.ts", "utf8");
+  assert.match(invite, /export const PENDING_INVITE_TTL_MS = 60 \* 60 \* 1000;/);
 });
