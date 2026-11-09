@@ -5,7 +5,7 @@ import { BookCover } from "../components/BookCover";
 import { IconClose, IconPlus, IconSearch } from "../components/Icons";
 import { Empty, Page } from "../components/Layout";
 import { SEARCH_MIN_CHARS, useSearch } from "../lib/hooks";
-import { formatAuthors } from "../lib/format";
+import { bookSourceUrl, formatAuthors } from "../lib/format";
 import { t, tp } from "../lib/i18n";
 import { SOURCE_LABEL, type BookInput } from "../lib/types";
 
@@ -91,25 +91,34 @@ export function SearchPage() {
           {search.isPending && (
             <li className="px-4 py-3 text-sm text-stone-500">{t("library.search.searchingFor", { q: search.debounced })}</li>
           )}
-          {items.map((b, i) => (
-            <li
-              key={`${b.source}:${b.sourceId}`}
-              id={`sug-${i}`}
-              role="option"
-              aria-selected={active === i}
-              className={`flex cursor-pointer items-center gap-3 px-3 py-2.5 transition ${active === i ? "bg-accent-50 dark:bg-stone-800" : "hover:bg-stone-50 dark:hover:bg-stone-800/60"}`}
-              onClick={() => setPicked(b)}
-            >
-              <BookCover book={b} size="S" className="w-9" />
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-semibold">{b.title}</p>
-                <p className="truncate text-xs text-stone-500 dark:text-stone-400">
-                  {formatAuthors(b.authors)}{b.publishedYear ? ` · ${b.publishedYear}` : ""}{b.pageCount ? ` · ${tp("library.pagesShort", b.pageCount)}` : ""}
-                </p>
-              </div>
-              <IconPlus width={20} height={20} className="shrink-0 text-accent-600" />
-            </li>
-          ))}
+          {items.map((b, i) => {
+            const sourceUrl = bookSourceUrl(b);
+            return (
+              <li
+                key={`${b.source}:${b.sourceId}`}
+                id={`sug-${i}`}
+                role="option"
+                aria-selected={active === i}
+                className={`flex cursor-pointer items-center gap-3 px-3 py-2.5 transition ${active === i ? "bg-accent-50 dark:bg-stone-800" : "hover:bg-stone-50 dark:hover:bg-stone-800/60"}`}
+                onClick={() => setPicked(b)}
+              >
+                <BookCover book={b} size="S" className="w-9" />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-semibold">{b.title}</p>
+                  <p className="truncate text-xs text-stone-500 dark:text-stone-400">
+                    {formatAuthors(b.authors)}{b.publishedYear ? ` · ${b.publishedYear}` : ""}{b.pageCount ? ` · ${tp("library.pagesShort", b.pageCount)}` : ""}
+                  </p>
+                  {sourceUrl && (
+                    // a linha inteira abre a folha de adicionar; o link não pode disparar isso
+                    <a href={sourceUrl} target="_blank" rel="noopener" onClick={(e) => e.stopPropagation()} className="text-xs font-semibold text-accent-700 underline underline-offset-2 dark:text-accent-400">
+                      {t("library.search.viewAt", { source: SOURCE_LABEL[b.source] })}
+                    </a>
+                  )}
+                </div>
+                <IconPlus width={20} height={20} className="shrink-0 text-accent-600" />
+              </li>
+            );
+          })}
           {search.isSuccess && items.length === 0 && (
             <li className="px-4 py-3 text-sm text-stone-500">{t("library.search.noResults", { q: search.debounced })}</li>
           )}
@@ -121,8 +130,11 @@ export function SearchPage() {
         </ul>
       )}
 
-      {search.data?.provider && items.length > 0 && (
+      {/* atribuição: Open Library só com resultados dela; nunca "Powered by Google" junto de resultados da Open Library */}
+      {search.data?.provider === "openlibrary" && items.length > 0 ? (
         <p className="mt-3 text-center text-xs text-stone-400">{t("library.search.via", { source: SOURCE_LABEL[search.data.provider] })}</p>
+      ) : showList && search.isError ? null : (
+        <p className="mt-3 text-center text-xs text-stone-400">{t("library.search.poweredByGoogle")}</p>
       )}
 
       {picked && <AddSheet book={picked} defaultYear={defaultYear} onClose={() => setPicked(null)} />}

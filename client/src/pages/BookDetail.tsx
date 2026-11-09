@@ -12,7 +12,7 @@ import { toast } from "../components/Toast";
 import { YearSelect } from "../components/YearSelect";
 import { useDetails, useItem, useRemoveItem, useUpdateItem } from "../lib/hooks";
 import { DateField } from "../components/DateField";
-import { currentYear, formatAuthors, readingPercent } from "../lib/format";
+import { bookSourceUrl, currentYear, formatAuthors, readingPercent } from "../lib/format";
 import { t, tp } from "../lib/i18n";
 import { changedFields, readDraft, writeDraft, type ItemDraft } from "../lib/itemDraft";
 import { SOURCE_LABEL, STATUS_ACTION, STATUS_ORDER } from "../lib/types";
@@ -80,6 +80,7 @@ export function BookDetailPage() {
   const dirty = Object.keys(changedFields(item, draft)).length > 0;
   const tracksPage = current.status === "reading" || current.status === "abandoned";
   const percent = readingPercent(current.currentPage, book.pageCount);
+  const sourceUrl = bookSourceUrl(book);
 
   return (
     <Page action={<button type="button" onClick={() => setConfirmRemove(true)} className="rounded-xl p-2 text-stone-500 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/40" aria-label={t("library.book.removeTitle")}><IconTrash /></button>}>
@@ -179,6 +180,14 @@ export function BookDetailPage() {
 
       <p className="mt-8 text-center text-xs text-stone-400">
         {book.source === "manual" ? t("library.book.sourceManual") : t("library.book.sourceData", { source: SOURCE_LABEL[book.source] })}
+        {sourceUrl && (
+          <>
+            {" · "}
+            <a href={sourceUrl} target="_blank" rel="noopener" className="font-semibold text-accent-700 underline underline-offset-2 dark:text-accent-400">
+              {t("library.search.viewAt", { source: SOURCE_LABEL[book.source] })}
+            </a>
+          </>
+        )}
       </p>
 
       {dirty && (
