@@ -40,6 +40,15 @@ export function coverUrlFor(book: { source: string; sourceId?: string | null; co
   return null;
 }
 
+/** Página do livro na fonte (Google Books ou Open Library); null no cadastro manual ou sem id na fonte. */
+export function bookSourceUrl(book: { source: string; sourceId?: string | null }): string | null {
+  if (!book.sourceId) return null;
+  const id = encodeURIComponent(book.sourceId);
+  if (book.source === "google") return `https://books.google.com/books?id=${id}`;
+  if (book.source === "openlibrary") return `https://openlibrary.org/works/${id}`;
+  return null;
+}
+
 /** Nome de um amigo para exibir; sem nome, como no Perfil. */
 export function displayName(user: { name: string | null }) {
   return user.name?.trim() || t("base.reader");
