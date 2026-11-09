@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { MESSAGES } from "../client/src/lib/messages/index.ts";
-import { getLocale, intlTag, setLocale, subscribe, t, tp, type Locale } from "../client/src/lib/i18n.ts";
+import { getLocale, intlTag, setLocale, subscribe, t, tp, urlWithoutLang, type Locale } from "../client/src/lib/i18n.ts";
 
 const LOCALES: Locale[] = ["pt", "en", "es"];
 const paramsOf = (message: string) => [...message.matchAll(/\{(\w+)\}/g)].map((m) => m[1]).sort();
@@ -85,4 +85,10 @@ test("intlTag por idioma", () => {
   assert.equal(intlTag(), "en-US");
   setLocale("es");
   assert.equal(intlTag(), "es-ES");
+});
+
+test("urlWithoutLang tira só o lang", () => {
+  assert.equal(urlWithoutLang("https://x.dev/?lang=pt"), "/");
+  assert.equal(urlWithoutLang("https://x.dev/amigos?lang=es&a=1#b"), "/amigos?a=1#b");
+  assert.equal(urlWithoutLang("https://x.dev/amigos?a=1"), "/amigos?a=1");
 });

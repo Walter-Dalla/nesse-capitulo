@@ -1,6 +1,6 @@
 /** A parte de i18n que toca o navegador. Nenhum teste importa este módulo: o que dá para testar fica puro em i18n.ts. */
 import { useSyncExternalStore } from "react";
-import { getLocale, HTML_LANG, localeCookie, resolveInitialLocale, setLocale, subscribe, t, type Locale } from "./i18n.js";
+import { getLocale, HTML_LANG, localeCookie, resolveInitialLocale, setLocale, subscribe, t, urlWithoutLang, type Locale } from "./i18n.js";
 
 export function initialLocale(): Locale {
   return resolveInitialLocale({
@@ -29,4 +29,8 @@ export function changeLocale(locale: Locale) {
 
 export function useLocale(): Locale {
   return useSyncExternalStore(subscribe, getLocale);
+}
+
+export function dropLangParam() {
+  if (new URLSearchParams(location.search).has("lang")) history.replaceState(history.state, "", urlWithoutLang(location.href));
 }
