@@ -6,14 +6,13 @@ import { Empty, ErrorBox, Page, Spinner } from "../components/Layout";
 import { toast } from "../components/Toast";
 import { displayName, readingPercent } from "../lib/format";
 import { useCreateInvite, useFriends } from "../lib/hooks";
-
-const SHARE_TEXT = "Vamos acompanhar o que o outro está lendo na Estante?";
+import { t } from "../lib/i18n";
 
 /** Compartilha pelo menu do aparelho; senão copia. Devolve false quando nada funcionou. */
 async function shareOrCopy(url: string): Promise<boolean> {
   if (typeof navigator.share === "function") {
     try {
-      await navigator.share({ title: "Convite da Estante", text: SHARE_TEXT, url });
+      await navigator.share({ title: t("social.friends.shareTitle"), text: t("social.friends.shareText"), url });
       return true;
     } catch (e) {
       // cancelar o menu de compartilhar não é erro
@@ -22,7 +21,7 @@ async function shareOrCopy(url: string): Promise<boolean> {
   }
   try {
     await navigator.clipboard.writeText(url);
-    toast("Link copiado");
+    toast(t("social.friends.linkCopied"));
     return true;
   } catch {
     return false;
@@ -47,16 +46,16 @@ export function FriendsPage() {
 
   return (
     <Page
-      title="Amigos"
+      title={t("social.friends.title")}
       action={
         <button type="button" onClick={inviteFriend} disabled={create.isPending} className="btn-primary shrink-0 px-3">
-          <IconPlus width={18} height={18} /> {create.isPending ? "Gerando…" : "Convidar"}
+          <IconPlus width={18} height={18} /> {create.isPending ? t("social.friends.inviting") : t("social.friends.invite")}
         </button>
       }
     >
       {manualUrl && (
         <section className="card fade-in mb-4 p-4">
-          <label className="label" htmlFor="invite-url">Copie e envie este link</label>
+          <label className="label" htmlFor="invite-url">{t("social.friends.copyLink")}</label>
           <input id="invite-url" className="input text-sm" readOnly value={manualUrl} onFocus={(e) => e.currentTarget.select()} />
         </section>
       )}
@@ -67,9 +66,9 @@ export function FriendsPage() {
         <ErrorBox error={friends.error} retry={() => friends.refetch()} />
       ) : friends.data.friends.length === 0 ? (
         <Empty
-          title="Nenhum amigo ainda"
-          hint="Convide alguém pelo link e acompanhe o que cada um está lendo."
-          action={<button type="button" onClick={inviteFriend} disabled={create.isPending} className="btn-primary mt-2">{create.isPending ? "Gerando link…" : "Convidar amigo"}</button>}
+          title={t("social.friends.empty")}
+          hint={t("social.friends.emptyHint")}
+          action={<button type="button" onClick={inviteFriend} disabled={create.isPending} className="btn-primary mt-2">{create.isPending ? t("social.friends.generatingLink") : t("social.friends.inviteFriend")}</button>}
         />
       ) : (
         <ul className="space-y-3">
@@ -81,11 +80,13 @@ export function FriendsPage() {
                   <p className="truncate font-semibold">{displayName(f)}</p>
                   <p className="truncate text-sm text-stone-500 dark:text-stone-400">
                     {f.reading.length
-                      ? `Lendo ${f.reading.map((r) => {
-                          const pct = readingPercent(r.currentPage, r.book.pageCount);
-                          return pct === null ? r.book.title : `${r.book.title} (${pct}%)`;
-                        }).join(", ")}`
-                      : "Sem leitura no momento"}
+                      ? t("social.friends.reading", {
+                          titles: f.reading.map((r) => {
+                            const pct = readingPercent(r.currentPage, r.book.pageCount);
+                            return pct === null ? r.book.title : t("social.friends.bookProgress", { title: r.book.title, percent: pct });
+                          }).join(", "),
+                        })
+                      : t("social.friends.notReading")}
                   </p>
                 </div>
               </Link>
@@ -95,7 +96,7 @@ export function FriendsPage() {
       )}
 
       <p className="mt-6 px-2 pb-4 text-center text-xs leading-relaxed text-stone-500 dark:text-stone-400">
-        O link de convite não expira e vale para uma pessoa. Amigos veem o que você está lendo, já leu e os comentários públicos.
+        {t("social.friends.footer")}
       </p>
     </Page>
   );

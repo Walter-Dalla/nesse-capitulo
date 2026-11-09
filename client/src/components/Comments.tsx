@@ -2,20 +2,21 @@ import { useState, type FormEvent } from "react";
 import { Link } from "react-router";
 import { displayName, formatTimestamp } from "../lib/format";
 import { useAddComment, useComments, useRemoveComment, useUpdateComment } from "../lib/hooks";
+import { t, type MessageKey } from "../lib/i18n";
 import { VISIBILITY_LABEL, type BookComment, type CommentVisibility } from "../lib/types";
 import { Avatar } from "./FriendBadge";
 import { Sheet } from "./Sheet";
 import { toast } from "./Toast";
 
 const MAX = 2000;
-const HINT: Record<CommentVisibility, string> = {
-  private: "Só você vê.",
-  public: "Seus amigos veem.",
+const HINT: Record<CommentVisibility, MessageKey> = {
+  private: "social.comments.hintPrivate",
+  public: "social.comments.hintPublic",
 };
 
 function VisibilityPicker({ value, onChange, disabled }: { value: CommentVisibility; onChange: (v: CommentVisibility) => void; disabled?: boolean }) {
   return (
-    <div className="flex gap-2" role="radiogroup" aria-label="Quem vê o comentário">
+    <div className="flex gap-2" role="radiogroup" aria-label={t("social.comments.whoSees")}>
       {(["private", "public"] as const).map((v) => (
         <button key={v} type="button" role="radio" aria-checked={value === v} disabled={disabled} onClick={() => onChange(v)} className={value === v ? "chip-on" : "chip-off"}>
           {VISIBILITY_LABEL[v]}
@@ -50,7 +51,7 @@ export function Comments({ itemId }: { itemId: string }) {
     try {
       await add.mutateAsync({ body: text, visibility });
       setBody("");
-      toast(visibility === "public" ? "Comentário publicado para amigos" : "Comentário salvo");
+      toast(visibility === "public" ? t("social.comments.published") : t("social.comments.saved"));
     } catch (err) {
       toast((err as Error).message, "error");
     }
@@ -72,7 +73,7 @@ export function Comments({ itemId }: { itemId: string }) {
     const next: CommentVisibility = c.visibility === "public" ? "private" : "public";
     try {
       await update.mutateAsync({ id: c.id, visibility: next });
-      toast(next === "public" ? "Agora seus amigos veem" : "Agora só você vê");
+      toast(next === "public" ? t("social.comments.nowPublic") : t("social.comments.nowPrivate"));
     } catch (err) {
       toast((err as Error).message, "error");
     }
@@ -82,7 +83,7 @@ export function Comments({ itemId }: { itemId: string }) {
     if (!deleting) return;
     try {
       await remove.mutateAsync(deleting.id);
-      toast("Comentário apagado");
+      toast(t("social.comments.deleted"));
     } catch (err) {
       toast((err as Error).message, "error");
     } finally {
@@ -95,24 +96,24 @@ export function Comments({ itemId }: { itemId: string }) {
 
   return (
     <section className="mt-6">
-      <span className="label">Comentários</span>
+      <span className="label">{t("social.comments.title")}</span>
       <form onSubmit={submit} className="card space-y-3 p-3">
         <textarea
-          aria-label="Novo comentário"
+          aria-label={t("social.comments.new")}
           className="input min-h-20 resize-y py-2.5"
-          placeholder="Uma ideia, um trecho, o que achou deste capítulo…"
+          placeholder={t("social.comments.placeholder")}
           maxLength={MAX}
           value={body}
           onChange={(e) => setBody(e.target.value)}
         />
         <div className="flex flex-wrap items-center gap-2">
           <VisibilityPicker value={visibility} onChange={setVisibility} disabled={add.isPending} />
-          <button type="submit" disabled={add.isPending || !body.trim()} className="btn-primary ml-auto">{add.isPending ? "Salvando…" : "Comentar"}</button>
+          <button type="submit" disabled={add.isPending || !body.trim()} className="btn-primary ml-auto">{add.isPending ? t("social.comments.saving") : t("social.comments.submit")}</button>
         </div>
-        <p className="text-xs text-stone-500 dark:text-stone-400">{HINT[visibility]}</p>
+        <p className="text-xs text-stone-500 dark:text-stone-400">{t(HINT[visibility])}</p>
       </form>
 
-      {query.isError && <p className="mt-3 text-sm text-red-700 dark:text-red-300">Não foi possível carregar os comentários.</p>}
+      {query.isError && <p className="mt-3 text-sm text-red-700 dark:text-red-300">{t("social.comments.loadError")}</p>}
 
       {mine.length > 0 && (
         <ul className="mt-3 space-y-2">
@@ -124,19 +125,19 @@ export function Comments({ itemId }: { itemId: string }) {
               </div>
               {editing?.id === c.id ? (
                 <div className="mt-2 space-y-2">
-                  <textarea aria-label="Editar comentário" className="input min-h-20 resize-y py-2.5" maxLength={MAX} value={editing.body} onChange={(e) => setEditing({ id: c.id, body: e.target.value })} />
+                  <textarea aria-label={t("social.comments.editLabel")} className="input min-h-20 resize-y py-2.5" maxLength={MAX} value={editing.body} onChange={(e) => setEditing({ id: c.id, body: e.target.value })} />
                   <div className="flex gap-2">
-                    <button type="button" onClick={saveEdit} disabled={update.isPending || !editing.body.trim()} className="btn-primary flex-1">Salvar</button>
-                    <button type="button" onClick={() => setEditing(null)} disabled={update.isPending} className="btn-secondary">Cancelar</button>
+                    <button type="button" onClick={saveEdit} disabled={update.isPending || !editing.body.trim()} className="btn-primary flex-1">{t("base.save")}</button>
+                    <button type="button" onClick={() => setEditing(null)} disabled={update.isPending} className="btn-secondary">{t("base.cancel")}</button>
                   </div>
                 </div>
               ) : (
                 <>
                   <p className="mt-1.5 whitespace-pre-wrap break-words leading-relaxed">{c.body}</p>
                   <div className="mt-2 flex justify-end gap-3 text-xs font-semibold text-accent-700 dark:text-accent-400">
-                    <button type="button" onClick={() => toggle(c)} disabled={update.isPending}>{c.visibility === "public" ? "Tornar privado" : "Tornar público"}</button>
-                    <button type="button" onClick={() => setEditing({ id: c.id, body: c.body })}>Editar</button>
-                    <button type="button" onClick={() => setDeleting(c)} className="text-red-700 dark:text-red-300">Apagar</button>
+                    <button type="button" onClick={() => toggle(c)} disabled={update.isPending}>{c.visibility === "public" ? t("social.comments.makePrivate") : t("social.comments.makePublic")}</button>
+                    <button type="button" onClick={() => setEditing({ id: c.id, body: c.body })}>{t("social.comments.edit")}</button>
+                    <button type="button" onClick={() => setDeleting(c)} className="text-red-700 dark:text-red-300">{t("social.comments.delete")}</button>
                   </div>
                 </>
               )}
@@ -147,7 +148,7 @@ export function Comments({ itemId }: { itemId: string }) {
 
       {friends.length > 0 && (
         <div className="mt-5">
-          <span className="label">Comentários de amigos</span>
+          <span className="label">{t("social.comments.friends")}</span>
           <ul className="space-y-2">
             {friends.map((c) => (
               <li key={c.id} className="card flex gap-3 p-3 text-sm">
@@ -166,11 +167,11 @@ export function Comments({ itemId }: { itemId: string }) {
       )}
 
       {deleting && (
-        <Sheet title="Apagar comentário" onClose={() => setDeleting(null)}>
+        <Sheet title={t("social.comments.deleteTitle")} onClose={() => setDeleting(null)}>
           <p className="line-clamp-4 text-sm text-stone-600 dark:text-stone-300">“{deleting.body}”</p>
           <div className="mt-5 flex gap-2">
-            <button type="button" onClick={() => setDeleting(null)} disabled={remove.isPending} className="btn-secondary flex-1">Cancelar</button>
-            <button type="button" onClick={confirmDelete} disabled={remove.isPending} className="btn-primary flex-1 !bg-red-600 hover:!bg-red-700">{remove.isPending ? "Apagando…" : "Apagar"}</button>
+            <button type="button" onClick={() => setDeleting(null)} disabled={remove.isPending} className="btn-secondary flex-1">{t("base.cancel")}</button>
+            <button type="button" onClick={confirmDelete} disabled={remove.isPending} className="btn-primary flex-1 !bg-red-600 hover:!bg-red-700">{remove.isPending ? t("social.comments.deleting") : t("social.comments.delete")}</button>
           </div>
         </Sheet>
       )}
