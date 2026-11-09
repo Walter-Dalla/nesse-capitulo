@@ -12,3 +12,4 @@ Login com Google (fluxo web e `idToken` nativo), login dev fora de produção, s
 - [estante](estante.md), [busca](busca.md), [historico-anos](historico-anos.md): todas as rotas `/api/*` passam por `requireAuth`.
 - [anuncios](anuncios.md): `adUnlocked` vive na sessão.
 - [pwa](pwa.md): login nativo via `POST /auth/google/token` e `GOOGLE_EXTRA_CLIENT_IDS`.
+- [amigos](amigos.md): `RequireAuth` guarda o convite de quem abre o link deslogado e volta a ele depois do login; `useLogout` limpa o convite guardado; o texto público do login diz o que amigos veem.
