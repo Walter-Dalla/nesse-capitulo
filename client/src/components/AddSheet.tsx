@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router";
 import { ApiError } from "../lib/api";
 import { useAddToShelf, useMe, useProviders, useUpdateAnyItem } from "../lib/hooks";
+import { t } from "../lib/i18n";
 import { AdGate } from "./AdGate";
 import { currentYear, formatAuthors, today } from "../lib/format";
 import { changedFields, type ItemDraft } from "../lib/itemDraft";
@@ -75,7 +76,7 @@ export function AddSheet({ book, defaultYear, onClose }: Props) {
       setItem(saved);
       setDraft({});
       if (status === "want") {
-        toast(`Adicionado em “${STATUS_LABEL.want}”`, "info", { label: "Ver livro", onClick: () => openBook(saved.id) });
+        toast(t("library.add.addedIn", { status: STATUS_LABEL.want }), "info", { label: t("library.viewBook"), onClick: () => openBook(saved.id) });
         onClose(true);
         return;
       }
@@ -108,7 +109,7 @@ export function AddSheet({ book, defaultYear, onClose }: Props) {
   const current = item ? { ...item, ...draft } : null;
 
   return (
-    <Sheet title={item ? "Adicionado à estante" : "Adicionar à estante"} onClose={() => (picking ? onClose(Boolean(item)) : void finish(false))}>
+    <Sheet title={item ? t("library.add.titleAdded") : t("library.add.title")} onClose={() => (picking ? onClose(Boolean(item)) : void finish(false))}>
       <div className="mb-4 flex gap-3">
         <BookCover book={book} className="w-12" />
         <div className="min-w-0">
@@ -117,7 +118,7 @@ export function AddSheet({ book, defaultYear, onClose }: Props) {
           {item && !picking && (
             <button type="button" onClick={() => setPicking(true)} disabled={busy} className="mt-1.5 inline-flex items-center gap-1.5 rounded-md bg-accent-100 px-2 py-0.5 text-xs font-semibold text-accent-700 dark:bg-accent-700/30 dark:text-accent-200">
               <IconCheck width={14} height={14} /> {STATUS_ACTION[item.status]}
-              <span className="font-normal opacity-70">· trocar</span>
+              <span className="font-normal opacity-70">· {t("library.add.changeShort")}</span>
             </button>
           )}
         </div>
@@ -125,8 +126,8 @@ export function AddSheet({ book, defaultYear, onClose }: Props) {
 
       {picking ? (
         <>
-          <span className="label">{item ? "Trocar o status" : "Como você quer guardar este livro?"}</span>
-          <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-label="Status">
+          <span className="label">{item ? t("library.add.changeStatus") : t("library.add.howToKeep")}</span>
+          <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-label={t("library.statusLabel")}>
             {STATUS_ORDER.map((s) => (
               <button key={s} type="button" role="radio" aria-checked={item?.status === s} disabled={busy} onClick={() => pick(s)} className={item?.status === s ? "btn-primary" : "btn-secondary"}>
                 {STATUS_ACTION[s]}
@@ -134,43 +135,43 @@ export function AddSheet({ book, defaultYear, onClose }: Props) {
             ))}
           </div>
           <p className="mt-3 text-center text-xs text-stone-500 dark:text-stone-400">
-            {busy ? "Salvando…" : item ? "O livro continua na estante; só o status muda." : "Toque em um status para adicionar à estante."}
+            {busy ? t("library.saving") : item ? t("library.add.onlyStatusChanges") : t("library.add.tapStatus")}
           </p>
         </>
       ) : current && (
         <>
-          <span className="label">Quer completar? (opcional)</span>
+          <span className="label">{t("library.add.complete")}</span>
           <div className="card fade-in grid grid-cols-2 gap-3 p-4">
             {current.status === "reading" && (
               <>
                 <div>
-                  <label className="label" htmlFor="add-start">Comecei em</label>
+                  <label className="label" htmlFor="add-start">{t("library.field.startedAt")}</label>
                   <DateField id="add-start" value={current.startedAt} onCommit={(v) => change({ startedAt: v })} />
                 </div>
                 <div>
-                  <label className="label" htmlFor="add-page">Estou na página</label>
+                  <label className="label" htmlFor="add-page">{t("library.field.pageReading")}</label>
                   <input id="add-page" type="number" inputMode="numeric" min={0} max={PAGE_MAX} className="input" placeholder="0" value={current.currentPage ?? ""} onChange={(e) => change({ currentPage: parsePage(e.target.value) })} />
                 </div>
               </>
             )}
             {current.status === "abandoned" && (
               <div className="col-span-2">
-                <label className="label" htmlFor="add-page">Parei na página</label>
+                <label className="label" htmlFor="add-page">{t("library.field.pageAbandoned")}</label>
                 <input id="add-page" type="number" inputMode="numeric" min={0} max={PAGE_MAX} className="input w-32" placeholder="0" value={current.currentPage ?? ""} onChange={(e) => change({ currentPage: parsePage(e.target.value) })} />
               </div>
             )}
             {current.status === "read" && (
               <>
                 <div>
-                  <label className="label" htmlFor="add-year">Ano da leitura</label>
+                  <label className="label" htmlFor="add-year">{t("library.add.readYear")}</label>
                   <YearSelect id="add-year" value={current.readYear ?? currentYear()} onChange={(y) => change({ readYear: y, ...(current.finishedAt && Number(current.finishedAt.slice(0, 4)) !== y ? { finishedAt: null } : {}) })} />
                 </div>
                 <div>
-                  <label className="label" htmlFor="add-date">Terminei em</label>
+                  <label className="label" htmlFor="add-date">{t("library.field.finishedAt")}</label>
                   <DateField id="add-date" value={current.finishedAt} onCommit={(v) => change({ finishedAt: v, ...(v ? { readYear: Number(v.slice(0, 4)) } : {}) })} />
                 </div>
                 <div className="col-span-2">
-                  <span className="label">Sua nota</span>
+                  <span className="label">{t("library.add.yourRating")}</span>
                   <Stars value={current.rating} onChange={(v) => change({ rating: v })} size="lg" />
                 </div>
               </>
@@ -178,10 +179,10 @@ export function AddSheet({ book, defaultYear, onClose }: Props) {
           </div>
 
           <div className="mt-5 flex gap-2">
-            <button type="button" onClick={() => finish(false)} disabled={busy} className="btn-primary flex-1">{update.isPending ? "Salvando…" : "Concluir"}</button>
-            <button type="button" onClick={() => finish(true)} disabled={busy} className="btn-secondary flex-1">Ver livro</button>
+            <button type="button" onClick={() => finish(false)} disabled={busy} className="btn-primary flex-1">{update.isPending ? t("library.saving") : t("library.add.done")}</button>
+            <button type="button" onClick={() => finish(true)} disabled={busy} className="btn-secondary flex-1">{t("library.viewBook")}</button>
           </div>
-          <p className="mt-3 text-center text-xs text-stone-500 dark:text-stone-400">O livro já está na sua estante. Fechar também guarda o que você preencheu.</p>
+          <p className="mt-3 text-center text-xs text-stone-500 dark:text-stone-400">{t("library.add.closeKeeps")}</p>
         </>
       )}
     </Sheet>
