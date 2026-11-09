@@ -28,7 +28,31 @@ export function createApp(db: DB) {
   const app = new Hono<AppEnv>();
 
   if (!env.isProd) app.use(logger());
-  app.use(secureHeaders({ crossOriginEmbedderPolicy: false }));
+  // connect-src inclui os hosts de capa porque a CSP vale também para o script do service worker, e o fetch dele obedece a connect-src.
+  // style-src 'unsafe-inline': <style> da landing e das páginas legais e style= do ProgressBar.
+  // Sem hosts de anúncio: docs/MONETIZACAO.md manda estender ao ativar o AdSense.
+  // *.googleusercontent.com também em connect-src: books.google.com pode redirecionar a capa para lá.
+  const coverHosts = ["https://books.google.com", "https://covers.openlibrary.org", "https://*.archive.org", "https://*.googleusercontent.com"];
+  app.use(
+    secureHeaders({
+      crossOriginEmbedderPolicy: false,
+      contentSecurityPolicy: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        imgSrc: ["'self'", "data:", ...coverHosts],
+        connectSrc: ["'self'", ...coverHosts],
+        fontSrc: ["'self'"],
+        manifestSrc: ["'self'"],
+        workerSrc: ["'self'"],
+        frameSrc: ["'none'"],
+        objectSrc: ["'none'"],
+        baseUri: ["'self'"],
+        formAction: ["'self'"],
+        frameAncestors: ["'none'"],
+      },
+    }),
+  );
   app.use(csrf());
 
   app.get("/api/health", (c) => c.json({ ok: true }));
