@@ -1,27 +1,31 @@
 <!doctype html>
-<html lang="pt-BR">
+<html lang="{{lang}}">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content="#f59e0b" media="(prefers-color-scheme: light)" />
     <meta name="theme-color" content="#1c1917" media="(prefers-color-scheme: dark)" />
-    <title>Estante — tracker de leituras: lidos, lendo, quero ler</title>
-    <meta name="description" content="Estante: tracker de leituras gratuito. Registre o que você leu, está lendo, quer ler e abandonou, com nota, resenha e histórico por ano. Veja o que seus amigos já leram." />
+    <title>{{title}}</title>
+    <meta name="description" content="{{description}}" />
     <meta name="robots" content="index, follow" />
-    <link rel="canonical" href="%SITE_URL%/" />
+    <link rel="canonical" href="%SITE_URL%{{canonicalPath}}" />
+    <link rel="alternate" hreflang="pt" href="%SITE_URL%/?lang=pt" />
+    <link rel="alternate" hreflang="es" href="%SITE_URL%/?lang=es" />
+    <link rel="alternate" hreflang="en" href="%SITE_URL%/" />
+    <link rel="alternate" hreflang="x-default" href="%SITE_URL%/" />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Estante" />
-    <meta property="og:locale" content="pt_BR" />
-    <meta property="og:title" content="Estante — tracker de leituras" />
-    <meta property="og:description" content="Registre o que você leu, está lendo, quer ler e abandonou. Nota, resenha, histórico por ano e amigos." />
-    <meta property="og:url" content="%SITE_URL%/" />
+    <meta property="og:locale" content="{{ogLocale}}" />
+    <meta property="og:title" content="{{ogTitle}}" />
+    <meta property="og:description" content="{{ogDescription}}" />
+    <meta property="og:url" content="%SITE_URL%{{canonicalPath}}" />
     <meta property="og:image" content="%SITE_URL%/icons/icon-512.png" />
     <meta property="og:image:width" content="512" />
     <meta property="og:image:height" content="512" />
-    <meta property="og:image:alt" content="Ícone do app Estante" />
+    <meta property="og:image:alt" content="{{iconAlt}}" />
     <meta name="twitter:card" content="summary" />
-    <meta name="twitter:title" content="Estante — tracker de leituras" />
-    <meta name="twitter:description" content="Registre o que você leu, está lendo, quer ler e abandonou. Nota, resenha, histórico por ano e amigos." />
+    <meta name="twitter:title" content="{{ogTitle}}" />
+    <meta name="twitter:description" content="{{ogDescription}}" />
     <meta name="twitter:image" content="%SITE_URL%/icons/icon-512.png" />
     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="icon" href="/icons/icon.svg" type="image/svg+xml" />
@@ -33,19 +37,19 @@
           {
             "@type": "WebApplication",
             "name": "Estante",
-            "url": "%SITE_URL%/",
-            "description": "Tracker de leituras: registre o que você leu, está lendo, quer ler e abandonou, com nota, resenha e histórico por ano.",
+            "url": "%SITE_URL%{{canonicalPath}}",
+            "description": "{{ldDescription}}",
             "applicationCategory": "LifestyleApplication",
             "operatingSystem": "Web, Android",
-            "inLanguage": "pt-BR",
+            "inLanguage": "{{lang}}",
             "offers": { "@type": "Offer", "price": "0", "priceCurrency": "BRL" }
           },
           {
             "@type": "FAQPage",
             "mainEntity": [
-              { "@type": "Question", "name": "A Estante é gratuita?", "acceptedAnswer": { "@type": "Answer", "text": "Sim. Basta entrar com sua conta Google. Não há plano pago." } },
-              { "@type": "Question", "name": "Preciso instalar um app?", "acceptedAnswer": { "@type": "Answer", "text": "Não. Funciona no navegador do celular e do computador, e pode ser instalado como app (PWA) ou pela Play Store." } },
-              { "@type": "Question", "name": "Minha estante é pública?", "acceptedAnswer": { "@type": "Answer", "text": "Não. Só seus amigos, aceitos por link de convite, veem o que você leu. Comentários podem ser públicos (para amigos) ou privados." } }
+              { "@type": "Question", "name": "{{faq1Question}}", "acceptedAnswer": { "@type": "Answer", "text": "{{faq1Answer}}" } },
+              { "@type": "Question", "name": "{{faq2Question}}", "acceptedAnswer": { "@type": "Answer", "text": "{{faq2Answer}}" } },
+              { "@type": "Question", "name": "{{faq3Question}}", "acceptedAnswer": { "@type": "Answer", "text": "{{faq3Answer}}" } }
             ]
           }
         ]
@@ -68,6 +72,10 @@
       header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1rem 0; }
       .brand { display: flex; align-items: center; gap: .6rem; font-weight: 800; text-decoration: none; letter-spacing: -.01em; }
       .brand img { width: 2rem; height: 2rem; border-radius: .6rem; }
+      .actions { display: flex; align-items: center; gap: .5rem; }
+      .langs { display: flex; font-size: .85rem; font-weight: 600; }
+      .langs a { display: inline-flex; align-items: center; justify-content: center; min-width: 2.25rem; min-height: 2.75rem; border-radius: .6rem; color: var(--muted); text-decoration: none; }
+      .langs a.on { color: var(--fg); text-decoration: underline; text-underline-offset: .25em; }
       .btn { display: inline-flex; align-items: center; justify-content: center; min-height: 2.75rem; padding: 0 1.1rem; border-radius: .8rem; font-weight: 600; font-size: .95rem; text-decoration: none; transition: background .15s, transform .1s; }
       .btn:active { transform: scale(.98); }
       .btn-primary { background: var(--accent); color: var(--on-accent); }
@@ -105,56 +113,63 @@
     <div class="wrap">
       <header>
         <a class="brand" href="/"><img src="/icons/icon.svg" alt="" width="32" height="32" /> Estante</a>
-        <a class="btn btn-ghost" href="/login">Entrar</a>
+        <div class="actions">
+          <nav class="langs" aria-label="{{languageLabel}}">
+            <a class="{{langClassPt}}" href="/?lang=pt" aria-current="{{langCurrentPt}}">PT</a>
+            <a class="{{langClassEn}}" href="/?lang=en" aria-current="{{langCurrentEn}}">EN</a>
+            <a class="{{langClassEs}}" href="/?lang=es" aria-current="{{langCurrentEs}}">ES</a>
+          </nav>
+          <a class="btn btn-ghost" href="/login">{{signIn}}</a>
+        </div>
       </header>
 
       <main>
         <section class="hero">
-          <img src="/icons/icon.svg" alt="Ícone do app Estante" width="96" height="96" />
-          <h1>Sua estante de leituras, no bolso</h1>
-          <p class="lead">Registre o que você leu, está lendo, quer ler e abandonou. Com nota, resenha, página atual e histórico por ano.</p>
+          <img src="/icons/icon.svg" alt="{{iconAlt}}" width="96" height="96" />
+          <h1>{{heroTitle}}</h1>
+          <p class="lead">{{heroLead}}</p>
           <div class="cta">
-            <a class="btn btn-primary" href="/login">Entrar com Google</a>
-            <a class="btn btn-ghost" href="#como-funciona">Como funciona</a>
+            <a class="btn btn-primary" href="/login">{{signInGoogle}}</a>
+            <a class="btn btn-ghost" href="#como-funciona">{{howItWorks}}</a>
           </div>
-          <ul class="statuses" aria-label="Status de leitura">
-            <li class="on">Lendo</li><li>Quero ler</li><li>Lido</li><li>Abandonado</li>
+          <ul class="statuses" aria-label="{{statusesLabel}}">
+            <li class="on">{{statusReading}}</li><li>{{statusWant}}</li><li>{{statusRead}}</li><li>{{statusAbandoned}}</li>
           </ul>
         </section>
 
         <section id="recursos">
-          <h2>Tudo que um leitor precisa</h2>
+          <h2>{{featuresTitle}}</h2>
           <div class="grid">
-            <article class="card"><span class="ico" aria-hidden="true">★</span><h3>Nota e resenha</h3><p>De 1 a 5 estrelas, resenha livre, datas de início e fim e a página em que você parou.</p></article>
-            <article class="card"><span class="ico" aria-hidden="true">Q</span><h3>Busca de livros</h3><p>Encontre pelo título, autor ou ISBN no Google Books e na Open Library, ou cadastre à mão.</p></article>
-            <article class="card"><span class="ico" aria-hidden="true">#</span><h3>Histórico por ano</h3><p>Quantos livros e páginas você leu em cada ano, nota média e leituras retroativas.</p></article>
-            <article class="card"><span class="ico" aria-hidden="true">♥</span><h3>Amigos</h3><p>Convide por link, veja um selo em cada livro que um amigo já leu e troque comentários públicos ou privados.</p></article>
-            <article class="card"><span class="ico" aria-hidden="true">↓</span><h3>Funciona offline</h3><p>Instale como app no celular ou pela Play Store. Capas e detalhes ficam em cache.</p></article>
-            <article class="card"><span class="ico" aria-hidden="true">🔒</span><h3>Privado por padrão</h3><p>Sua estante é só sua. Nada é público além do que você mostra aos amigos que aceitou.</p></article>
+            <article class="card"><span class="ico" aria-hidden="true">★</span><h3>{{feature1Title}}</h3><p>{{feature1Text}}</p></article>
+            <article class="card"><span class="ico" aria-hidden="true">Q</span><h3>{{feature2Title}}</h3><p>{{feature2Text}}</p></article>
+            <article class="card"><span class="ico" aria-hidden="true">#</span><h3>{{feature3Title}}</h3><p>{{feature3Text}}</p></article>
+            <article class="card"><span class="ico" aria-hidden="true">♥</span><h3>{{feature4Title}}</h3><p>{{feature4Text}}</p></article>
+            <article class="card"><span class="ico" aria-hidden="true">↓</span><h3>{{feature5Title}}</h3><p>{{feature5Text}}</p></article>
+            <article class="card"><span class="ico" aria-hidden="true">🔒</span><h3>{{feature6Title}}</h3><p>{{feature6Text}}</p></article>
           </div>
         </section>
 
         <section id="como-funciona">
-          <h2>Como funciona</h2>
+          <h2>{{howItWorks}}</h2>
           <ol class="steps">
-            <li><strong>Entre com o Google.</strong> Sem senha nova, sem cadastro.</li>
-            <li><strong>Busque um livro</strong> e toque no status: já está na estante.</li>
-            <li><strong>Acompanhe a leitura</strong> com página atual, nota e resenha quando terminar.</li>
-            <li><strong>Convide amigos</strong> e descubra quem já leu o que você está lendo.</li>
+            <li><strong>{{step1Title}}</strong> {{step1Text}}</li>
+            <li><strong>{{step2Title}}</strong> {{step2Text}}</li>
+            <li><strong>{{step3Title}}</strong> {{step3Text}}</li>
+            <li><strong>{{step4Title}}</strong> {{step4Text}}</li>
           </ol>
         </section>
 
         <section id="perguntas">
-          <h2>Perguntas frequentes</h2>
-          <details><summary>A Estante é gratuita?</summary><p>Sim. Basta entrar com sua conta Google. Não há plano pago.</p></details>
-          <details><summary>Preciso instalar um app?</summary><p>Não. Funciona no navegador do celular e do computador, e pode ser instalado como app (PWA) ou pela Play Store.</p></details>
-          <details><summary>Minha estante é pública?</summary><p>Não. Só seus amigos, aceitos por link de convite, veem o que você leu. Comentários podem ser públicos (para amigos) ou privados.</p></details>
+          <h2>{{faqTitle}}</h2>
+          <details><summary>{{faq1Question}}</summary><p>{{faq1Answer}}</p></details>
+          <details><summary>{{faq2Question}}</summary><p>{{faq2Answer}}</p></details>
+          <details><summary>{{faq3Question}}</summary><p>{{faq3Answer}}</p></details>
         </section>
       </main>
 
       <footer>
-        <p><a class="btn btn-primary" href="/login">Começar agora</a></p>
-        <p>Estante · <a href="https://github.com/Walter-Dalla/nesse-capitulo">código aberto</a></p>
+        <p><a class="btn btn-primary" href="/login">{{startNow}}</a></p>
+        <p>Estante · <a href="https://github.com/Walter-Dalla/nesse-capitulo">{{openSource}}</a></p>
       </footer>
     </div>
   </body>

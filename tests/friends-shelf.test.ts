@@ -72,7 +72,7 @@ test("nota, resenha, datas, sinopse e e-mail não saem nas rotas de amigo", asyn
 test("não amigo, ex-amigo e id inexistente recebem o mesmo 404", async () => {
   const { db, ana, bia } = await anaWithShelf();
   const caio = await login(db, "Caio");
-  const expected = { status: 404, json: { error: "Não encontrado" } };
+  const expected = { status: 404, json: { error: "Não encontrado", code: "NOT_FOUND" } };
   assert.deepEqual(await caio.call("GET", `/api/friends/${ana.user.id}/shelf`), expected);
   assert.deepEqual(await bia.call("GET", "/api/friends/nao-existe/shelf"), expected);
   assert.deepEqual(await ana.call("GET", `/api/friends/${ana.user.id}/shelf`), expected);

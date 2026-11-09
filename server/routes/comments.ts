@@ -7,7 +7,7 @@ import { MY_FRIENDS, rowToPublicComment } from "./friends.js";
 import { getItem } from "./shelf.js";
 
 export const COMMENT_MAX = 2000;
-const NOT_FOUND = { error: "Não encontrado" };
+const NOT_FOUND = { error: "Não encontrado", code: "NOT_FOUND" };
 
 const SELECT_COMMENT = "SELECT id, body, visibility, created_at, updated_at FROM book_comments";
 
@@ -53,7 +53,7 @@ function parseVisibility(v: unknown): CommentVisibility {
 
 function parseBody(v: unknown): string {
   const body = optStr(v, "body", COMMENT_MAX);
-  if (!body) throw new ValidationError("Escreva o comentário");
+  if (!body) throw new ValidationError("Escreva o comentário", "COMMENT_EMPTY");
   return body;
 }
 
@@ -66,9 +66,9 @@ export function commentsRoutes(db: DB) {
   const app = new Hono<AppEnv>();
 
   app.onError((err, c) => {
-    if (err instanceof ValidationError) return c.json({ error: err.message }, 400);
+    if (err instanceof ValidationError) return c.json({ error: err.message, code: err.code }, 400);
     console.error(err);
-    return c.json({ error: "Erro interno" }, 500);
+    return c.json({ error: "Erro interno", code: "INTERNAL" }, 500);
   });
 
   // meus comentários (privados e públicos) e os públicos de amigos sobre o mesmo livro

@@ -5,6 +5,9 @@ import type { AppEnv } from "../types.js";
 /** Rotas públicas do app (sem login): só elas entram no sitemap e ficam liberadas no robots.txt. */
 export const PUBLIC_PATHS = ["/", "/login"] as const;
 
+/** Home em PT e ES (`/` é a versão em EN): só no sitemap, o `Allow: /` do robots.txt já as cobre. */
+const LOCALIZED_HOME_PATHS = ["/?lang=pt", "/?lang=es"] as const;
+
 /** Rotas que exigem sessão (ou são API): bloqueadas para robôs, nunca indexadas. */
 export const PRIVATE_PREFIXES = ["/api/", "/auth/", "/buscar", "/adicionar", "/livro/", "/anos", "/perfil", "/amigos"] as const;
 
@@ -17,28 +20,28 @@ const ROBOTS = [
 
 const LLMS = `# Estante
 
-> Tracker de leituras mobile-first (PWA) em português: registre o que você leu, está lendo, quer ler e abandonou, com nota, resenha, página atual e histórico por ano. Amigos veem um selo de quem já leu cada livro e podem trocar comentários públicos ou privados.
+> Reading tracker, mobile-first (PWA), available in Portuguese, English and Spanish: log what you have read, are reading, want to read and abandoned, with rating, review, current page and history by year. Friends see a badge showing who has already read each book and can exchange public or private comments.
 
-Site pessoal e gratuito. O conteúdo das estantes é privado por usuário: só a página inicial e o login são públicos; a API (/api/*) exige sessão e não deve ser rastreada.
+Personal, free site. Shelf content is private per user: only the home page and login are public; the API (/api/*) requires a session and must not be crawled.
 
-## Páginas públicas
+## Public pages
 
-- [Início](/): apresentação e entrada no app
-- [Login](/login): entrar com Google
-- [Manifesto PWA](/manifest.webmanifest): nome, ícones e categorias do app
+- [Home](/): introduction and entry to the app
+- [Login](/login): sign in with Google
+- [PWA manifest](/manifest.webmanifest): app name, icons and categories
 
-## O que o app faz
+## What the app does
 
-- Estante com quatro status: lendo, quero ler, lido e abandonado
-- Busca de livros no Google Books e na Open Library, ou cadastro manual (ISBN opcional)
-- Nota de 1 a 5 estrelas, resenha, datas de início e fim, página atual
-- Histórico por ano de leitura e estatísticas (livros, páginas, nota média)
-- Amigos por link de convite; selo de quem já leu; comentários públicos e privados
-- Instalável como PWA e publicado como app Android (TWA)
+- Shelf with four statuses: reading, want to read, read and abandoned
+- Book search on Google Books and Open Library, or manual entry (ISBN optional)
+- Rating from 1 to 5 stars, review, start and finish dates, current page
+- Reading history by year and statistics (books, pages, average rating)
+- Friends by invite link; badge showing who has already read a book; public and private comments
+- Installable as a PWA and published as an Android app (TWA)
 
-## Opcional
+## Optional
 
-- [Código-fonte e documentação](https://github.com/Walter-Dalla/nesse-capitulo)
+- [Source code and documentation](https://github.com/Walter-Dalla/nesse-capitulo)
 `;
 
 /** Arquivos de descoberta para buscadores e assistentes de IA: robots.txt, sitemap.xml e llms.txt. */
@@ -49,7 +52,7 @@ export function seoRoutes() {
   app.get("/robots.txt", (c) => c.text(`${ROBOTS}Sitemap: ${env.baseUrl}/sitemap.xml\n`, 200, cache));
 
   app.get("/sitemap.xml", (c) => {
-    const urls = PUBLIC_PATHS.map((p) => `  <url><loc>${env.baseUrl}${p}</loc><changefreq>monthly</changefreq></url>`).join("\n");
+    const urls = [...PUBLIC_PATHS, ...LOCALIZED_HOME_PATHS].map((p) => `  <url><loc>${env.baseUrl}${p}</loc><changefreq>monthly</changefreq></url>`).join("\n");
     const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>\n`;
     return c.body(xml, 200, { ...cache, "Content-Type": "application/xml; charset=utf-8" });
   });

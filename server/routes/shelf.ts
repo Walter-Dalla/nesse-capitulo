@@ -7,6 +7,8 @@ import { ValidationError, optDate, optInt, optStr, parseBookInput, parseStatus }
 import { AD_REQUIRED } from "./ads.js";
 import { fetchDetails } from "./search.js";
 
+const NOT_FOUND = { error: "Não encontrado", code: "NOT_FOUND" };
+
 const SELECT_ITEM = `
   SELECT ub.id, ub.status, ub.rating, ub.review, ub.started_at, ub.finished_at, ub.read_year,
          ub.current_page, ub.created_at, ub.updated_at,
@@ -88,7 +90,7 @@ function reconcile(next: { status: Status; startedAt: string | null; finishedAt:
     next.readYear = null;
   }
   if (next.startedAt && next.finishedAt && next.finishedAt < next.startedAt) {
-    throw new ValidationError("A data de término não pode ser antes do início");
+    throw new ValidationError("A data de término não pode ser antes do início", "DATE_RANGE_INVALID");
   }
 }
 
@@ -96,9 +98,9 @@ export function shelfRoutes(db: DB) {
   const app = new Hono<AppEnv>();
 
   app.onError((err, c) => {
-    if (err instanceof ValidationError) return c.json({ error: err.message }, 400);
+    if (err instanceof ValidationError) return c.json({ error: err.message, code: err.code }, 400);
     console.error(err);
-    return c.json({ error: "Erro interno" }, 500);
+    return c.json({ error: "Erro interno", code: "INTERNAL" }, 500);
   });
 
   // lista a estante, com filtros opcionais por status e ano de leitura
@@ -119,7 +121,7 @@ export function shelfRoutes(db: DB) {
 
   app.get("/api/shelf/:id", (c) => {
     const item = getItem(db, c.var.user.id, c.req.param("id"));
-    return item ? c.json({ item }) : c.json({ error: "Não encontrado" }, 404);
+    return item ? c.json({ item }) : c.json(NOT_FOUND, 404);
   });
 
   // adiciona um livro à estante (ou atualiza se já estiver nela)
@@ -175,7 +177,7 @@ export function shelfRoutes(db: DB) {
   app.patch("/api/shelf/:id", async (c) => {
     const user = c.var.user;
     const current = getItem(db, user.id, c.req.param("id"));
-    if (!current) return c.json({ error: "Não encontrado" }, 404);
+    if (!current) return c.json(NOT_FOUND, 404);
     const body = (await c.req.json().catch(() => ({}))) as Record<string, unknown>;
     const has = (k: string) => Object.prototype.hasOwnProperty.call(body, k);
 
@@ -217,7 +219,7 @@ export function shelfRoutes(db: DB) {
   // sinopse: vem do banco; na falta, busca na fonte externa e grava para as próximas consultas
   app.get("/api/shelf/:id/details", async (c) => {
     const item = getItem(db, c.var.user.id, c.req.param("id"));
-    if (!item) return c.json({ error: "Não encontrado" }, 404);
+    if (!item) return c.json(NOT_FOUND, 404);
     if (item.book.source === "manual" || !item.book.sourceId) return c.json({ description: null });
     const stored = db.prepare("SELECT description FROM books WHERE id = ?").get(item.book.id) as { description: string | null } | undefined;
     let description = stored?.description ?? null;
@@ -232,7 +234,7 @@ export function shelfRoutes(db: DB) {
 
   app.delete("/api/shelf/:id", (c) => {
     const info = db.prepare("DELETE FROM user_books WHERE user_id = ? AND id = ?").run(c.var.user.id, c.req.param("id"));
-    return info.changes ? c.json({ ok: true }) : c.json({ error: "Não encontrado" }, 404);
+    return info.changes ? c.json({ ok: true }) : c.json(NOT_FOUND, 404);
   });
 
   return app;

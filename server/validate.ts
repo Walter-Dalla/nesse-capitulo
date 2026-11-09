@@ -1,6 +1,10 @@
-import { BOOK_SOURCES, STATUSES, type BookInput, type BookSource, type Status } from "./types.js";
+import { BOOK_SOURCES, STATUSES, type BookInput, type BookSource, type ErrorCode, type Status } from "./types.js";
 
-export class ValidationError extends Error {}
+export class ValidationError extends Error {
+  constructor(message: string, public code: ErrorCode = "VALIDATION") {
+    super(message);
+  }
+}
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -51,7 +55,7 @@ export function parseBookInput(v: unknown): BookInput {
   const coverRef = optStr(b.coverRef, "book.coverRef", 40);
   if (coverRef && !/^(g|ol:\d{1,12})$/.test(coverRef)) throw new ValidationError("book.coverRef inválido");
   const isbn = optStr(b.isbn13, "book.isbn13", 20)?.replace(/[^0-9Xx]/g, "") || null;
-  if (isbn && isbn.length !== 10 && isbn.length !== 13) throw new ValidationError("ISBN deve ter 10 ou 13 dígitos");
+  if (isbn && isbn.length !== 10 && isbn.length !== 13) throw new ValidationError("ISBN deve ter 10 ou 13 dígitos", "ISBN_INVALID");
   return {
     source,
     sourceId: source === "manual" ? null : sourceId,
