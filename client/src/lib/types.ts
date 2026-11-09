@@ -168,3 +168,22 @@ export interface FriendInvitePreview {
   inviter: FriendUser;
   alreadyFriends: boolean;
 }
+
+/** Espelho de `ERROR_CODES` de server/types.ts. */
+export const ERROR_CODES = [
+  "NOT_FOUND",
+  "INTERNAL",
+  "INVITE_INVALID",
+  "INVITE_SELF",
+  "AD_REQUIRED",
+  "AD_PROVIDER_INVALID",
+  "AD_NOT_COMPLETED",
+  "SEARCH_RATE_LIMITED",
+  "SEARCH_SOURCES_LIMITED",
+  "SEARCH_UNAVAILABLE",
+  "DATE_RANGE_INVALID",
+  "ISBN_INVALID",
+  "COMMENT_EMPTY",
+  "VALIDATION",
+] as const;
+export type ErrorCode = (typeof ERROR_CODES)[number];
