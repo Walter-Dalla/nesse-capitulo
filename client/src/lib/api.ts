@@ -5,6 +5,7 @@ import type {
   Providers, ShelfItem, ShelfPatch, Stats, Status, User,
 } from "./types";
 import type { ReportInput } from "./types";
+import type { ModerationAction, ModReport, ReportStatus } from "./types";
 
 export const queryClient = new QueryClient({
   defaultOptions: {
@@ -80,6 +81,9 @@ export const Api = {
   blocks: () => api<{ blocks: FriendUser[] }>("/api/friends/blocks"),
   unblock: (userId: string) => api<{ ok: true }>(`/api/friends/blocks/${encodeURIComponent(userId)}`, { method: "DELETE" }),
   report: (input: ReportInput) => api<{ ok: true }>("/api/reports", { method: "POST", body: JSON.stringify(input) }),
+  modReports: (status: ReportStatus = "open") => api<{ reports: ModReport[] }>(`/api/mod/reports?status=${status}`),
+  resolveReport: (id: string, action: ModerationAction) =>
+    api<{ ok: true }>(`/api/mod/reports/${encodeURIComponent(id)}/resolve`, { method: "POST", body: JSON.stringify({ action }) }),
 };
 
 /** Invalida tudo que depende da estante após uma mutação. */

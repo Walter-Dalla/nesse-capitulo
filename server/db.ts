@@ -12,7 +12,8 @@ CREATE TABLE IF NOT EXISTS users (
   picture TEXT,
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   terms_version INTEGER,             -- versão dos termos aceita; null = ainda não aceitou
-  terms_accepted_at TEXT             -- quando aceitou essa versão
+  terms_accepted_at TEXT,            -- quando aceitou essa versão
+  banned_at TEXT                     -- banida pela moderação; null = conta ativa
 );
 
 CREATE TABLE IF NOT EXISTS sessions (
@@ -168,6 +169,7 @@ function migrate(db: DatabaseSync) {
   const users = cols("users");
   if (!users.includes("terms_version")) db.exec("ALTER TABLE users ADD COLUMN terms_version INTEGER");
   if (!users.includes("terms_accepted_at")) db.exec("ALTER TABLE users ADD COLUMN terms_accepted_at TEXT");
+  if (!users.includes("banned_at")) db.exec("ALTER TABLE users ADD COLUMN banned_at TEXT");
 }
 
 export type DB = DatabaseSync;

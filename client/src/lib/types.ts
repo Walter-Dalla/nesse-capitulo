@@ -199,3 +199,22 @@ export type ReportInput = ({ commentId: string; userId?: never } | { userId: str
   reason: ReportReason;
   details?: string;
 };
+
+/** Situação de uma denúncia; espelho de server/types.ts. */
+export type ReportStatus = "open" | "dismissed" | "actioned";
+
+/** Decisão do moderador; espelho de `MODERATION_ACTIONS` de server/types.ts. */
+export type ModerationAction = "dismiss" | "remove_comment" | "ban_user";
+
+/** Denúncia como o moderador a vê (`GET /api/mod/reports`). */
+export interface ModReport {
+  id: string;
+  reason: ReportReason;
+  details: string | null;
+  status: ReportStatus;
+  createdAt: string;
+  commentId: string | null;
+  commentBody: string | null;
+  reporter: { id: string; name: string | null } | null;
+  reported: { id: string; name: string | null; email: string | null };
+}

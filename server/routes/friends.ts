@@ -121,10 +121,10 @@ export function resolveInvite(db: DB, code: string, me: string): InviteState {
     .prepare(
       `SELECT fi.inviter_id, fi.used_by, u.name, u.picture
        FROM friend_invites fi JOIN users u ON u.id = fi.inviter_id
-       WHERE fi.code = ?`,
+       WHERE fi.code = ? AND u.banned_at IS NULL`,
     )
     .get(code) as { inviter_id: string; used_by: string | null; name: string | null; picture: string | null } | undefined;
-  // 1. inexistente (convites não expiram)
+  // 1. inexistente (convites não expiram) ou de conta banida
   if (!row) return { state: "invalid" };
   // 2. o convite é meu
   if (row.inviter_id === me) return { state: "self" };
