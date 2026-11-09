@@ -1,7 +1,10 @@
+import { useState } from "react";
 import { useNavigate } from "react-router";
 import { LanguageSwitch } from "../components/LanguageSwitch";
 import { Page } from "../components/Layout";
-import { useLogout, useMe, useStats } from "../lib/hooks";
+import { Sheet } from "../components/Sheet";
+import { toast } from "../components/Toast";
+import { useDeleteAccount, useLogout, useMe, useStats } from "../lib/hooks";
 import { intlTag, t } from "../lib/i18n";
 import { STATUS_LABEL, STATUS_ORDER } from "../lib/types";
 
@@ -9,7 +12,20 @@ export function ProfilePage() {
   const me = useMe();
   const stats = useStats();
   const logout = useLogout();
+  const deleteAccount = useDeleteAccount();
   const navigate = useNavigate();
+  const [confirmDelete, setConfirmDelete] = useState(false);
+
+  async function onDelete() {
+    try {
+      await deleteAccount.mutateAsync();
+      toast(t("social.profile.deleted"));
+      navigate("/login", { replace: true });
+    } catch (e) {
+      setConfirmDelete(false);
+      toast((e as Error).message, "error");
+    }
+  }
   const user = me.data?.user;
   const totalRead = stats.data?.years.reduce((a, y) => a + y.books, 0) ?? 0;
   const totalPages = stats.data?.years.reduce((a, y) => a + y.pages, 0) ?? 0;
@@ -47,6 +63,12 @@ export function ProfilePage() {
         <LanguageSwitch />
       </section>
 
+      {/* páginas públicas fora do SPA: navegação completa, o roteador mandaria para "/" */}
+      <section className="card mt-4 divide-y divide-stone-100 text-sm dark:divide-stone-800">
+        <a href="/privacidade" className="block px-4 py-3 hover:underline">{t("social.legal.privacy")}</a>
+        <a href="/termos" className="block px-4 py-3 hover:underline">{t("social.legal.terms")}</a>
+      </section>
+
       <section className="mt-6 space-y-3">
         <p className="text-center text-xs text-stone-500">
           {t("social.profile.installHint")}
@@ -59,7 +81,26 @@ export function ProfilePage() {
         >
           {t("social.profile.logout")}
         </button>
+        <button type="button" onClick={() => setConfirmDelete(true)} className="w-full py-2 text-sm font-semibold text-red-700 dark:text-red-300">
+          {t("social.profile.delete")}
+        </button>
       </section>
+
+      {confirmDelete && (
+        <Sheet title={t("social.profile.delete")} onClose={() => setConfirmDelete(false)}>
+          <div className="space-y-2 text-sm text-stone-600 dark:text-stone-300">
+            <p>{t("social.profile.deleteWhat")}</p>
+            <p className="font-semibold text-red-700 dark:text-red-300">{t("social.profile.deleteIrreversible")}</p>
+            <a href="/excluir-conta" className="inline-block font-semibold text-accent-700 hover:underline dark:text-accent-400">{t("social.profile.deleteHelp")}</a>
+          </div>
+          <div className="mt-5 flex gap-2">
+            <button type="button" onClick={() => setConfirmDelete(false)} disabled={deleteAccount.isPending} className="btn-secondary flex-1">{t("base.cancel")}</button>
+            <button type="button" onClick={onDelete} disabled={deleteAccount.isPending} className="btn-primary flex-1 !bg-red-600 hover:!bg-red-700">
+              {deleteAccount.isPending ? t("social.profile.deleting") : t("social.profile.deleteAction")}
+            </button>
+          </div>
+        </Sheet>
+      )}
     </Page>
   );
 }

@@ -151,18 +151,20 @@ export const useRemoveItem = () =>
     },
   });
 
-export const useLogout = () =>
-  useMutation({
-    mutationFn: Api.logout,
-    onSuccess: () => {
-      // primeiro derruba o usuário (RequireAuth redireciona), depois limpa o resto sem refetch
-      queryClient.setQueryData(["me"], { user: null, adUnlocked: false });
-      queryClient.removeQueries({ predicate: (q) => q.queryKey[0] !== "me" });
-      void clearBookCaches();
-      clearDrafts();
-      clearPendingInvite(browserInviteStore());
-    },
-  });
+/** Tira do aparelho tudo da conta que saiu (logout ou exclusão). */
+function clearLocalAccount() {
+  // primeiro derruba o usuário (RequireAuth redireciona), depois limpa o resto sem refetch
+  queryClient.setQueryData(["me"], { user: null, adUnlocked: false });
+  queryClient.removeQueries({ predicate: (q) => q.queryKey[0] !== "me" });
+  void clearBookCaches();
+  clearDrafts();
+  clearPendingInvite(browserInviteStore());
+}
+
+export const useLogout = () => useMutation({ mutationFn: Api.logout, onSuccess: clearLocalAccount });
+
+/** Erro não limpa nada: a conta continua existindo. */
+export const useDeleteAccount = () => useMutation({ mutationFn: Api.deleteAccount, onSuccess: clearLocalAccount });
 
 export function useDebounced<T>(value: T, ms: number) {
   const [v, setV] = useState(value);
