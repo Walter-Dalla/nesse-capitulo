@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router";
 import { Avatar } from "../components/FriendBadge";
+import { IconPlus } from "../components/Icons";
 import { Empty, ErrorBox, Page, Spinner } from "../components/Layout";
 import { toast } from "../components/Toast";
 import { displayName, readingPercent } from "../lib/format";
@@ -45,30 +46,33 @@ export function FriendsPage() {
   }
 
   return (
-    <Page title="Amigos">
-      <section className="card p-4">
-        <button type="button" onClick={inviteFriend} disabled={create.isPending} className="btn-primary w-full">
-          {create.isPending ? "Gerando link…" : "Convidar amigo"}
+    <Page
+      title="Amigos"
+      action={
+        <button type="button" onClick={inviteFriend} disabled={create.isPending} className="btn-primary shrink-0 px-3">
+          <IconPlus width={18} height={18} /> {create.isPending ? "Gerando…" : "Convidar"}
         </button>
-        <p className="mt-3 text-xs leading-relaxed text-stone-500 dark:text-stone-400">
-          O link não expira e vale para uma pessoa. Quem confirmar vira seu amigo e vocês veem o que o outro está lendo, já leu e os comentários públicos.
-        </p>
-        {manualUrl && (
-          <div className="fade-in mt-3">
-            <label className="label" htmlFor="invite-url">Copie e envie este link</label>
-            <input id="invite-url" className="input text-sm" readOnly value={manualUrl} onFocus={(e) => e.currentTarget.select()} />
-          </div>
-        )}
-      </section>
+      }
+    >
+      {manualUrl && (
+        <section className="card fade-in mb-4 p-4">
+          <label className="label" htmlFor="invite-url">Copie e envie este link</label>
+          <input id="invite-url" className="input text-sm" readOnly value={manualUrl} onFocus={(e) => e.currentTarget.select()} />
+        </section>
+      )}
 
       {friends.isPending ? (
         <Spinner />
       ) : friends.isError ? (
         <ErrorBox error={friends.error} retry={() => friends.refetch()} />
       ) : friends.data.friends.length === 0 ? (
-        <Empty title="Nenhum amigo ainda" hint="Convide alguém pelo link e acompanhe o que cada um está lendo." />
+        <Empty
+          title="Nenhum amigo ainda"
+          hint="Convide alguém pelo link e acompanhe o que cada um está lendo."
+          action={<button type="button" onClick={inviteFriend} disabled={create.isPending} className="btn-primary mt-2">{create.isPending ? "Gerando link…" : "Convidar amigo"}</button>}
+        />
       ) : (
-        <ul className="mt-4 space-y-3 pb-4">
+        <ul className="space-y-3">
           {friends.data.friends.map((f) => (
             <li key={f.id}>
               <Link to={`/amigos/${f.id}`} className="card flex items-center gap-3 p-3 transition active:scale-[0.99] hover:ring-accent-200 dark:hover:ring-stone-700">
@@ -89,6 +93,10 @@ export function FriendsPage() {
           ))}
         </ul>
       )}
+
+      <p className="mt-6 px-2 pb-4 text-center text-xs leading-relaxed text-stone-500 dark:text-stone-400">
+        O link de convite não expira e vale para uma pessoa. Amigos veem o que você está lendo, já leu e os comentários públicos.
+      </p>
     </Page>
   );
 }

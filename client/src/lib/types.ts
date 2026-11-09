@@ -14,6 +14,22 @@ export const STATUS_ACTION: Record<Status, string> = {
   abandoned: "Abandonei",
 };
 
+/** Selo no cartão, no singular e com o mesmo vocabulário dos filtros. */
+export const STATUS_BADGE: Record<Status, string> = {
+  reading: "Lendo",
+  want: "Quero ler",
+  read: "Lido",
+  abandoned: "Abandonado",
+};
+
+/** Cabeçalho de cada grupo em "Ver todos"; Lendo sempre primeiro (ordem de STATUS_ORDER). */
+export const STATUS_GROUP: Record<Status, string> = {
+  reading: "Lendo agora",
+  want: "Quero ler",
+  read: "Lidos",
+  abandoned: "Abandonados",
+};
+
 export const STATUS_ORDER: Status[] = ["reading", "want", "read", "abandoned"];
 
 export interface User {

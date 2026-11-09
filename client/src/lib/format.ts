@@ -61,6 +61,17 @@ export function formatTimestamp(sqlUtc: string) {
   return Number.isNaN(d.getTime()) ? "" : d.toLocaleDateString("pt-BR");
 }
 
+/** "Atualizado hoje", "Atualizado ontem", "Atualizado há 3 dias" a partir de um timestamp do servidor. */
+export function updatedAgoText(sqlUtc: string, now = new Date()) {
+  const d = new Date(`${sqlUtc.replace(" ", "T")}Z`);
+  if (Number.isNaN(d.getTime())) return "";
+  const startOfDay = (x: Date) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
+  const days = Math.max(0, Math.round((startOfDay(now) - startOfDay(d)) / 86_400_000));
+  if (days === 0) return "Atualizado hoje";
+  if (days === 1) return "Atualizado ontem";
+  return `Atualizado há ${days} dias`;
+}
+
 /** Percentual lido (0 a 100), ou null sem página atual ou sem total de páginas. */
 export function readingPercent(currentPage: number | null | undefined, pageCount: number | null | undefined) {
   if (currentPage == null || !pageCount) return null;

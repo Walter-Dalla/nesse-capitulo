@@ -6,7 +6,7 @@ import { IconClose, IconPlus, IconSearch } from "../components/Icons";
 import { Empty, Page } from "../components/Layout";
 import { SEARCH_MIN_CHARS, useSearch } from "../lib/hooks";
 import { formatAuthors } from "../lib/format";
-import { SOURCE_LABEL, type BookInput, type Status } from "../lib/types";
+import { SOURCE_LABEL, type BookInput } from "../lib/types";
 
 /**
  * Busca com autocompletar: as sugestões aparecem 1 s depois que o usuário para de digitar
@@ -16,7 +16,6 @@ import { SOURCE_LABEL, type BookInput, type Status } from "../lib/types";
 export function SearchPage() {
   const [params] = useSearchParams();
   const defaultYear = params.get("ano") ? Number(params.get("ano")) : undefined;
-  const defaultStatus = (params.get("status") as Status | null) ?? (defaultYear ? "read" : undefined);
   const [q, setQ] = useState(params.get("q") ?? "");
   const [picked, setPicked] = useState<BookInput | null>(null);
   const [active, setActive] = useState(-1);
@@ -27,7 +26,7 @@ export function SearchPage() {
   useEffect(() => { inputRef.current?.focus(); }, []);
   useEffect(() => { setActive(-1); }, [search.debounced]);
 
-  const manualLink = `/adicionar?${new URLSearchParams({ ...(q.trim() ? { titulo: q.trim() } : {}), ...(defaultYear ? { ano: String(defaultYear) } : {}), ...(defaultStatus ? { status: defaultStatus } : {}) })}`;
+  const manualLink = `/adicionar?${new URLSearchParams({ ...(q.trim() ? { titulo: q.trim() } : {}), ...(defaultYear ? { ano: String(defaultYear) } : {}) })}`;
   const typing = q.trim().length > 0 && q.trim().length < SEARCH_MIN_CHARS;
   const showList = search.debounced.length >= SEARCH_MIN_CHARS;
 
@@ -81,9 +80,9 @@ export function SearchPage() {
         <div className="card p-4 text-sm">
           <p className="font-semibold">Busca indisponível</p>
           <p className="mt-1 text-stone-600 dark:text-stone-300">{(search.error as Error).message}</p>
-          <div className="mt-3 flex gap-2">
-            <button type="button" onClick={() => search.refetch()} className="btn-secondary">Tentar de novo</button>
-            <Link to={manualLink} className="btn-primary">Cadastrar manualmente</Link>
+          <div className="mt-3 flex flex-col gap-2">
+            <Link to={manualLink} className="btn-primary w-full">Cadastrar manualmente</Link>
+            <button type="button" onClick={() => search.refetch()} className="btn-secondary w-full">Tentar de novo</button>
           </div>
         </div>
       ) : (
@@ -125,7 +124,7 @@ export function SearchPage() {
         <p className="mt-3 text-center text-xs text-stone-400">Resultados via {SOURCE_LABEL[search.data.provider]}</p>
       )}
 
-      {picked && <AddSheet book={picked} defaultStatus={defaultStatus} defaultYear={defaultYear} onClose={() => setPicked(null)} />}
+      {picked && <AddSheet book={picked} defaultYear={defaultYear} onClose={() => setPicked(null)} />}
     </Page>
   );
 }

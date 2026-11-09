@@ -11,6 +11,9 @@ interface PageProps {
   padded?: boolean;
 }
 
+/** Destinos da barra inferior: são "raiz", não ganham seta de voltar. */
+const TAB_PATHS = ["/", "/buscar", "/anos", "/amigos", "/perfil"];
+
 /** Container mobile-first: coluna centralizada (máx. 28rem no desktop), header opcional e bottom nav. */
 export function Page({ title, action, children, nav = true, padded = true }: PageProps) {
   const navigate = useNavigate();
@@ -18,7 +21,7 @@ export function Page({ title, action, children, nav = true, padded = true }: Pag
   // idx é a posição que o React Router grava no histórico: 0 é a primeira tela aberta no app,
   // e voltar dali sairia dele
   const canGoBack = (window.history.state?.idx ?? 0) > 0;
-  const showBack = canGoBack || pathname !== "/";
+  const showBack = !TAB_PATHS.includes(pathname);
   return (
     <div className={`mx-auto min-h-dvh max-w-md ${nav ? "pb-24" : ""}`}>
       {(title || showBack || action) && (
@@ -28,7 +31,7 @@ export function Page({ title, action, children, nav = true, padded = true }: Pag
               <IconBack />
             </button>
           )}
-          {title && <h1 className="flex-1 truncate text-xl font-bold tracking-tight">{title}</h1>}
+          {title ? <h1 className="flex-1 truncate text-xl font-bold tracking-tight">{title}</h1> : <span className="flex-1" aria-hidden />}
           {action}
         </header>
       )}

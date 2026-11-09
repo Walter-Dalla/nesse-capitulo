@@ -1,12 +1,13 @@
 import { useState, type FormEvent } from "react";
-import { useSearchParams } from "react-router";
+import { useNavigate, useSearchParams } from "react-router";
 import { AddSheet } from "../components/AddSheet";
 import { Page } from "../components/Layout";
-import type { BookInput, Status } from "../lib/types";
+import type { BookInput } from "../lib/types";
 
 /** Cadastro manual de um livro que não foi encontrado na busca (sem upload de capa: só metadados). */
 export function AddManualPage() {
   const [params] = useSearchParams();
+  const navigate = useNavigate();
   const [title, setTitle] = useState(params.get("titulo") ?? "");
   const [authors, setAuthors] = useState("");
   const [pages, setPages] = useState("");
@@ -14,7 +15,6 @@ export function AddManualPage() {
   const [isbn, setIsbn] = useState("");
   const [book, setBook] = useState<BookInput | null>(null);
   const defaultYear = params.get("ano") ? Number(params.get("ano")) : undefined;
-  const defaultStatus = (params.get("status") as Status | null) ?? undefined;
 
   function submit(e: FormEvent) {
     e.preventDefault();
@@ -57,7 +57,8 @@ export function AddManualPage() {
         </div>
         <button type="submit" className="btn-primary w-full">Continuar</button>
       </form>
-      {book && <AddSheet book={book} defaultStatus={defaultStatus} defaultYear={defaultYear} onClose={() => setBook(null)} />}
+      {/* adicionado: sai do formulário para não cadastrar o mesmo livro duas vezes sem querer */}
+      {book && <AddSheet book={book} defaultYear={defaultYear} onClose={(added) => (added ? navigate(defaultYear ? `/anos?ano=${defaultYear}` : "/", { replace: true }) : setBook(null))} />}
     </Page>
   );
 }
