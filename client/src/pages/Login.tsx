@@ -12,6 +12,7 @@ const ERRORS: Record<string, MessageKey> = {
   state: "social.login.error.state",
   token: "social.login.error.token",
   access_denied: "social.login.error.accessDenied",
+  banned: "social.login.error.banned",
 };
 
 export function LoginPage() {
@@ -60,7 +61,7 @@ export function LoginPage() {
         {error && <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-950/50 dark:text-red-300">{t(Object.hasOwn(ERRORS, error) ? ERRORS[error] : "social.login.error.generic")}</p>}
 
         {providers.data?.google ? (
-          <a href="/auth/google" className="btn w-full bg-white text-stone-800 shadow-sm ring-1 ring-stone-200 hover:bg-stone-50 dark:bg-stone-900 dark:text-stone-100 dark:ring-stone-700">
+          <a href="/auth/google" className="inline-flex w-full min-h-11 items-center justify-center gap-2.5 rounded-full bg-white px-3 text-sm font-medium text-[#1F1F1F] ring-1 ring-inset ring-[#747775] hover:bg-stone-50">
             <IconGoogle /> {t("social.login.google")}
           </a>
         ) : providers.isSuccess ? (
@@ -76,6 +77,11 @@ export function LoginPage() {
         )}
 
         <p className="pt-2 text-center text-xs text-stone-400">{t("social.login.privacy")}</p>
+        {/* páginas públicas fora do SPA: navegação completa, o roteador mandaria para "/" */}
+        <p className="flex justify-center gap-4 text-xs text-stone-500">
+          <a href="/privacidade" className="underline">{t("social.legal.privacy")}</a>
+          <a href="/termos" className="underline">{t("social.legal.terms")}</a>
+        </p>
       </div>
     </div>
   );

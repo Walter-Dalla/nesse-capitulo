@@ -250,7 +250,7 @@ test("migração adiciona a coluna de sinopse em banco antigo e não apaga sinop
     old.close();
 
     const migrated = openDatabase(file);
-    migrated.prepare("INSERT INTO books (id, source, title, description) VALUES ('b1', 'manual', 'T', 'Guardada')").run();
+    migrated.prepare("INSERT INTO books (id, source, source_id, title, description) VALUES ('b1', 'google', 'vol-b1', 'T', 'Guardada')").run();
     migrated.close();
 
     const reopened = openDatabase(file);

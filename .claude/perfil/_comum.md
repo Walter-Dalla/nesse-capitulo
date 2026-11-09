@@ -33,6 +33,6 @@ Mapa de pastas em `CLAUDE.md`; rotas em `server/routes/*.ts` e `server/auth.ts`;
 `docs/features/README.md` — mapa de features. [adotar]
 
 ## Limites
-Produção: nenhuma URL ou servidor no repo; nada a tocar. Segredos: `.env` (ignorado), `GOOGLE_CLIENT_SECRET`, `ADSENSE_CLIENT_ID`. [.env.example, .gitignore]
+Produção: `https://nesse-capitulo.walterdalla.uk` (deploy pelo dono); nada a tocar pelos agentes. Segredos: `.env` (ignorado), `GOOGLE_CLIENT_SECRET`, `ADSENSE_CLIENT_ID`. [.env.example, .gitignore]
 Banco do dono: `data/estante.db` (nunca usar em teste; usar `DATABASE_PATH` próprio ou `:memory:`). [server/env.ts, tests/api.test.ts]
 Portas `3000` e `5173` do dono. APIs externas (Google Books, Open Library, OAuth) não são chamadas em teste automatizado. [inferido]

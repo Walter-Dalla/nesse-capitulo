@@ -7,6 +7,10 @@ export interface User {
   email: string | null;
   name: string | null;
   picture: string | null;
+  /** Versão dos termos de uso aceita; null = ainda não aceitou. */
+  terms_version: number | null;
+  /** Quando a moderação baniu a conta; null = ativa. */
+  banned_at: string | null;
 }
 
 export type BookSource = "google" | "openlibrary" | "manual";
@@ -128,5 +132,33 @@ export const ERROR_CODES = [
   "ISBN_INVALID",
   "COMMENT_EMPTY",
   "VALIDATION",
+  "TERMS_REQUIRED",
+  "REPORT_INVALID",
+  "ACCOUNT_BANNED",
 ] as const;
 export type ErrorCode = (typeof ERROR_CODES)[number];
+
+/** Motivo de uma denúncia (`content_reports.reason`). */
+export type ReportReason = "spam" | "harassment" | "sexual" | "other";
+export const REPORT_REASONS: ReportReason[] = ["spam", "harassment", "sexual", "other"];
+
+/** Situação de uma denúncia: aberta, descartada pelo moderador ou com ação tomada. */
+export type ReportStatus = "open" | "dismissed" | "actioned";
+export const REPORT_STATUSES: ReportStatus[] = ["open", "dismissed", "actioned"];
+
+/** Decisão do moderador sobre uma denúncia. */
+export type ModerationAction = "dismiss" | "remove_comment" | "ban_user";
+export const MODERATION_ACTIONS: ModerationAction[] = ["dismiss", "remove_comment", "ban_user"];
+
+/** Denúncia como o moderador a vê. */
+export interface ModReport {
+  id: string;
+  reason: ReportReason;
+  details: string | null;
+  status: ReportStatus;
+  createdAt: string;
+  commentId: string | null;
+  commentBody: string | null;
+  reporter: { id: string; name: string | null } | null;
+  reported: { id: string; name: string | null; email: string | null };
+}

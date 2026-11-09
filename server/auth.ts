@@ -4,11 +4,14 @@ import { getCookie, setCookie, deleteCookie } from "hono/cookie";
 import { randomBytes, randomUUID } from "node:crypto";
 import type { DB } from "./db.js";
 import { env, googleLoginEnabled } from "./env.js";
+import { hasAcceptedTerms } from "./terms.js";
+import { isModerator } from "./moderators.js";
 import type { AppEnv, User } from "./types.js";
 
 export const SESSION_COOKIE = "sid";
 const STATE_COOKIE = "oauth_state";
 const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 dias
+const BANNED = { error: "Conta suspensa por violar os termos de uso", code: "ACCOUNT_BANNED" } as const;
 
 export interface GoogleProfile {
   sub: string;
@@ -42,9 +45,9 @@ export function findSession(db: DB, sessionId: string | undefined): { user: User
   if (!sessionId) return null;
   const row = db
     .prepare(
-      `SELECT u.id, u.google_sub, u.email, u.name, u.picture, s.ad_unlocked
+      `SELECT u.id, u.google_sub, u.email, u.name, u.picture, u.terms_version, u.banned_at, s.ad_unlocked
        FROM sessions s JOIN users u ON u.id = s.user_id
-       WHERE s.id = ? AND s.expires_at > ?`,
+       WHERE s.id = ? AND s.expires_at > ? AND u.banned_at IS NULL`,
     )
     .get(sessionId, Date.now()) as (User & { ad_unlocked: number }) | undefined;
   if (!row) return null;
@@ -78,6 +81,8 @@ export function upsertGoogleUser(db: DB, p: GoogleProfile): User {
     email: p.email ?? null,
     name: p.name ?? null,
     picture: p.picture ?? null,
+    terms_version: null,
+    banned_at: null,
   };
   db.prepare("INSERT INTO users (id, google_sub, email, name, picture) VALUES (?, ?, ?, ?, ?)").run(
     user.id, user.google_sub, user.email, user.name, user.picture,
@@ -114,7 +119,16 @@ export function decodeIdToken(idToken: string): GoogleProfile {
   if (parts.length !== 3) throw new Error("id_token inválido");
   const payload = JSON.parse(Buffer.from(parts[1], "base64url").toString("utf8"));
   if (!payload.sub) throw new Error("id_token sem sub");
-  return { sub: payload.sub, email: payload.email, name: payload.name, picture: payload.picture };
+  return { sub: payload.sub, email: verifiedEmail(payload), name: payload.name, picture: payload.picture };
+}
+
+/**
+ * E-mail só se o Google o declarar verificado: sem isso uma conta poderia assumir o e-mail de outra
+ * (por exemplo o do moderador). O id_token traz booleano; o tokeninfo, texto.
+ */
+function verifiedEmail(claims: { email?: unknown; email_verified?: unknown }): string | undefined {
+  const verified = claims.email_verified === true || claims.email_verified === "true";
+  return verified && typeof claims.email === "string" ? claims.email : undefined;
 }
 
 /** Verifica um id_token recebido do cliente (ex.: Google Sign-In nativo no Android) */
@@ -126,7 +140,7 @@ export async function verifyIdTokenRemote(idToken: string): Promise<GoogleProfil
   if (!allowed.has(info.aud)) throw new Error("id_token emitido para outro aplicativo (aud)");
   if (info.iss !== "https://accounts.google.com" && info.iss !== "accounts.google.com") throw new Error("issuer inválido");
   if (Number(info.exp) * 1000 < Date.now()) throw new Error("id_token expirado");
-  return { sub: info.sub, email: info.email, name: info.name, picture: info.picture };
+  return { sub: info.sub, email: verifiedEmail(info), name: info.name, picture: info.picture };
 }
 
 export function authRoutes(db: DB) {
@@ -183,6 +197,7 @@ export function authRoutes(db: DB) {
 
     // O id_token veio direto do endpoint do Google via TLS, então decodificar é seguro aqui.
     const user = upsertGoogleUser(db, decodeIdToken(tokens.id_token));
+    if (user.banned_at) return c.redirect("/login?error=banned");
     const session = createSession(db, user.id);
     setSessionCookie(c, session.id, session.expiresAt);
     return c.redirect("/");
@@ -195,6 +210,7 @@ export function authRoutes(db: DB) {
     if (!body.idToken) return c.json({ error: "idToken obrigatório" }, 400);
     try {
       const user = upsertGoogleUser(db, await verifyIdTokenRemote(body.idToken));
+      if (user.banned_at) return c.json(BANNED, 403);
       const session = createSession(db, user.id);
       setSessionCookie(c, session.id, session.expiresAt);
       return c.json({ user: publicUser(user) });
@@ -209,6 +225,7 @@ export function authRoutes(db: DB) {
     const body = (await c.req.json().catch(() => ({}))) as { name?: string; email?: string };
     const email = body.email?.trim() || "dev@example.com";
     const user = upsertGoogleUser(db, { sub: `dev:${email}`, email, name: body.name?.trim() || "Leitor(a) Dev" });
+    if (user.banned_at) return c.json(BANNED, 403);
     const session = createSession(db, user.id);
     setSessionCookie(c, session.id, session.expiresAt);
     return c.json({ user: publicUser(user) });
@@ -223,8 +240,13 @@ export function authRoutes(db: DB) {
 
   app.get("/api/me", (c) => {
     const session = findSession(db, getCookie(c, SESSION_COOKIE));
-    if (!session) return c.json({ user: null, adUnlocked: false });
-    return c.json({ user: publicUser(session.user), adUnlocked: !env.ads.enabled || session.adUnlocked });
+    if (!session) return c.json({ user: null, adUnlocked: false, termsAccepted: false, isModerator: false });
+    return c.json({
+      user: publicUser(session.user),
+      adUnlocked: !env.ads.enabled || session.adUnlocked,
+      termsAccepted: hasAcceptedTerms(session.user),
+      isModerator: isModerator(session.user),
+    });
   });
 
   return app;

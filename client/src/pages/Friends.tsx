@@ -5,7 +5,7 @@ import { IconPlus } from "../components/Icons";
 import { Empty, ErrorBox, Page, Spinner } from "../components/Layout";
 import { toast } from "../components/Toast";
 import { displayName, readingPercent } from "../lib/format";
-import { useCreateInvite, useFriends } from "../lib/hooks";
+import { useBlocks, useCreateInvite, useFriends, useUnblock } from "../lib/hooks";
 import { t } from "../lib/i18n";
 
 /** Compartilha pelo menu do aparelho; senão copia. Devolve false quando nada funcionou. */
@@ -31,6 +31,8 @@ async function shareOrCopy(url: string): Promise<boolean> {
 export function FriendsPage() {
   const friends = useFriends();
   const create = useCreateInvite();
+  const blocks = useBlocks();
+  const unblock = useUnblock();
   // link gerado que não deu para compartilhar nem copiar: fica visível para copiar à mão
   const [manualUrl, setManualUrl] = useState<string | null>(null);
 
@@ -39,6 +41,15 @@ export function FriendsPage() {
       const { code } = await create.mutateAsync();
       const url = `${location.origin}/amigos/convite/${code}`;
       setManualUrl((await shareOrCopy(url)) ? null : url);
+    } catch (e) {
+      toast((e as Error).message, "error");
+    }
+  }
+
+  async function onUnblock(userId: string) {
+    try {
+      await unblock.mutateAsync(userId);
+      toast(t("social.friends.unblocked"));
     } catch (e) {
       toast((e as Error).message, "error");
     }
@@ -93,6 +104,22 @@ export function FriendsPage() {
             </li>
           ))}
         </ul>
+      )}
+
+      {blocks.data && blocks.data.blocks.length > 0 && (
+        <section className="mt-6">
+          <h2 className="label">{t("social.friends.blocked")}</h2>
+          <ul className="card divide-y divide-stone-100 dark:divide-stone-800">
+            {blocks.data.blocks.map((b) => (
+              <li key={b.id} className="flex items-center gap-3 p-3">
+                <Avatar user={b} size="sm" />
+                <p className="min-w-0 flex-1 truncate text-sm font-semibold">{displayName(b)}</p>
+                <button type="button" onClick={() => onUnblock(b.id)} disabled={unblock.isPending} className="btn-secondary shrink-0 px-3 text-sm">{t("social.friends.unblock")}</button>
+              </li>
+            ))}
+          </ul>
+          <p className="mt-2 px-2 text-xs text-stone-500 dark:text-stone-400">{t("social.friends.unblockHint")}</p>
+        </section>
       )}
 
       <p className="mt-6 px-2 pb-4 text-center text-xs leading-relaxed text-stone-500 dark:text-stone-400">

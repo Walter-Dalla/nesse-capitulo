@@ -15,11 +15,14 @@ const FILES = [
   "client/src/components/AdGate.tsx",
   "client/src/components/Comments.tsx",
   "client/src/components/FriendBadge.tsx",
+  "client/src/components/TermsGate.tsx",
+  "client/src/components/ReportSheet.tsx",
   "client/src/pages/Login.tsx",
   "client/src/pages/Profile.tsx",
   "client/src/pages/Friends.tsx",
   "client/src/pages/FriendDetail.tsx",
   "client/src/pages/FriendInvite.tsx",
+  "client/src/pages/Moderation.tsx",
 ];
 
 const read = (file: string) => readFileSync(file, "utf8");

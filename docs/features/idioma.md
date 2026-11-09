@@ -26,3 +26,4 @@ Toda a interface existe em português (pt-BR), inglês e espanhol neutro. Quem n
 - [seo](seo.md): robôs sem cabeçalho veem `/` em EN; PT e ES ficam em `/?lang=`, com `hreflang` e no sitemap.
 - [conta](conta.md): seletor no Perfil e no Login; o idioma escolhido na home segue depois de entrar.
 - [pwa](pwa.md): o fallback offline do service worker é a última página guardada, no idioma dela; o manifest é só em EN.
+- [legal](legal.md): as páginas legais saem nos 3 idiomas pela mesma negociação (`respondNegotiated`), com seletor e `hreflang`.

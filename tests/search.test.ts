@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { allowSearch, normalizeOpenLibraryDoc, normalizeVolume } from "../server/routes/search.ts";
+import { allowSearch, normalizeOpenLibraryDoc, normalizeVolume, searchBooks } from "../server/routes/search.ts";
 
 test("normaliza um volume do Google Books", () => {
   const b = normalizeVolume({
@@ -44,4 +44,22 @@ test("throttle por usuário: rajada de 5 e depois 1 por segundo", () => {
   assert.equal(allowSearch("u2", t0), true, "outro usuário não é afetado");
   assert.equal(allowSearch("u1", t0 + 1000), true, "recarrega 1 token por segundo");
   assert.equal(allowSearch("u1", t0 + 1000), false);
+});
+
+test("Open Library sem resultados continua openlibrary quando volta do cache", async () => {
+  const realFetch = globalThis.fetch;
+  let calls = 0;
+  globalThis.fetch = (async (input: string | URL | Request) => {
+    calls++;
+    return new URL(String(input)).hostname === "openlibrary.org" ? Response.json({ docs: [] }) : new Response("erro", { status: 500 });
+  }) as typeof fetch;
+  try {
+    const first = await searchBooks("termo exclusivo vazio na open library");
+    assert.deepEqual(first, { items: [], provider: "openlibrary" });
+    const cached = await searchBooks("Termo exclusivo vazio na Open Library");
+    assert.deepEqual(cached, { items: [], provider: "openlibrary" });
+    assert.equal(calls, 2, "a segunda busca vem do cache, sem rede");
+  } finally {
+    globalThis.fetch = realFetch;
+  }
 });

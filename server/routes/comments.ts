@@ -5,6 +5,7 @@ import { COMMENT_VISIBILITIES, type AppEnv, type BookComment, type CommentVisibi
 import { ValidationError, optStr } from "../validate.js";
 import { MY_FRIENDS, rowToPublicComment } from "./friends.js";
 import { getItem } from "./shelf.js";
+import { hasAcceptedTerms, TERMS_REQUIRED } from "../terms.js";
 
 export const COMMENT_MAX = 2000;
 const NOT_FOUND = { error: "Não encontrado", code: "NOT_FOUND" };
@@ -14,6 +15,7 @@ const SELECT_COMMENT = "SELECT id, body, visibility, created_at, updated_at FROM
 /**
  * Comentários públicos de amigos sobre o mesmo livro do meu item `?2`: mesmo book_id ou mesmo ISBN,
  * em qualquer status da estante deles (quem deixou público quis mostrar). UNION pelo mesmo motivo do selo.
+ * O comentário que eu denunciei some só para mim.
  */
 const FRIEND_COMMENTS_SQL = `WITH ${MY_FRIENDS},
 mine AS (
@@ -38,6 +40,7 @@ SELECT c.id, c.body, c.created_at, c.updated_at, u.id AS u_id, u.name AS u_name,
 FROM items i
 JOIN book_comments c ON c.item_id = i.id AND c.visibility = 'public'
 JOIN users u ON u.id = c.user_id
+WHERE NOT EXISTS (SELECT 1 FROM content_reports r WHERE r.comment_id = c.id AND r.reporter_id = ?1)
 ORDER BY c.created_at DESC, c.rowid DESC`;
 
 function rowToComment(r: any): BookComment {
@@ -95,6 +98,7 @@ export function commentsRoutes(db: DB) {
     const input = (await c.req.json().catch(() => ({}))) as Record<string, unknown>;
     const body = parseBody(input.body);
     const visibility = input.visibility === undefined ? "private" : parseVisibility(input.visibility);
+    if (visibility === "public" && !hasAcceptedTerms(c.var.user)) return c.json(TERMS_REQUIRED, 403);
     const id = randomUUID();
     db.prepare("INSERT INTO book_comments (id, item_id, user_id, body, visibility) VALUES (?, ?, ?, ?, ?)").run(id, itemId, me, body, visibility);
     return c.json({ comment: findMyComment(db, me, id) }, 201);
@@ -109,6 +113,7 @@ export function commentsRoutes(db: DB) {
     const has = (k: string) => Object.prototype.hasOwnProperty.call(input, k);
     const body = has("body") ? parseBody(input.body) : current.body;
     const visibility = has("visibility") ? parseVisibility(input.visibility) : current.visibility;
+    if (visibility === "public" && !hasAcceptedTerms(c.var.user)) return c.json(TERMS_REQUIRED, 403);
     db.prepare("UPDATE book_comments SET body = ?, visibility = ?, updated_at = datetime('now') WHERE id = ?").run(body, visibility, current.id);
     return c.json({ comment: findMyComment(db, me, current.id) });
   });

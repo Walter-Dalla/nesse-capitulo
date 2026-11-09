@@ -32,6 +32,8 @@ export async function login(db: DB, name: string, email = `${name.toLowerCase()}
   const call = client(db);
   const r = await call("POST", "/auth/dev", { name, email });
   if (r.status !== 200) throw new Error(`login falhou: ${r.status}`);
+  const terms = await call("POST", "/api/terms/accept");
+  if (terms.status !== 200) throw new Error(`aceite dos termos falhou: ${terms.status}`);
   return { call, user: r.json.user };
 }
 

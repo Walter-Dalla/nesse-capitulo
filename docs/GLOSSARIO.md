@@ -35,6 +35,7 @@ Vocabulário de negócio ↔ identificadores do código. Coluna "Evite" só traz
 | Referência de capa | `coverRef` / `cover_ref` (`g`, `ol:<id>`, null), `coverUrlFor`, `BookCover` | a URL é montada no cliente |
 | Sinopse | `BookDetails.description`, `books.description`, `fetchDetails`, `GET /api/shelf/:id/details` | buscada na fonte na primeira consulta e gravada no banco; não sai nas rotas de amigos |
 | Limite de busca | `allowSearch` | rajada de 5, depois 1/s por usuário; cache 10 min |
+| Fonte do livro (link e atribuição) | `bookSourceUrl`, `searchAttribution` | "Ver no Google Books"/Open Library por resultado e na tela do livro (nunca no manual); rodapé "Powered by Google" ou "via Open Library", decidido pela fonte |
 
 ## Conta e sessão
 
@@ -44,7 +45,10 @@ Vocabulário de negócio ↔ identificadores do código. Coluna "Evite" só traz
 | Login nativo | `POST /auth/google/token`, `verifyIdTokenRemote` | app Android/iOS envia `idToken` |
 | Login dev | `POST /auth/dev`, `ALLOW_DEV_LOGIN` | botão "Entrar sem Google"; nunca em produção |
 | Sessão | `createSession`, `findSession`, cookie `sid`, tabela `sessions` | 30 dias |
-| Usuário | `User`, `useMe`, `GET /api/me` | |
+| Usuário | `User`, `useMe`, `GET /api/me` | `/api/me` traz também `termsAccepted` e `isModerator` |
+| Termos de uso / aceite | `TERMS_VERSION`, `hasAcceptedTerms`, `POST /api/terms/accept`, `users.terms_version`/`terms_accepted_at`, `TermsGate`, `TERMS_REQUIRED` | aceite único depois do login; `/perfil` fica fora do gate; sem aceite, comentário público e convite dão 403 `TERMS_REQUIRED` |
+| Excluir conta | `DELETE /api/account`, `accountRoutes`, `useDeleteAccount` | apaga a linha de `users`; o resto vai pelas chaves estrangeiras e pelo gatilho de livros manuais |
+| E-mail verificado | `verifiedEmail` | e-mail só é gravado com `email_verified`; é o que torna seguro o moderador por e-mail |
 
 ## Amigos
 
@@ -56,6 +60,25 @@ Vocabulário de negócio ↔ identificadores do código. Coluna "Evite" só traz
 | Estante do amigo | `GET /api/friends/:userId/shelf`, `FriendBook`, `FriendShelfItem`, `FriendDetailPage` | só Lendo e Lidos, com ano, página atual e comentários públicos; sem nota, resenha, datas, sinopse ou e-mail |
 | Comentários de amigos | `FriendComment`, `GET /api/shelf/:id/comments` (`friends`) | públicos de amigos sobre o mesmo livro (book_id ou ISBN), em qualquer status da estante deles |
 | Amigos que já leram (selo) | `FriendBadge`, `GET /api/shelf/:id/friends`, `GET /api/friends/badges`, `BADGES_SQL`, `useFriendBadges` | conta amigos com o livro em `read`; casa por `book_id` ou ISBN, nunca por título + autor; nunca na busca |
+| Bloqueio | `user_blocks`, `isBlocked`, `POST /api/friends/:userId/block`, `GET /api/friends/blocks`, `DELETE /api/friends/blocks/:userId` | desfaz a amizade e invalida convites nos dois sentidos; desbloquear não refaz a amizade |
+
+## Denúncia e moderação
+
+| Negócio | Código | Evite / nota |
+| --- | --- | --- |
+| Denúncia | `content_reports`, `POST /api/reports`, `reportsRoutes`, `ReportReason` (`spam`, `harassment`, `sexual`, `other`), `ReportSheet`, `REPORT_INVALID` | de um comentário público de amigo ou de um amigo; esconde o comentário só de quem denunciou; guarda cópia do texto |
+| Situação da denúncia | `ReportStatus` (`open`, `dismissed`, `actioned`) | |
+| Moderador | `isModerator`, `MODERATOR_EMAILS`, `moderationRoutes`, `ModerationPage`, `/moderacao` | hoje só `CONTACT_EMAIL`; quem não modera recebe 404 em `/api/mod/*` |
+| Decisão do moderador | `ModerationAction` (`dismiss`, `remove_comment`, `ban_user`), `POST /api/mod/reports/:id/resolve` | |
+| Banimento / conta banida | `users.banned_at`, `ACCOUNT_BANNED`, `/login?error=banned` | a conta fica no banco para barrar a volta; sessões e amizades saem; "suspensa" é só o texto da mensagem |
+
+## Páginas legais
+
+| Negócio | Código | Evite / nota |
+| --- | --- | --- |
+| Páginas legais | `LEGAL_PATHS` (`/privacidade`, `/termos`, `/excluir-conta`), `renderLegal`, `LEGAL_TEXT`, `legalRoutes` | públicas, HTML do servidor, 3 idiomas; não são rotas da SPA |
+| Contato do desenvolvedor | `CONTACT_EMAIL`, `DEVELOPER_NAME`, `APP_NAME` (`server/contact.ts`) | constantes, não env; também no User-Agent da busca |
+| Retenção em backup | chave `backupRetention` (`server/legalText.ts`) | "até 30 dias"; tem de ser verdade no deploy |
 
 ## Monetização e estatísticas
 
@@ -86,3 +109,4 @@ Vocabulário de negócio ↔ identificadores do código. Coluna "Evite" só traz
 | `isProd` | `NODE_ENV=production` ou rodar o `.js` compilado | `npm start` desliga o login dev mesmo sem `NODE_ENV` |
 | `/api/shelf/:id/friends` | amigos que já leram o **meu** item `:id` | mora em `friendsRoutes`, não em `shelfRoutes`; 404 se o item não for meu |
 | Selo de amigos e `["item"]` | o selo usa as chaves `["friends", …]` do React Query | `invalidateShelf` não refaz `["friends","book",id]`: daria 404 durante a remoção do item |
+| `POST /api/terms/accept` | aceite dos termos | mora em `accountRoutes` (`server/routes/account.ts`), não num `termsRoutes`; a regra fica em `server/terms.ts` |

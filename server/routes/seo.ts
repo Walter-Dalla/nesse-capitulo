@@ -3,13 +3,13 @@ import { env } from "../env.js";
 import type { AppEnv } from "../types.js";
 
 /** Rotas públicas do app (sem login): só elas entram no sitemap e ficam liberadas no robots.txt. */
-export const PUBLIC_PATHS = ["/", "/login"] as const;
+export const PUBLIC_PATHS = ["/", "/login", "/privacidade", "/termos", "/excluir-conta"] as const;
 
 /** Home em PT e ES (`/` é a versão em EN): só no sitemap, o `Allow: /` do robots.txt já as cobre. */
 const LOCALIZED_HOME_PATHS = ["/?lang=pt", "/?lang=es"] as const;
 
 /** Rotas que exigem sessão (ou são API): bloqueadas para robôs, nunca indexadas. */
-export const PRIVATE_PREFIXES = ["/api/", "/auth/", "/buscar", "/adicionar", "/livro/", "/anos", "/perfil", "/amigos"] as const;
+export const PRIVATE_PREFIXES = ["/api/", "/auth/", "/buscar", "/adicionar", "/livro/", "/anos", "/perfil", "/amigos", "/moderacao"] as const;
 
 const ROBOTS = [
   "User-agent: *",
@@ -22,12 +22,15 @@ const LLMS = `# Estante
 
 > Reading tracker, mobile-first (PWA), available in Portuguese, English and Spanish: log what you have read, are reading, want to read and abandoned, with rating, review, current page and history by year. Friends see a badge showing who has already read each book and can exchange public or private comments.
 
-Personal, free site. Shelf content is private per user: only the home page and login are public; the API (/api/*) requires a session and must not be crawled.
+Personal, free site. Shelf content is private per user: only the home page, login, privacy policy, terms of use and account deletion pages are public; the API (/api/*) requires a session and must not be crawled.
 
 ## Public pages
 
 - [Home](/): introduction and entry to the app
 - [Login](/login): sign in with Google
+- [Privacy policy](/privacidade): what data is kept, who sees it and how long it is kept
+- [Terms of use](/termos): who can use the app, forbidden content and moderation
+- [Delete account](/excluir-conta): how to delete an account and what is erased
 - [PWA manifest](/manifest.webmanifest): app name, icons and categories
 
 ## What the app does

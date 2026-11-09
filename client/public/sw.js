@@ -5,6 +5,8 @@ const COVERS = "estante-covers"; // mesmo nome usado em client/src/lib/bookCache
 const DETAILS = "estante-details"; // preenchido pela página, em client/src/lib/bookCache.ts
 const MAX_COVERS = 300;
 const COVER_HOSTS = ["books.google.com", "covers.openlibrary.org"];
+/** Páginas públicas renderizadas no servidor: não são o app, então nunca viram o fallback offline de "/". */
+const NOT_APP_SHELL = ["/privacidade", "/termos", "/excluir-conta"];
 
 async function storeCover(url, res) {
   const cache = await caches.open(COVERS);
@@ -65,6 +67,7 @@ self.addEventListener("fetch", (event) => {
     event.respondWith(
       fetch(req)
         .then((res) => {
+          if (NOT_APP_SHELL.includes(url.pathname)) return res;
           const copy = res.clone();
           caches.open(VERSION).then((c) => c.put("/", copy));
           return res;

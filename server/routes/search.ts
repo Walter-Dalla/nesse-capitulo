@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import { APP_NAME, CONTACT_EMAIL } from "../contact.js";
 import { env } from "../env.js";
 import type { AppEnv, BookDetails, BookInput, ErrorCode } from "../types.js";
 
@@ -12,6 +13,7 @@ const GOOGLE_BOOKS_URL = "https://www.googleapis.com/books/v1/volumes";
 const OPEN_LIBRARY_SEARCH_URL = "https://openlibrary.org/search.json";
 const OPEN_LIBRARY_URL = "https://openlibrary.org";
 const FETCH_TIMEOUT_MS = 8000;
+const USER_AGENT = `${APP_NAME}/0.1 (book tracker; contact: ${CONTACT_EMAIL})`;
 
 // ---------- cache simples em memória (LRU-ish por tamanho) ----------
 function makeCache<T>(max: number, ttlMs: number) {
@@ -29,7 +31,8 @@ function makeCache<T>(max: number, ttlMs: number) {
     },
   };
 }
-const searchCache = makeCache<BookInput[]>(500, 10 * 60 * 1000);
+// guarda a fonte junto: lista vazia da Open Library não pode voltar do cache como Google
+const searchCache = makeCache<{ items: BookInput[]; provider: "google" | "openlibrary" }>(500, 10 * 60 * 1000);
 const detailsCache = makeCache<BookDetails>(1000, 60 * 60 * 1000);
 
 // ---------- throttle por usuário (protege o backend e as cotas externas) ----------
@@ -48,7 +51,7 @@ export function allowSearch(userId: string, now = Date.now()): boolean {
 }
 
 function fetchJson(url: string): Promise<Response> {
-  return fetch(url, { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS), headers: { "User-Agent": "Estante/0.1 (book tracker)" } });
+  return fetch(url, { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS), headers: { "User-Agent": USER_AGENT } });
 }
 
 // ---------- Google Books ----------
@@ -128,7 +131,7 @@ async function searchOpenLibrary(q: string): Promise<BookInput[]> {
 export async function searchBooks(q: string): Promise<{ items: BookInput[]; provider: "google" | "openlibrary" }> {
   const key = q.toLowerCase();
   const hit = searchCache.get(key);
-  if (hit) return { items: hit, provider: hit[0]?.source === "openlibrary" ? "openlibrary" : "google" };
+  if (hit) return hit;
   let items: BookInput[];
   let provider: "google" | "openlibrary" = "google";
   try {
@@ -147,8 +150,9 @@ export async function searchBooks(q: string): Promise<{ items: BookInput[]; prov
       );
     }
   }
-  searchCache.set(key, items);
-  return { items, provider };
+  const result = { items, provider };
+  searchCache.set(key, result);
+  return result;
 }
 
 /** Sinopse na fonte externa; quem grava no banco é `GET /api/shelf/:id/details`. */
