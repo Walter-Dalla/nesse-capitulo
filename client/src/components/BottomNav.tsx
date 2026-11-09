@@ -1,17 +1,18 @@
 import { NavLink } from "react-router";
+import { t } from "../lib/i18n";
 import { IconCalendar, IconFriends, IconSearch, IconShelf, IconUser } from "./Icons";
 
 const ITEMS = [
-  { to: "/", label: "Estante", Icon: IconShelf },
-  { to: "/buscar", label: "Buscar", Icon: IconSearch },
-  { to: "/anos", label: "Por ano", Icon: IconCalendar },
-  { to: "/amigos", label: "Amigos", Icon: IconFriends },
-  { to: "/perfil", label: "Perfil", Icon: IconUser },
-];
+  { to: "/", label: "social.nav.shelf", Icon: IconShelf },
+  { to: "/buscar", label: "social.nav.search", Icon: IconSearch },
+  { to: "/anos", label: "social.nav.years", Icon: IconCalendar },
+  { to: "/amigos", label: "social.nav.friends", Icon: IconFriends },
+  { to: "/perfil", label: "social.nav.profile", Icon: IconUser },
+] as const;
 
 export function BottomNav() {
   return (
-    <nav className="safe-bottom fixed inset-x-0 bottom-0 z-40 border-t border-stone-200 bg-white/95 backdrop-blur dark:border-stone-800 dark:bg-stone-950/95" aria-label="Navegação principal">
+    <nav className="safe-bottom fixed inset-x-0 bottom-0 z-40 border-t border-stone-200 bg-white/95 backdrop-blur dark:border-stone-800 dark:bg-stone-950/95" aria-label={t("social.nav.label")}>
       <ul className="mx-auto flex max-w-md items-stretch justify-around px-2 pt-1.5">
         {ITEMS.map(({ to, label, Icon }) => (
           <li key={to} className="flex-1">
@@ -23,7 +24,7 @@ export function BottomNav() {
               }
             >
               <Icon width={24} height={24} />
-              {label}
+              {t(label)}
             </NavLink>
           </li>
         ))}
