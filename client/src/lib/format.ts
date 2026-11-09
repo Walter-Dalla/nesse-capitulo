@@ -1,13 +1,16 @@
+import { intlTag, t, tp } from "./i18n.js";
+
 export function formatAuthors(authors: string[] | undefined) {
-  if (!authors || authors.length === 0) return "Autor desconhecido";
-  if (authors.length <= 2) return authors.join(" e ");
-  return `${authors[0]} e outros`;
+  if (!authors || authors.length === 0) return t("base.authors.unknown");
+  if (authors.length === 1) return authors[0];
+  if (authors.length === 2) return t("base.authors.two", { first: authors[0], second: authors[1] });
+  return t("base.authors.others", { first: authors[0] });
 }
 
 export function formatDate(iso: string | null | undefined) {
   if (!iso) return "";
   const [y, m, d] = iso.split("-").map(Number);
-  return new Date(y, m - 1, d).toLocaleDateString("pt-BR");
+  return new Date(y, m - 1, d).toLocaleDateString(intlTag());
 }
 
 export function today() {
@@ -39,26 +42,26 @@ export function coverUrlFor(book: { source: string; sourceId?: string | null; co
 
 /** Nome de um amigo para exibir; sem nome, como no Perfil. */
 export function displayName(user: { name: string | null }) {
-  return user.name?.trim() || "Leitor(a)";
+  return user.name?.trim() || t("base.reader");
 }
 
 /** Texto do badge na tela do livro: "Ana já leu", "Ana e João já leram", "Ana, João e mais 2 já leram". */
 export function friendsReadText(names: string[]) {
   if (names.length === 0) return "";
-  if (names.length === 1) return `${names[0]} já leu`;
-  if (names.length === 2) return `${names[0]} e ${names[1]} já leram`;
-  return `${names[0]}, ${names[1]} e mais ${names.length - 2} já leram`;
+  if (names.length === 1) return t("base.friends.readOne", { name: names[0] });
+  if (names.length === 2) return t("base.friends.readTwo", { first: names[0], second: names[1] });
+  return t("base.friends.readMany", { first: names[0], second: names[1], count: names.length - 2 });
 }
 
 /** Chip do cartão: "1 amigo leu", "2 amigos leram". */
 export function friendsReadChip(count: number) {
-  return count === 1 ? "1 amigo leu" : `${count} amigos leram`;
+  return tp("base.friends.readChip", count);
 }
 
 /** Data de um registro do servidor (SQLite grava em UTC, "AAAA-MM-DD HH:MM:SS") no fuso do aparelho. */
 export function formatTimestamp(sqlUtc: string) {
   const d = new Date(`${sqlUtc.replace(" ", "T")}Z`);
-  return Number.isNaN(d.getTime()) ? "" : d.toLocaleDateString("pt-BR");
+  return Number.isNaN(d.getTime()) ? "" : d.toLocaleDateString(intlTag());
 }
 
 /** "Atualizado hoje", "Atualizado ontem", "Atualizado há 3 dias" a partir de um timestamp do servidor. */
@@ -67,9 +70,9 @@ export function updatedAgoText(sqlUtc: string, now = new Date()) {
   if (Number.isNaN(d.getTime())) return "";
   const startOfDay = (x: Date) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
   const days = Math.max(0, Math.round((startOfDay(now) - startOfDay(d)) / 86_400_000));
-  if (days === 0) return "Atualizado hoje";
-  if (days === 1) return "Atualizado ontem";
-  return `Atualizado há ${days} dias`;
+  if (days === 0) return t("base.updated.today");
+  if (days === 1) return t("base.updated.yesterday");
+  return t("base.updated.days", { days });
 }
 
 /** Percentual lido (0 a 100), ou null sem página atual ou sem total de páginas. */
@@ -82,5 +85,6 @@ export function readingPercent(currentPage: number | null | undefined, pageCount
 export function pageProgressText(currentPage: number | null | undefined, pageCount: number | null | undefined) {
   if (currentPage == null) return "";
   const pct = readingPercent(currentPage, pageCount);
-  return pct === null ? `Pág. ${currentPage}` : `Pág. ${currentPage} de ${pageCount} · ${pct}%`;
+  if (pct === null) return t("base.page.current", { page: currentPage });
+  return t("base.page.progress", { page: currentPage, total: pageCount as number, percent: pct });
 }

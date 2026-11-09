@@ -1,4 +1,5 @@
 import { QueryClient } from "@tanstack/react-query";
+import { apiErrorMessage } from "./i18n.js";
 import type {
   AddPayload, BookComment, BookInput, CommentVisibility, FriendComment, FriendInvitePreview, FriendShelfItem, FriendSummary, FriendUser,
   Providers, ShelfItem, ShelfPatch, Stats, Status, User,
@@ -24,10 +25,10 @@ async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
   });
   if (res.status === 401) {
     queryClient.setQueryData(["me"], { user: null });
-    throw new ApiError(401, "Sessão expirada. Entre de novo.");
+    throw new ApiError(401, apiErrorMessage(undefined, 401));
   }
   const data = res.headers.get("content-type")?.includes("json") ? await res.json() : null;
-  if (!res.ok) throw new ApiError(res.status, data?.error ?? `Erro ${res.status}`, data?.code);
+  if (!res.ok) throw new ApiError(res.status, apiErrorMessage(data?.code, res.status), data?.code);
   return data as T;
 }
 
