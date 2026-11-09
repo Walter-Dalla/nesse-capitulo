@@ -7,15 +7,16 @@
 Armadilha: `node --test` sai 0 quando nenhum teste casa com `--test-name-pattern` e quando recebe arquivo inexistente junto de um existente. Aceitação = arquivo de teste novo, sozinho na 1ª chamada. [retros i18n-pt-en-es]
 Área: `node --test --import tsx --test-name-pattern "<filtro>" tests/*.test.ts` (filtro = trecho do nome do `test("…")`). [package.json, inferido]
 Suíte: `npm test 2>&1 | grep -E "^# (pass|fail)|not ok"`. [package.json]
+Item que muda `server/db.ts` (schema, `migrate`, gatilho) roda também a suíte: fixture antiga em `tests/` pode quebrar. Linha de `db.prepare().get/all` em `deepEqual`: espalhar `{ ...row }` (protótipo nulo). [retro play-store]
 Aceite de item = teste de área que só fica verde com o item feito; teste novo em `tests/<area>.test.ts` quando não há. Banco em memória: `createApp(openDatabase(":memory:"))`; login dev por `POST /auth/dev` com `ALLOW_DEV_LOGIN=true`, `NODE_ENV=test`. [tests/api.test.ts]
 Relógio e aleatoriedade: não injetados; — [inferido]
 
 ## Checks
-`npm run typecheck` (front, server e tests) — por item e QA final. [package.json, ci: ci.yml]
+`npm run typecheck > /dev/null 2>&1; echo tc=$?` (front, server e tests) — por item e QA final; com `| tail` o exit é do filtro. [package.json, ci: ci.yml, retro play-store]
 Lint/formatação: — (não há ESLint/Prettier no repo). [package.json]
 
 ## Serviço descartável
-Subir: `npm run build && PORT=<porta> DATABASE_PATH=/tmp/estante-<slug>.db ALLOW_DEV_LOGIN=true NODE_ENV=development BASE_URL=http://localhost:<porta> node dist/server/index.js > /tmp/estante-<slug>.log 2>&1 &` (serve API + front na mesma porta). [server/index.ts, server/env.ts, confirmado pelo dono]
+Subir: `npm run build && PORT=<porta> DATABASE_PATH=/tmp/estante-<slug>.db ALLOW_DEV_LOGIN=true GOOGLE_CLIENT_ID=fake-qa GOOGLE_CLIENT_SECRET=fake-qa NODE_ENV=development BASE_URL=http://localhost:<porta> node dist/server/index.js > /tmp/estante-<slug>.log 2>&1 &` (serve API + front na mesma porta; ids Google falsos só para o botão aparecer, nunca clicar). [server/index.ts, server/env.ts, confirmado pelo dono, retro play-store]
 Health: `curl -s http://localhost:<porta>/api/health` → `{"ok":true}`. [server/app.ts]
 Parar: `fuser -k <porta>/tcp`. Fixtures: — (banco nasce vazio; login dev cria o usuário). [confirmado pelo dono]
 Portas: `_comum § Portas`.
