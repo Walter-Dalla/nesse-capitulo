@@ -1,12 +1,11 @@
 import { serve } from "@hono/node-server";
-import { serveStatic } from "@hono/node-server/serve-static";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { createApp, isApiPath } from "./app.js";
+import { createApp } from "./app.js";
 import { openDatabase } from "./db.js";
 import { env, googleLoginEnabled } from "./env.js";
-import { hasSession } from "./auth.js";
+import { mountClient } from "./html.js";
 
 const db = openDatabase();
 const app = createApp(db);
@@ -17,19 +16,7 @@ const clientDir = [path.resolve(here, "../client"), path.resolve(process.cwd(), 
   fs.existsSync(path.join(d, "index.html")),
 );
 if (clientDir) {
-  const root = path.relative(process.cwd(), clientDir) || ".";
-  app.use(
-    "/assets/*",
-    serveStatic({ root, onFound: (_p, c) => c.header("Cache-Control", "public, max-age=31536000, immutable") }),
-  );
-  const spa = serveStatic({ root, path: "index.html" });
-  // Home: visitante sem sessão recebe a página estática (landing.html, indexável, sem JS); logado cai na SPA (estante).
-  const landing = serveStatic({ root, path: "landing.html" });
-  app.get("/", (c, next) => (hasSession(db, c) ? spa(c, next) : landing(c, next)));
-  app.get("/landing.html", (c) => c.redirect("/", 301));
-  app.use("*", serveStatic({ root }));
-  // fallback da SPA: qualquer rota que não seja API/auth devolve o index.html
-  app.get("*", (c, next) => (isApiPath(c.req.path) ? next() : spa(c, next)));
+  mountClient(app, db, clientDir);
 } else {
   console.warn("dist/client não encontrado — rode `npm run build` para servir o front por aqui (em dev use o Vite na 5173).");
 }
