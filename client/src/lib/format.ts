@@ -40,6 +40,25 @@ export function coverUrlFor(book: { source: string; sourceId?: string | null; co
   return null;
 }
 
+/** Página do livro na fonte (Google Books ou Open Library); null no cadastro manual ou sem id na fonte. */
+export function bookSourceUrl(book: { source: string; sourceId?: string | null }): string | null {
+  if (!book.sourceId) return null;
+  const id = encodeURIComponent(book.sourceId);
+  if (book.source === "google") return `https://books.google.com/books?id=${id}`;
+  if (book.source === "openlibrary") return `https://openlibrary.org/works/${id}`;
+  return null;
+}
+
+/**
+ * Rodapé da busca: "via Open Library" só com resultados dela, nada quando ela volta vazia ou a busca falha,
+ * "Powered by Google" no resto (inclusive antes da primeira busca). Decide pela fonte, nunca pela contagem.
+ */
+export function searchAttribution(state: { provider?: string | null; itemCount: number; failed: boolean }): "via" | "poweredByGoogle" | null {
+  if (state.provider === "openlibrary") return state.itemCount > 0 ? "via" : null;
+  if (state.failed) return null;
+  return "poweredByGoogle";
+}
+
 /** Nome de um amigo para exibir; sem nome, como no Perfil. */
 export function displayName(user: { name: string | null }) {
   return user.name?.trim() || t("base.reader");

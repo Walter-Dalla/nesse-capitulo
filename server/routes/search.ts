@@ -31,7 +31,8 @@ function makeCache<T>(max: number, ttlMs: number) {
     },
   };
 }
-const searchCache = makeCache<BookInput[]>(500, 10 * 60 * 1000);
+// guarda a fonte junto: lista vazia da Open Library não pode voltar do cache como Google
+const searchCache = makeCache<{ items: BookInput[]; provider: "google" | "openlibrary" }>(500, 10 * 60 * 1000);
 const detailsCache = makeCache<BookDetails>(1000, 60 * 60 * 1000);
 
 // ---------- throttle por usuário (protege o backend e as cotas externas) ----------
@@ -130,7 +131,7 @@ async function searchOpenLibrary(q: string): Promise<BookInput[]> {
 export async function searchBooks(q: string): Promise<{ items: BookInput[]; provider: "google" | "openlibrary" }> {
   const key = q.toLowerCase();
   const hit = searchCache.get(key);
-  if (hit) return { items: hit, provider: hit[0]?.source === "openlibrary" ? "openlibrary" : "google" };
+  if (hit) return hit;
   let items: BookInput[];
   let provider: "google" | "openlibrary" = "google";
   try {
@@ -149,8 +150,9 @@ export async function searchBooks(q: string): Promise<{ items: BookInput[]; prov
       );
     }
   }
-  searchCache.set(key, items);
-  return { items, provider };
+  const result = { items, provider };
+  searchCache.set(key, result);
+  return result;
 }
 
 /** Sinopse na fonte externa; quem grava no banco é `GET /api/shelf/:id/details`. */
