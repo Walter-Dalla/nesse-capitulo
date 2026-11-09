@@ -2,6 +2,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Suspense, lazy } from "react";
 import { BrowserRouter, Navigate, Outlet, Route, Routes, useLocation } from "react-router";
 import { Spinner } from "./components/Layout";
+import { TermsGate } from "./components/TermsGate";
 import { Toaster } from "./components/Toast";
 import { queryClient } from "./lib/api";
 import { useMe } from "./lib/hooks";
@@ -33,7 +34,9 @@ function RequireAuth() {
     if (code) savePendingInvite(browserInviteStore(), code);
     return <Navigate to="/login" replace />;
   }
-  const to = pendingInviteRedirect(browserInviteStore(), pathname);
+  // antes do convite guardado: /perfil (exclusão da conta) fica aberto, senão o convite devolveria ao gate em ciclo
+  if (!me.data.termsAccepted) return pathname === "/perfil" ? <Outlet /> : <TermsGate />;
+  const to =pendingInviteRedirect(browserInviteStore(), pathname);
   if (to) return <Navigate to={to} replace />;
   return <Outlet />;
 }

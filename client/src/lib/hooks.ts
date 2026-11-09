@@ -108,6 +108,10 @@ function cacheBookAssets(item: ShelfItem) {
   void queryClient.prefetchQuery({ queryKey: ["details", item.id], queryFn: () => loadDetails(item.id), staleTime: DETAILS_STALE_MS });
 }
 
+/** Refaz ["me"]: com termsAccepted verdadeiro, RequireAuth troca o TermsGate pela rota pedida. */
+export const useAcceptTerms = () =>
+  useMutation({ mutationFn: Api.acceptTerms, onSuccess: () => queryClient.invalidateQueries({ queryKey: ["me"] }) });
+
 export const useAdReward = () =>
   useMutation({ mutationFn: (provider: string) => Api.adReward(provider), onSuccess: () => queryClient.invalidateQueries({ queryKey: ["me"] }) });
 
