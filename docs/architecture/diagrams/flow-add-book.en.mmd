@@ -1,0 +1,37 @@
+sequenceDiagram
+    actor reader as Reader
+    participant spa as Single-page app
+    participant web_server as Web server
+    participant google_books as Google Books
+    participant open_library as Open Library
+    participant sqlite_db as Database
+    participant service_worker as Service worker
+    reader->>spa: Types a title (3+ characters)
+    spa->>web_server: GET /api/search after a 1 s debounce
+    web_server->>sqlite_db: Find session by cookie
+    web_server->>web_server: Take a token from the per-user bucket, then check the 10 min cache
+    web_server->>google_books: Search volumes
+    alt Google Books answers
+        google_books-->>web_server: Volumes
+    else Google Books fails or is rate limited
+        web_server->>open_library: Search works
+        open_library-->>web_server: Works
+    end
+    web_server-->>spa: Normalized items and provider
+    reader->>spa: Taps a status on a result
+    spa->>web_server: POST /api/shelf with book and status
+    web_server->>web_server: Validate input and reconcile status rules
+    alt Ad gate is on, session not unlocked and book is new
+        web_server-->>spa: 403 AD_REQUIRED
+    else Ad gate off or already unlocked
+        web_server->>sqlite_db: Transaction, find or create book and upsert shelf item
+        web_server-->>spa: Shelf item
+        spa->>service_worker: Preload cover images from the cover reference
+        service_worker->>google_books: Fetch cover (or from Open Library)
+        service_worker->>service_worker: Store cover in Cache Storage
+        spa->>web_server: GET /api/shelf/:id/details
+        web_server->>sqlite_db: Read the stored synopsis
+        web_server->>google_books: Fetch synopsis if missing, then save it in the database
+        web_server-->>spa: Synopsis
+        spa->>spa: Copy synopsis to Cache Storage
+    end

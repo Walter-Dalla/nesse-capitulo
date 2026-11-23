@@ -1,0 +1,75 @@
+erDiagram
+  users ||--o{ sessions : "abre"
+  users ||--o{ user_books : "coloca na estante"
+  books ||--o{ user_books : "aparece na estante como"
+  user_books ||--o{ book_comments : "recebe"
+  users ||--o{ book_comments : "escreve"
+  users ||--o{ friendships : "participa de"
+  users ||--o{ friend_invites : "cria ou usa"
+  users ||--o{ user_blocks : "bloqueia ou é bloqueado em"
+  users ||--o{ content_reports : "denuncia ou é denunciado em"
+  book_comments |o--o{ content_reports : "é alvo de"
+
+  users {
+    text id PK
+    text google_sub UK
+    text email
+    text name
+    integer terms_version
+    text banned_at
+  }
+  sessions {
+    text id PK
+    text user_id FK
+    integer expires_at
+    integer ad_unlocked
+  }
+  books {
+    text id PK
+    text source
+    text source_id
+    text title
+    text authors
+    text isbn13
+    text cover_ref
+    text description
+  }
+  user_books {
+    text id PK
+    text user_id FK
+    text book_id FK
+    text status
+    integer rating
+    text finished_at
+    integer read_year
+    integer current_page
+  }
+  book_comments {
+    text id PK
+    text item_id FK
+    text user_id FK
+    text body
+    text visibility
+  }
+  friendships {
+    text user_low PK, FK
+    text user_high PK, FK
+  }
+  friend_invites {
+    text code PK
+    text inviter_id FK
+    text used_by FK
+  }
+  user_blocks {
+    text blocker_id PK, FK
+    text blocked_id PK, FK
+  }
+  content_reports {
+    text id PK
+    text reporter_id FK
+    text reported_user_id FK
+    text comment_id FK
+    text comment_body
+    text reason
+    text status
+  }

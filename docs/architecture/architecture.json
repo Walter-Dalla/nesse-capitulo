@@ -1,0 +1,1456 @@
+{
+  "schemaVersion": 2,
+  "project": {
+    "name": "Estante",
+    "slug": "nesse-capitulo",
+    "repository": "",
+    "commit": "2487705635b879c3acd70a6a8a8f9042015dbde0",
+    "generatedAt": "2026-11-12T01:46:49Z"
+  },
+  "systemType": "web-app",
+  "summary": {
+    "en": "Estante is a mobile-first reading tracker: readers shelve books, rate and review them, add friends by invite link and exchange comments. It ships as one container published through a Cloudflare tunnel, with all state in a single SQLite file (D1, D2). Identity and the book catalog are delegated to Google and Open Library and nothing in the stack is paid for; what that costs is recorded in the decisions and risks.",
+    "pt": "Estante é um tracker de leituras mobile-first: leitores organizam livros na estante, dão nota e resenha, adicionam amigos por link de convite e trocam comentários. O produto sai como um único contêiner publicado por um túnel da Cloudflare, com todo o estado em um arquivo SQLite (D1, D2). Identidade e catálogo de livros são delegados ao Google e à Open Library e nada na stack é pago; o custo disso está registrado nas decisões e nos riscos."
+  },
+  "stack": [
+    {
+      "name": "TypeScript 7",
+      "role": {
+        "en": "Language for client, server and tests",
+        "pt": "Linguagem do cliente, do servidor e dos testes"
+      }
+    },
+    {
+      "name": "React 19",
+      "role": {
+        "en": "UI of the single-page app",
+        "pt": "Interface da aplicação de página única"
+      }
+    },
+    {
+      "name": "Vite 8",
+      "role": {
+        "en": "Client build and dev server with API proxy",
+        "pt": "Build do cliente e servidor de desenvolvimento com proxy da API"
+      }
+    },
+    {
+      "name": "Tailwind CSS 4",
+      "role": {
+        "en": "Styling",
+        "pt": "Estilos"
+      }
+    },
+    {
+      "name": "React Router 8",
+      "role": {
+        "en": "Client-side routing",
+        "pt": "Rotas no cliente"
+      }
+    },
+    {
+      "name": "TanStack Query 5",
+      "role": {
+        "en": "Server-state fetching and caching in the client",
+        "pt": "Busca e cache do estado do servidor no cliente"
+      }
+    },
+    {
+      "name": "Node.js 24",
+      "role": {
+        "en": "Server runtime",
+        "pt": "Runtime do servidor"
+      }
+    },
+    {
+      "name": "Hono 4",
+      "role": {
+        "en": "HTTP framework for API, auth and server-rendered pages",
+        "pt": "Framework HTTP da API, da autenticação e das páginas renderizadas no servidor"
+      }
+    },
+    {
+      "name": "SQLite (node:sqlite)",
+      "role": {
+        "en": "Embedded database in WAL mode, no native dependency",
+        "pt": "Banco embutido em modo WAL, sem dependência nativa"
+      }
+    },
+    {
+      "name": "Google OAuth 2.0 / OpenID Connect",
+      "role": {
+        "en": "Reader sign-in, implemented without an auth library",
+        "pt": "Login do leitor, implementado sem biblioteca de autenticação"
+      }
+    },
+    {
+      "name": "Service Worker + Cache Storage",
+      "role": {
+        "en": "Offline app shell and on-device cache of covers and synopses",
+        "pt": "App shell offline e cache de capas e sinopses no aparelho"
+      }
+    },
+    {
+      "name": "node:test",
+      "role": {
+        "en": "API tests against an in-memory database",
+        "pt": "Testes da API contra um banco em memória"
+      }
+    },
+    {
+      "name": "Docker + Docker Compose",
+      "role": {
+        "en": "Multi-stage image and the single-container deployment",
+        "pt": "Imagem multi-stage e a implantação em um único contêiner"
+      }
+    },
+    {
+      "name": "Cloudflare Tunnel",
+      "role": {
+        "en": "Public entry point in front of the container",
+        "pt": "Ponto de entrada público na frente do contêiner"
+      }
+    },
+    {
+      "name": "GitHub Actions",
+      "role": {
+        "en": "CI: typecheck, tests and build",
+        "pt": "CI: typecheck, testes e build"
+      }
+    }
+  ],
+  "diagrams": [
+    {
+      "id": "context",
+      "level": "c4-context",
+      "mermaidType": "flowchart",
+      "files": {
+        "en": "diagrams/context.en.mmd",
+        "pt": "diagrams/context.pt.mmd"
+      },
+      "title": {
+        "en": "System context",
+        "pt": "Contexto do sistema"
+      },
+      "caption": {
+        "en": "Estante, its two kinds of users and the four external services it depends on.",
+        "pt": "A Estante, seus dois tipos de usuário e os quatro serviços externos de que depende."
+      },
+      "description": {
+        "en": "Top-down flowchart. A reader and a moderator both use the Estante system. Estante signs users in with Google Identity, searches books and loads covers from Google Books, falls back to Open Library for search and covers, and is published through Cloudflare.",
+        "pt": "Fluxograma de cima para baixo. Um leitor e um moderador usam o sistema Estante. A Estante autentica usuários com o Google Identity, busca livros e carrega capas do Google Books, recorre à Open Library para busca e capas e é publicada através da Cloudflare."
+      },
+      "insight": {
+        "en": "The system owns only reading data. Identity, the book catalog and the public entry point belong to third parties, and each of the four is named in the privacy policy.",
+        "pt": "O sistema só é dono dos dados de leitura. Identidade, catálogo de livros e ponto de entrada público pertencem a terceiros, e cada um dos quatro é citado na política de privacidade."
+      }
+    },
+    {
+      "id": "containers",
+      "level": "c4-container",
+      "mermaidType": "flowchart",
+      "files": {
+        "en": "diagrams/containers.en.mmd",
+        "pt": "diagrams/containers.pt.mmd"
+      },
+      "title": {
+        "en": "Containers",
+        "pt": "Contêineres"
+      },
+      "caption": {
+        "en": "Two containers and a cache in the browser, one process and one database file on the server.",
+        "pt": "Dois contêineres e um cache no navegador, um processo e um arquivo de banco no servidor."
+      },
+      "description": {
+        "en": "Top-down flowchart with the Estante boundary as a subgraph holding the single-page app, the service worker, the browser cache, the web server and the database. The reader and the moderator use the single-page app; the reader also reads landing and legal pages from the web server. Cloudflare forwards requests to the web server and adds the visitor country. The app calls the JSON API with a session cookie, loads covers through the service worker and keeps a copy of each synopsis in the browser cache, where the service worker also stores the app shell and covers. The web server reads and writes the database, talks to Google Identity for sign-in and to Google Books and Open Library for search and synopses. The service worker fetches cover images directly from Google Books and Open Library.",
+        "pt": "Fluxograma de cima para baixo com a fronteira da Estante em um subgraph que contém a aplicação de página única, o service worker, o cache do navegador, o servidor web e o banco de dados. O leitor e o moderador usam a aplicação; o leitor também lê a home e as páginas legais do servidor web. A Cloudflare encaminha as requisições ao servidor web e adiciona o país do visitante. A aplicação chama a API JSON com cookie de sessão, carrega capas pelo service worker e mantém uma cópia de cada sinopse no cache do navegador, onde o service worker também guarda o app shell e as capas. O servidor web lê e grava no banco, fala com o Google Identity para o login e com o Google Books e a Open Library para busca e sinopses. O service worker busca as imagens de capa direto no Google Books e na Open Library."
+      },
+      "insight": {
+        "en": "Two paths leave the browser and they never cross: reading state goes to the server, images go straight to the public sources (D4). The browser cache holds only copies, so clearing it loses nothing.",
+        "pt": "Dois caminhos saem do navegador e nunca se cruzam: o estado de leitura vai para o servidor, as imagens vão direto às fontes públicas (D4). O cache do navegador só guarda cópias, então limpá-lo não perde nada."
+      }
+    },
+    {
+      "id": "deployment",
+      "level": "deployment",
+      "mermaidType": "flowchart",
+      "files": {
+        "en": "diagrams/deployment.en.mmd",
+        "pt": "diagrams/deployment.pt.mmd"
+      },
+      "title": {
+        "en": "Deployment",
+        "pt": "Implantação"
+      },
+      "caption": {
+        "en": "From the reader's browser to the database file: edge, tunnel, one container and one volume.",
+        "pt": "Do navegador do leitor até o arquivo do banco: borda, túnel, um contêiner e um volume."
+      },
+      "description": {
+        "en": "Top-down flowchart. The reader connects over HTTPS to Cloudflare, which forwards requests through a tunnel to the tunnel connector. The connector runs inside the container host, next to the web server, and proxies plain HTTP to it. The web server reads and writes the database, which keeps its file on a data volume. The container host pulls the application image from a private container registry.",
+        "pt": "Fluxograma de cima para baixo. O leitor conecta via HTTPS à Cloudflare, que encaminha as requisições por um túnel ao conector do túnel. O conector roda dentro do host de contêineres, ao lado do servidor web, e repassa HTTP puro a ele. O servidor web lê e grava no banco de dados, que mantém seu arquivo em um volume de dados. O host de contêineres baixa a imagem da aplicação de um registro de contêineres privado."
+      },
+      "insight": {
+        "en": "The public path is the tunnel, which the connector opens from the inside, so the app needs no public inbound port. Everything below the edge exists exactly once, so the host, the container and the volume are each a single point of failure.",
+        "pt": "O caminho público é o túnel, que o conector abre de dentro para fora, então o app não precisa de porta de entrada pública. Tudo abaixo da borda existe uma única vez, então o host, o contêiner e o volume são, cada um, um ponto único de falha."
+      }
+    },
+    {
+      "id": "data-model",
+      "level": "supplementary",
+      "mermaidType": "erDiagram",
+      "files": {
+        "en": "diagrams/data-model.en.mmd",
+        "pt": "diagrams/data-model.pt.mmd"
+      },
+      "title": {
+        "en": "Data model",
+        "pt": "Modelo de dados"
+      },
+      "caption": {
+        "en": "The nine SQLite tables; the column selection is partial, showing keys and the fields that carry rules.",
+        "pt": "As nove tabelas SQLite; a seleção de colunas é parcial e mostra as chaves e os campos que carregam regras."
+      },
+      "description": {
+        "en": "Entity-relationship diagram. A user opens many sessions and shelves many user_books; each user_books row points to one book, so books are shared between users. A shelf item receives many book_comments, each written by a user. Users take part in friendships, create or use friend_invites, appear in user_blocks as blocker or blocked, and appear in content_reports as reporter or reported; a report may also target a book comment.",
+        "pt": "Diagrama entidade-relacionamento. Um usuário abre várias sessões e tem vários user_books; cada linha de user_books aponta para um livro, então os livros são compartilhados entre usuários. Um item da estante recebe vários book_comments, cada um escrito por um usuário. Usuários participam de friendships, criam ou usam friend_invites, aparecem em user_blocks como quem bloqueia ou é bloqueado e em content_reports como quem denuncia ou é denunciado; uma denúncia também pode ter um comentário como alvo."
+      },
+      "insight": {
+        "en": "The catalog (books) is shared and the reading state (user_books) is personal, which lets the 'friends who read this' badge match on the same book row or ISBN. A report keeps a copy of the comment text, so it outlives the removal of the comment.",
+        "pt": "O catálogo (books) é compartilhado e o estado de leitura (user_books) é pessoal, o que permite ao selo de 'amigos que já leram' casar pelo mesmo registro ou pelo ISBN. A denúncia guarda uma cópia do texto do comentário, então sobrevive à remoção dele."
+      }
+    },
+    {
+      "id": "flow-login",
+      "level": "supplementary",
+      "mermaidType": "sequenceDiagram",
+      "files": {
+        "en": "diagrams/flow-login.en.mmd",
+        "pt": "diagrams/flow-login.pt.mmd"
+      },
+      "title": {
+        "en": "Sign in with Google",
+        "pt": "Login com Google"
+      },
+      "caption": {
+        "en": "The highest-risk flow: hand-written OAuth, with the two failure paths that stop a sign-in.",
+        "pt": "O fluxo de maior risco: OAuth escrito à mão, com os dois caminhos de falha que barram um login."
+      },
+      "description": {
+        "en": "Sequence diagram. The reader taps Sign in with Google; the app requests the sign-in route and the web server redirects to Google after setting a short-lived state cookie. Google redirects back to the callback with a code and the state. If the state is missing or differs from the cookie, the server redirects to the login screen with an error. Otherwise it exchanges the code for an ID token and upserts the user in the database. A banned account is redirected to the login screen with an error; an active one gets a new session row, an HttpOnly session cookie and a redirect to the home. The app then asks who is signed in, and the server finds the session joined with the user, excluding banned accounts.",
+        "pt": "Diagrama de sequência. O leitor toca em Entrar com Google; a aplicação pede a rota de login e o servidor web redireciona para o Google depois de definir um cookie de state de curta duração. O Google redireciona de volta ao callback com um code e o state. Se o state falta ou difere do cookie, o servidor redireciona para a tela de login com erro. Caso contrário, troca o code por um ID token e cria ou atualiza o usuário no banco. Uma conta banida é redirecionada para a tela de login com erro; uma conta ativa recebe uma nova linha de sessão, um cookie de sessão HttpOnly e um redirecionamento para a home. A aplicação então pergunta quem está logado, e o servidor busca a sessão com junção ao usuário, excluindo contas banidas."
+      },
+      "insight": {
+        "en": "A ban is enforced twice: once at sign-in and again on every request, because the session lookup joins the user row. That immediate revocation is what the per-request database read of D3 buys.",
+        "pt": "O banimento é aplicado duas vezes: no login e de novo a cada requisição, porque a busca da sessão faz junção com o usuário. Essa revogação imediata é o que a leitura do banco por requisição de D3 compra."
+      }
+    },
+    {
+      "id": "flow-add-book",
+      "level": "supplementary",
+      "mermaidType": "sequenceDiagram",
+      "files": {
+        "en": "diagrams/flow-add-book.en.mmd",
+        "pt": "diagrams/flow-add-book.pt.mmd"
+      },
+      "title": {
+        "en": "Search and add a book",
+        "pt": "Buscar e adicionar um livro"
+      },
+      "caption": {
+        "en": "The central flow, from typing a title to the book on the shelf with its cover and synopsis cached.",
+        "pt": "O fluxo central, da digitação do título até o livro na estante com capa e sinopse em cache."
+      },
+      "description": {
+        "en": "Sequence diagram. The reader types a title; after a one-second debounce the app calls the search route. The web server finds the session, takes a token from the per-user bucket and checks the ten-minute cache, then searches Google Books; if that fails or is rate limited it searches Open Library instead. Normalized items return to the app. The reader taps a status and the app posts the book to the shelf route, where the server validates the input and reconciles the status rules. If the ad gate is on, the session has not unlocked it and the book is new, the server answers 403. Otherwise it finds or creates the book and upserts the shelf item in one transaction. The app then preloads the cover images through the service worker, which fetches them from the public source and stores them in Cache Storage, and asks for the synopsis: the server reads the stored one, fetches it from the source if missing and saves it in the database, and the app copies it to Cache Storage.",
+        "pt": "Diagrama de sequência. O leitor digita um título; depois de um debounce de um segundo a aplicação chama a rota de busca. O servidor web busca a sessão, consome um token do limite por usuário e consulta o cache de dez minutos, depois busca no Google Books; se falhar ou houver limite de taxa, busca na Open Library. Os itens normalizados voltam à aplicação. O leitor toca em um status e a aplicação envia o livro à rota da estante, onde o servidor valida a entrada e reconcilia as regras de status. Se o gate de anúncio está ligado, a sessão não o liberou e o livro é novo, o servidor responde 403. Caso contrário, busca ou cria o livro e grava o item da estante em uma transação. A aplicação então pré-carrega as capas pelo service worker, que as busca na fonte pública e as guarda no Cache Storage, e pede a sinopse: o servidor lê a guardada, busca na fonte se faltar e salva no banco, e a aplicação a copia para o Cache Storage."
+      },
+      "insight": {
+        "en": "The synopsis is fetched from the source once per book, for every reader: the database holds the durable copy, the server memory and the browser hold disposable ones. The cover takes the opposite route and is never stored on the server.",
+        "pt": "A sinopse é buscada na fonte uma vez por livro, para todos os leitores: o banco guarda a cópia durável, a memória do servidor e o navegador guardam cópias descartáveis. A capa faz o caminho oposto e nunca é guardada no servidor."
+      }
+    }
+  ],
+  "elements": [
+    {
+      "id": "reader",
+      "kind": "person",
+      "name": {
+        "en": "Reader",
+        "pt": "Leitor"
+      },
+      "technology": "",
+      "responsibility": {
+        "en": "Signs in with Google, keeps a shelf of books with status, rating and review, adds friends by invite link and writes private or public comments.",
+        "pt": "Entra com o Google, mantém uma estante de livros com status, nota e resenha, adiciona amigos por link de convite e escreve comentários privados ou públicos."
+      },
+      "evidence": [
+        "client/src/pages/Login.tsx:64"
+      ]
+    },
+    {
+      "id": "moderator",
+      "kind": "person",
+      "name": {
+        "en": "Moderator",
+        "pt": "Moderador"
+      },
+      "technology": "",
+      "responsibility": {
+        "en": "A reader whose verified e-mail is on a list kept in code (D7); reviews content reports and can dismiss them, remove a comment or ban an account.",
+        "pt": "Um leitor cujo e-mail verificado consta em uma lista mantida no código (D7); analisa as denúncias e pode descartá-las, remover um comentário ou banir uma conta."
+      },
+      "evidence": [
+        "server/moderators.ts:7"
+      ]
+    },
+    {
+      "id": "estante",
+      "kind": "system",
+      "name": {
+        "en": "Estante",
+        "pt": "Estante"
+      },
+      "technology": "React PWA + Node.js API",
+      "responsibility": {
+        "en": "Mobile-first reading tracker: shelf, ratings, reviews, history by year, friends, comments and moderation.",
+        "pt": "Tracker de leituras mobile-first: estante, notas, resenhas, histórico por ano, amigos, comentários e moderação."
+      },
+      "evidence": [
+        "server/app.ts:27"
+      ]
+    },
+    {
+      "id": "spa",
+      "kind": "container",
+      "name": {
+        "en": "Single-page app",
+        "pt": "Aplicação de página única"
+      },
+      "technology": "React 19 + Vite + React Router + TanStack Query",
+      "responsibility": {
+        "en": "Installable PWA with the screens for shelf, search, book detail, years, friends, profile and moderation; talks to the server only through the same-origin JSON API.",
+        "pt": "PWA instalável com as telas de estante, busca, detalhe do livro, anos, amigos, perfil e moderação; conversa com o servidor apenas pela API JSON de mesma origem."
+      },
+      "evidence": [
+        "client/src/main.tsx:13",
+        "client/public/manifest.webmanifest:8"
+      ]
+    },
+    {
+      "id": "service_worker",
+      "kind": "container",
+      "name": {
+        "en": "Service worker",
+        "pt": "Service worker"
+      },
+      "technology": "Service Worker API",
+      "responsibility": {
+        "en": "Registered only in production builds. Caches hashed assets cache-first, serves navigation network-first with an offline fallback, and fetches and caches cover images, revalidating them after 30 days, except Open Library covers addressed by cover id, which never change.",
+        "pt": "Registrado apenas em builds de produção. Guarda em cache os assets com hash priorizando o cache, atende a navegação priorizando a rede com um fallback offline, e busca e guarda em cache as imagens de capa, revalidando-as após 30 dias, exceto as capas da Open Library endereçadas por id de capa, que nunca mudam."
+      },
+      "evidence": [
+        "client/public/sw.js:63",
+        "client/src/main.tsx:19"
+      ]
+    },
+    {
+      "id": "browser_cache",
+      "kind": "database",
+      "name": {
+        "en": "Browser cache",
+        "pt": "Cache do navegador"
+      },
+      "technology": "Cache Storage",
+      "responsibility": {
+        "en": "Per-device caches for the app shell, up to 300 cover images and a copy of each synopsis; cover and synopsis caches are cleared on sign-out.",
+        "pt": "Caches por dispositivo para o app shell, até 300 imagens de capa e uma cópia de cada sinopse; os caches de capas e de sinopses são limpos ao sair da conta."
+      },
+      "evidence": [
+        "client/public/sw.js:8",
+        "client/src/lib/bookCache.ts:6",
+        "client/src/lib/bookCache.ts:55"
+      ]
+    },
+    {
+      "id": "web_server",
+      "kind": "container",
+      "name": {
+        "en": "Web server",
+        "pt": "Servidor web"
+      },
+      "technology": "Node.js 24 + Hono 4",
+      "responsibility": {
+        "en": "The only server process (D1): JSON API, Google sign-in and cookie sessions, localized landing and legal pages, SEO files and the built SPA. Also holds the in-memory search cache, synopsis cache and rate limiter (D5).",
+        "pt": "O único processo de servidor (D1): API JSON, login com o Google e sessões por cookie, home e páginas legais localizadas, arquivos de SEO e a SPA compilada. Também mantém em memória o cache de busca, o cache de sinopses e o limitador de taxa (D5)."
+      },
+      "evidence": [
+        "server/index.ts:24",
+        "Dockerfile:22"
+      ]
+    },
+    {
+      "id": "sqlite_db",
+      "kind": "database",
+      "name": {
+        "en": "Database",
+        "pt": "Banco de dados"
+      },
+      "technology": "SQLite via node:sqlite (WAL)",
+      "responsibility": {
+        "en": "One file with users, sessions, the shared book catalog and its synopses, shelf items, comments, friendships, invites, blocks and content reports; schema and migrations run at startup (D2).",
+        "pt": "Um único arquivo com usuários, sessões, o catálogo de livros compartilhado e suas sinopses, itens da estante, comentários, amizades, convites, bloqueios e denúncias; o schema e as migrações rodam na inicialização (D2)."
+      },
+      "evidence": [
+        "server/db.ts:6",
+        "server/db.ts:142"
+      ]
+    },
+    {
+      "id": "google_identity",
+      "kind": "external",
+      "name": {
+        "en": "Google Identity",
+        "pt": "Google Identity"
+      },
+      "technology": "OAuth 2.0 / OpenID Connect",
+      "responsibility": {
+        "en": "Authenticates readers through the authorization-code flow; the only sign-in method in production.",
+        "pt": "Autentica os leitores pelo fluxo de código de autorização; é o único método de login em produção."
+      },
+      "evidence": [
+        "server/auth.ts:109"
+      ]
+    },
+    {
+      "id": "google_books",
+      "kind": "external",
+      "name": {
+        "en": "Google Books",
+        "pt": "Google Books"
+      },
+      "technology": "REST API + cover images",
+      "responsibility": {
+        "en": "Primary source for book search and synopses; serves cover images straight to the browser, sometimes redirecting to a Google content host that the content security policy also allows.",
+        "pt": "Fonte principal para a busca de livros e as sinopses; serve as imagens de capa direto ao navegador, às vezes redirecionando para um host de conteúdo do Google que a política de segurança de conteúdo também permite."
+      },
+      "evidence": [
+        "server/routes/search.ts:12",
+        "server/app.ts:35"
+      ]
+    },
+    {
+      "id": "open_library",
+      "kind": "external",
+      "name": {
+        "en": "Open Library",
+        "pt": "Open Library"
+      },
+      "technology": "REST API + cover images",
+      "responsibility": {
+        "en": "Fallback source for search and synopses; serves covers by cover id or ISBN, which may redirect to Internet Archive hosts that the content security policy also allows.",
+        "pt": "Fonte de reserva para a busca e as sinopses; serve capas por id de capa ou ISBN, o que pode redirecionar para hosts do Internet Archive que a política de segurança de conteúdo também permite."
+      },
+      "evidence": [
+        "server/routes/search.ts:13",
+        "server/app.ts:35"
+      ]
+    },
+    {
+      "id": "cloudflare",
+      "kind": "external",
+      "name": {
+        "en": "Cloudflare",
+        "pt": "Cloudflare"
+      },
+      "technology": "Edge network + Tunnel",
+      "responsibility": {
+        "en": "Public entry point: receives every browser request, forwards it through a tunnel and adds the visitor-country header used in language negotiation. Named in the privacy policy as a processor of IP address and country.",
+        "pt": "Ponto de entrada público: recebe toda requisição do navegador, a encaminha por um túnel e adiciona o cabeçalho de país do visitante usado na negociação de idioma. Citada na política de privacidade como operadora do endereço IP e do país."
+      },
+      "evidence": [
+        "server/legalText.ts:130"
+      ]
+    },
+    {
+      "id": "tunnel_connector",
+      "kind": "infrastructure",
+      "name": {
+        "en": "Tunnel connector",
+        "pt": "Conector do túnel"
+      },
+      "technology": "cloudflared",
+      "responsibility": {
+        "en": "Outbound tunnel client on the same Docker network as the app; receives requests from the Cloudflare edge and proxies them to the web server, so the app needs no public inbound port. It is deployed as a separate stack, outside this repository.",
+        "pt": "Cliente de túnel de saída na mesma rede Docker da aplicação; recebe as requisições da borda da Cloudflare e as repassa ao servidor web, de modo que o app não precisa de porta de entrada pública. É implantado como uma stack separada, fora deste repositório."
+      },
+      "evidence": [
+        "deploy/compose.prod.yaml:21"
+      ]
+    },
+    {
+      "id": "container_host",
+      "kind": "infrastructure",
+      "name": {
+        "en": "Container host",
+        "pt": "Host de contêineres"
+      },
+      "technology": "Docker Compose",
+      "responsibility": {
+        "en": "Runs the application container with a restart policy and a health check, on a network shared with the tunnel connector.",
+        "pt": "Executa o contêiner da aplicação com política de reinício e verificação de saúde, em uma rede compartilhada com o conector do túnel."
+      },
+      "evidence": [
+        "deploy/compose.prod.yaml:6",
+        "Dockerfile:20"
+      ]
+    },
+    {
+      "id": "data_volume",
+      "kind": "infrastructure",
+      "name": {
+        "en": "Data volume",
+        "pt": "Volume de dados"
+      },
+      "technology": "Docker named volume",
+      "responsibility": {
+        "en": "Named volume mounted at the data directory; the only persistent state of the deployment.",
+        "pt": "Volume nomeado montado no diretório de dados; o único estado persistente da implantação."
+      },
+      "evidence": [
+        "Dockerfile:19",
+        "deploy/compose.prod.yaml:20"
+      ]
+    },
+    {
+      "id": "container_registry",
+      "kind": "infrastructure",
+      "name": {
+        "en": "Container registry",
+        "pt": "Registro de contêineres"
+      },
+      "technology": "Private OCI registry",
+      "responsibility": {
+        "en": "Stores the application image, tagged by commit and as latest; the production stack pulls from it instead of building.",
+        "pt": "Armazena a imagem da aplicação, com tag por commit e como latest; a stack de produção a baixa daqui em vez de compilar."
+      },
+      "evidence": [
+        "deploy/publish.sh:15"
+      ]
+    }
+  ],
+  "relationships": [
+    {
+      "from": "reader",
+      "to": "estante",
+      "label": {
+        "en": "tracks books, friends and comments in",
+        "pt": "acompanha livros, amigos e comentários na"
+      },
+      "protocol": "HTTPS",
+      "evidence": [
+        "server/app.ts:66"
+      ]
+    },
+    {
+      "from": "moderator",
+      "to": "estante",
+      "label": {
+        "en": "reviews content reports in",
+        "pt": "revisa denúncias na"
+      },
+      "protocol": "HTTPS",
+      "evidence": [
+        "server/routes/moderation.ts:61"
+      ]
+    },
+    {
+      "from": "estante",
+      "to": "google_identity",
+      "label": {
+        "en": "signs users in with",
+        "pt": "autentica usuários com"
+      },
+      "protocol": "OAuth 2.0 / OpenID Connect over HTTPS",
+      "evidence": [
+        "server/auth.ts:158"
+      ]
+    },
+    {
+      "from": "estante",
+      "to": "google_books",
+      "label": {
+        "en": "searches books and loads covers from",
+        "pt": "busca livros e carrega capas do"
+      },
+      "protocol": "HTTPS",
+      "evidence": [
+        "server/routes/search.ts:88"
+      ]
+    },
+    {
+      "from": "estante",
+      "to": "open_library",
+      "label": {
+        "en": "falls back for search and covers to",
+        "pt": "recorre para busca e capas ao"
+      },
+      "protocol": "HTTPS",
+      "evidence": [
+        "server/routes/search.ts:122"
+      ]
+    },
+    {
+      "from": "estante",
+      "to": "cloudflare",
+      "label": {
+        "en": "is published through",
+        "pt": "é publicada através da"
+      },
+      "protocol": "Cloudflare Tunnel",
+      "evidence": [
+        "deploy/compose.prod.yaml:24"
+      ]
+    },
+    {
+      "from": "reader",
+      "to": "spa",
+      "label": {
+        "en": "manages shelf, friends and comments in",
+        "pt": "gerencia a estante, amigos e comentários na"
+      },
+      "protocol": "Browser / installed PWA",
+      "evidence": [
+        "client/src/App.tsx:54"
+      ]
+    },
+    {
+      "from": "moderator",
+      "to": "spa",
+      "label": {
+        "en": "resolves reports in",
+        "pt": "resolve denúncias na"
+      },
+      "protocol": "Browser / installed PWA",
+      "evidence": [
+        "client/src/lib/api.ts:85"
+      ]
+    },
+    {
+      "from": "reader",
+      "to": "web_server",
+      "label": {
+        "en": "reads landing and legal pages from",
+        "pt": "lê a home e as páginas legais do"
+      },
+      "protocol": "HTTPS (server-rendered HTML)",
+      "evidence": [
+        "server/html.ts:34",
+        "server/routes/legal.ts:15"
+      ]
+    },
+    {
+      "from": "cloudflare",
+      "to": "web_server",
+      "label": {
+        "en": "forwards requests and adds visitor country to",
+        "pt": "encaminha requisições e adiciona o país do visitante ao"
+      },
+      "protocol": "HTTP via tunnel",
+      "evidence": [
+        "server/localeResponse.ts:15"
+      ]
+    },
+    {
+      "from": "spa",
+      "to": "web_server",
+      "label": {
+        "en": "calls JSON API with session cookie",
+        "pt": "chama a API JSON com cookie de sessão do"
+      },
+      "protocol": "HTTPS / JSON",
+      "evidence": [
+        "client/src/lib/api.ts:24",
+        "server/app.ts:64"
+      ]
+    },
+    {
+      "from": "spa",
+      "to": "service_worker",
+      "label": {
+        "en": "registers and loads covers through",
+        "pt": "registra e carrega capas por meio do"
+      },
+      "protocol": "Service Worker fetch interception",
+      "evidence": [
+        "client/src/main.tsx:20",
+        "client/public/sw.js:67"
+      ]
+    },
+    {
+      "from": "spa",
+      "to": "browser_cache",
+      "label": {
+        "en": "keeps a copy of each synopsis in",
+        "pt": "mantém uma cópia de cada sinopse no"
+      },
+      "protocol": "Cache Storage API",
+      "evidence": [
+        "client/src/lib/bookCache.ts:31"
+      ]
+    },
+    {
+      "from": "service_worker",
+      "to": "browser_cache",
+      "label": {
+        "en": "caches app shell and covers in",
+        "pt": "guarda o app shell e as capas no"
+      },
+      "protocol": "Cache Storage API",
+      "evidence": [
+        "client/public/sw.js:54",
+        "client/public/sw.js:23"
+      ]
+    },
+    {
+      "from": "web_server",
+      "to": "sqlite_db",
+      "label": {
+        "en": "reads and writes",
+        "pt": "lê e grava no"
+      },
+      "protocol": "In-process SQL (node:sqlite)",
+      "evidence": [
+        "server/index.ts:10"
+      ]
+    },
+    {
+      "from": "web_server",
+      "to": "google_identity",
+      "label": {
+        "en": "exchanges code and verifies ID tokens with",
+        "pt": "troca o code e verifica ID tokens com o"
+      },
+      "protocol": "OAuth 2.0 / OpenID Connect over HTTPS",
+      "evidence": [
+        "server/auth.ts:183",
+        "server/auth.ts:136"
+      ]
+    },
+    {
+      "from": "web_server",
+      "to": "google_books",
+      "label": {
+        "en": "searches books and fetches synopses from",
+        "pt": "busca livros e sinopses no"
+      },
+      "protocol": "HTTPS / JSON",
+      "evidence": [
+        "server/routes/search.ts:91",
+        "server/routes/search.ts:168"
+      ]
+    },
+    {
+      "from": "web_server",
+      "to": "open_library",
+      "label": {
+        "en": "falls back for search and synopses to",
+        "pt": "recorre para busca e sinopses à"
+      },
+      "protocol": "HTTPS / JSON",
+      "evidence": [
+        "server/routes/search.ts:141",
+        "server/routes/search.ts:174"
+      ]
+    },
+    {
+      "from": "service_worker",
+      "to": "google_books",
+      "label": {
+        "en": "fetches cover images from",
+        "pt": "busca imagens de capa no"
+      },
+      "protocol": "HTTPS (no-cors image fetch)",
+      "evidence": [
+        "client/public/sw.js:39",
+        "client/src/lib/format.ts:41"
+      ]
+    },
+    {
+      "from": "service_worker",
+      "to": "open_library",
+      "label": {
+        "en": "fetches cover images from",
+        "pt": "busca imagens de capa na"
+      },
+      "protocol": "HTTPS (CORS image fetch)",
+      "evidence": [
+        "client/public/sw.js:10",
+        "client/src/lib/format.ts:43"
+      ]
+    },
+    {
+      "from": "reader",
+      "to": "cloudflare",
+      "label": {
+        "en": "connects over HTTPS to",
+        "pt": "conecta via HTTPS ao"
+      },
+      "protocol": "HTTPS",
+      "evidence": [
+        "server/legalText.ts:130"
+      ]
+    },
+    {
+      "from": "cloudflare",
+      "to": "tunnel_connector",
+      "label": {
+        "en": "forwards requests through the tunnel to",
+        "pt": "encaminha requisições pelo túnel ao"
+      },
+      "protocol": "Cloudflare Tunnel",
+      "evidence": [
+        "deploy/compose.prod.yaml:30",
+        "deploy/compose.prod.yaml:31"
+      ]
+    },
+    {
+      "from": "tunnel_connector",
+      "to": "web_server",
+      "label": {
+        "en": "proxies plain HTTP to",
+        "pt": "repassa HTTP puro ao"
+      },
+      "protocol": "HTTP",
+      "evidence": [
+        "deploy/compose.prod.yaml:21"
+      ]
+    },
+    {
+      "from": "sqlite_db",
+      "to": "data_volume",
+      "label": {
+        "en": "keeps its file on",
+        "pt": "mantém seu arquivo no"
+      },
+      "protocol": "Filesystem",
+      "evidence": [
+        "Dockerfile:11"
+      ]
+    },
+    {
+      "from": "container_host",
+      "to": "container_registry",
+      "label": {
+        "en": "pulls the application image from",
+        "pt": "baixa a imagem da aplicação do"
+      },
+      "protocol": "OCI image pull",
+      "evidence": [
+        "deploy/compose.prod.yaml:5"
+      ]
+    }
+  ],
+  "decisions": [
+    {
+      "id": "D1",
+      "title": {
+        "en": "One process serves everything",
+        "pt": "Um processo serve tudo"
+      },
+      "context": {
+        "en": "A product maintained by one person needs an API, sign-in, indexable public pages and an installable app, with no budget for operations.",
+        "pt": "Um produto mantido por uma pessoa precisa de API, login, páginas públicas indexáveis e um app instalável, sem orçamento de operação."
+      },
+      "choice": {
+        "en": "A single Hono process serves the JSON API, the OAuth routes, the server-rendered landing and legal pages and the built SPA: one image, one port, one health check.",
+        "pt": "Um único processo Hono serve a API JSON, as rotas de OAuth, a home e as páginas legais renderizadas no servidor e a SPA buildada: uma imagem, uma porta, um health check."
+      },
+      "alternatives": [
+        {
+          "en": "SPA on static hosting or a CDN, with the API as a separate service.",
+          "pt": "SPA em hospedagem estática ou CDN, com a API como serviço separado."
+        }
+      ],
+      "tradeoffs": {
+        "en": "The parts cannot scale or be released independently. A restart takes everything down at once and empties the in-memory caches. Static assets are served by Node instead of the edge.",
+        "pt": "As partes não escalam nem são publicadas de forma independente. Um restart derruba tudo de uma vez e esvazia os caches em memória. Os assets estáticos são servidos pelo Node em vez da borda."
+      },
+      "revisitWhen": {
+        "en": "Static traffic dominates the server load, or API and front end need different release cadences.",
+        "pt": "O tráfego estático dominar a carga do servidor, ou API e front precisarem de ritmos de publicação diferentes."
+      },
+      "evidence": [
+        "server/index.ts:19",
+        "server/html.ts:36"
+      ]
+    },
+    {
+      "id": "D2",
+      "title": {
+        "en": "Embedded SQLite instead of a database server",
+        "pt": "SQLite embutido em vez de servidor de banco"
+      },
+      "context": {
+        "en": "The data is small and relational, and the deployment has no database service to lean on.",
+        "pt": "Os dados são pequenos e relacionais, e a implantação não tem um serviço de banco em que se apoiar."
+      },
+      "choice": {
+        "en": "Node's built-in node:sqlite in WAL mode. The schema is created at startup and column-level migrations are detected by inspecting the tables.",
+        "pt": "O node:sqlite nativo do Node em modo WAL. O schema é criado na inicialização e as migrações de coluna são detectadas inspecionando as tabelas."
+      },
+      "alternatives": [
+        {
+          "en": "A managed PostgreSQL.",
+          "pt": "Um PostgreSQL gerenciado."
+        },
+        {
+          "en": "SQLite through a native driver.",
+          "pt": "SQLite por um driver nativo."
+        }
+      ],
+      "tradeoffs": {
+        "en": "Only one instance can run. Queries are synchronous and block the event loop. Migrations have no version table, so they cannot be reversed or audited. Backup is a file copy that nothing schedules.",
+        "pt": "Só uma instância pode rodar. As consultas são síncronas e bloqueiam o event loop. As migrações não têm tabela de versão, então não podem ser revertidas nem auditadas. O backup é uma cópia de arquivo que nada agenda."
+      },
+      "revisitWhen": {
+        "en": "A second instance is needed, a slow query is felt by other requests, or a migration has to be reversible.",
+        "pt": "For preciso uma segunda instância, uma consulta lenta for sentida por outras requisições, ou uma migração precisar ser reversível."
+      },
+      "evidence": [
+        "server/db.ts:1",
+        "server/db.ts:153"
+      ]
+    },
+    {
+      "id": "D3",
+      "title": {
+        "en": "Hand-written Google OAuth with server-side sessions",
+        "pt": "Google OAuth escrito à mão, com sessões no servidor"
+      },
+      "context": {
+        "en": "Sign-in is Google only, and moderation has to cut a reader's access immediately.",
+        "pt": "O login é só pelo Google, e a moderação precisa cortar o acesso de um leitor na hora."
+      },
+      "choice": {
+        "en": "The authorization-code flow is written directly against Google's endpoints. Sessions are random identifiers stored in the database behind an HttpOnly cookie.",
+        "pt": "O fluxo authorization code é escrito direto contra os endpoints do Google. As sessões são identificadores aleatórios guardados no banco atrás de um cookie HttpOnly."
+      },
+      "alternatives": [
+        {
+          "en": "An authentication library.",
+          "pt": "Uma biblioteca de autenticação."
+        },
+        {
+          "en": "Stateless JWT sessions.",
+          "pt": "Sessões JWT sem estado."
+        }
+      ],
+      "tradeoffs": {
+        "en": "Security-sensitive code is maintained in-house. Every authenticated request costs a database read. The web flow relies on the direct TLS channel to Google to trust the ID token instead of verifying its signature.",
+        "pt": "Código sensível à segurança é mantido em casa. Cada requisição autenticada custa uma leitura no banco. O fluxo web confia no canal TLS direto com o Google para aceitar o ID token, em vez de verificar a assinatura."
+      },
+      "revisitWhen": {
+        "en": "A second identity provider is added, or the native sign-in endpoint gets a real client.",
+        "pt": "Entrar um segundo provedor de identidade, ou o endpoint de login nativo ganhar um cliente real."
+      },
+      "evidence": [
+        "server/auth.ts:176",
+        "server/auth.ts:50"
+      ]
+    },
+    {
+      "id": "D4",
+      "title": {
+        "en": "Covers never touch the server",
+        "pt": "As capas nunca passam pelo servidor"
+      },
+      "context": {
+        "en": "Covers are the heaviest asset of the product and belong to third parties.",
+        "pt": "As capas são o asset mais pesado do produto e pertencem a terceiros."
+      },
+      "choice": {
+        "en": "Each book stores only a short cover reference. The client derives the image URL and the service worker caches the image on the device.",
+        "pt": "Cada livro guarda só uma referência de capa curta. O cliente deriva a URL da imagem e o service worker guarda a imagem no aparelho."
+      },
+      "alternatives": [
+        {
+          "en": "Storing the cover files on the server.",
+          "pt": "Guardar os arquivos de capa no servidor."
+        },
+        {
+          "en": "Proxying covers through the server.",
+          "pt": "Fazer proxy das capas pelo servidor."
+        }
+      ],
+      "tradeoffs": {
+        "en": "The cover hosts see the reader's IP address. The content security policy has to allow them and their redirect targets. The Google response is opaque to the service worker, so an error can stay cached until the 30-day revalidation. A cover disappears if its source drops it.",
+        "pt": "Os hosts de capa veem o endereço IP do leitor. A política de segurança de conteúdo precisa liberá-los, junto com os destinos de redirecionamento. A resposta do Google é opaca para o service worker, então um erro pode ficar em cache até a revalidação de 30 dias. Uma capa some se a fonte a remover."
+      },
+      "revisitWhen": {
+        "en": "Missing covers become a complaint, or third-party requests from the client stop being acceptable.",
+        "pt": "Capas ausentes virarem reclamação, ou requisições a terceiros a partir do cliente deixarem de ser aceitáveis."
+      },
+      "evidence": [
+        "server/db.ts:40",
+        "client/src/lib/format.ts:38"
+      ]
+    },
+    {
+      "id": "D5",
+      "title": {
+        "en": "Search quotas protected inside the process",
+        "pt": "Cotas de busca protegidas dentro do processo"
+      },
+      "context": {
+        "en": "Search depends on the free quotas of two external catalogs.",
+        "pt": "A busca depende das cotas gratuitas de dois catálogos externos."
+      },
+      "choice": {
+        "en": "A client debounce, a per-user token bucket, a ten-minute result cache and a fallback catalog, with the bucket and the cache held in process memory.",
+        "pt": "Um debounce no cliente, um token bucket por usuário, um cache de resultados de dez minutos e um catálogo de reserva, com o bucket e o cache na memória do processo."
+      },
+      "alternatives": [
+        {
+          "en": "A shared cache service such as Redis.",
+          "pt": "Um serviço de cache compartilhado, como o Redis."
+        },
+        {
+          "en": "A paid search quota.",
+          "pt": "Uma cota de busca paga."
+        }
+      ],
+      "tradeoffs": {
+        "en": "Cache and buckets are lost on every deploy and exist per instance. Fallback results come from a different catalog, so the same query can return different books.",
+        "pt": "O cache e os buckets se perdem a cada deploy e existem por instância. Os resultados de reserva vêm de outro catálogo, então a mesma busca pode devolver livros diferentes."
+      },
+      "revisitWhen": {
+        "en": "A second instance exists, or quota errors appear despite the cache.",
+        "pt": "Existir uma segunda instância, ou aparecerem erros de cota apesar do cache."
+      },
+      "evidence": [
+        "server/routes/search.ts:35",
+        "server/routes/search.ts:41"
+      ]
+    },
+    {
+      "id": "D6",
+      "title": {
+        "en": "One root URL: landing for visitors, app for readers",
+        "pt": "Uma única raiz: home para visitantes, app para leitores"
+      },
+      "context": {
+        "en": "The root URL has to be indexable for visitors and be the app for signed-in readers, in three languages.",
+        "pt": "A URL raiz precisa ser indexável para visitantes e ser o app para leitores logados, em três idiomas."
+      },
+      "choice": {
+        "en": "On the root path the server checks the session cookie and returns either a script-free landing page or the SPA shell, with the language negotiated on the server.",
+        "pt": "Na raiz o servidor confere o cookie de sessão e devolve ou uma home sem script ou a casca da SPA, com o idioma negociado no servidor."
+      },
+      "alternatives": [
+        {
+          "en": "A separate marketing site.",
+          "pt": "Um site institucional separado."
+        },
+        {
+          "en": "Server-side rendering of the whole app.",
+          "pt": "Renderização no servidor do app inteiro."
+        }
+      ],
+      "tradeoffs": {
+        "en": "The HTML varies by cookie, language and visitor country, so it is sent as non-cacheable and the edge cannot serve it. Every visit to the root costs a session lookup.",
+        "pt": "O HTML varia por cookie, idioma e país do visitante, então sai como não cacheável e a borda não consegue servi-lo. Cada visita à raiz custa uma busca de sessão."
+      },
+      "revisitWhen": {
+        "en": "The landing needs edge caching or its own release cycle.",
+        "pt": "A home precisar de cache na borda ou de um ciclo de publicação próprio."
+      },
+      "evidence": [
+        "server/html.ts:34",
+        "server/localeResponse.ts:26",
+        "server/localeResponse.ts:27"
+      ]
+    },
+    {
+      "id": "D7",
+      "title": {
+        "en": "Moderators are a list in code",
+        "pt": "Moderadores são uma lista no código"
+      },
+      "context": {
+        "en": "Public comments between friends require moderation, and there is a single moderator.",
+        "pt": "Comentários públicos entre amigos exigem moderação, e há um único moderador."
+      },
+      "choice": {
+        "en": "Moderators are a list of e-mails in the source, matched against the e-mail Google declares verified. Moderation routes answer 404 to everyone else.",
+        "pt": "Moderadores são uma lista de e-mails no código-fonte, comparada com o e-mail que o Google declara verificado. As rotas de moderação respondem 404 a todos os demais."
+      },
+      "alternatives": [
+        {
+          "en": "A role column in the users table, with a screen to manage it.",
+          "pt": "Uma coluna de papel na tabela de usuários, com uma tela para gerenciá-la."
+        }
+      ],
+      "tradeoffs": {
+        "en": "Changing moderators requires a deploy. The model depends on the identity provider verifying the e-mail. A decision is not attributed to the moderator who took it.",
+        "pt": "Trocar moderadores exige um deploy. O modelo depende de o provedor de identidade verificar o e-mail. Uma decisão não é atribuída ao moderador que a tomou."
+      },
+      "revisitWhen": {
+        "en": "There is a second moderator.",
+        "pt": "Houver um segundo moderador."
+      },
+      "evidence": [
+        "server/moderators.ts:5",
+        "server/routes/moderation.ts:55"
+      ]
+    }
+  ],
+  "qualityAttributes": [
+    {
+      "attribute": "security",
+      "controls": [
+        {
+          "en": "Content security policy limited to the app's own origin plus the cover hosts.",
+          "pt": "Política de segurança de conteúdo limitada à própria origem do app e aos hosts de capa."
+        },
+        {
+          "en": "CSRF middleware rejects cross-origin form submissions; the JSON API relies on the SameSite session cookie.",
+          "pt": "O middleware de CSRF rejeita envios de formulário de outra origem; a API JSON se apoia no cookie de sessão SameSite."
+        },
+        {
+          "en": "Session cookie is HttpOnly and SameSite=Lax, and Secure when the base URL is HTTPS.",
+          "pt": "O cookie de sessão é HttpOnly e SameSite=Lax, e Secure quando a URL base é HTTPS."
+        },
+        {
+          "en": "The OAuth callback compares the state with a short-lived cookie.",
+          "pt": "O callback do OAuth compara o state com um cookie de curta duração."
+        },
+        {
+          "en": "An e-mail is stored only when the identity provider declares it verified.",
+          "pt": "Um e-mail só é guardado quando o provedor de identidade o declara verificado."
+        },
+        {
+          "en": "Write routes validate their input before touching the database.",
+          "pt": "As rotas de escrita validam a entrada antes de tocar no banco."
+        }
+      ],
+      "gaps": [
+        {
+          "en": "Rate limiting exists only on search.",
+          "pt": "Só a busca tem limite de taxa."
+        },
+        {
+          "en": "Moderation decisions are not attributed to a moderator.",
+          "pt": "As decisões de moderação não são atribuídas a um moderador."
+        }
+      ],
+      "evidence": [
+        "server/app.ts:39",
+        "server/app.ts:56",
+        "server/auth.ts:36",
+        "server/auth.ts:181",
+        "server/auth.ts:130",
+        "server/validate.ts:44"
+      ]
+    },
+    {
+      "attribute": "reliability",
+      "controls": [
+        {
+          "en": "Calls to the book catalogs time out after eight seconds and fall back to the second catalog.",
+          "pt": "As chamadas aos catálogos de livros expiram em oito segundos e recorrem ao segundo catálogo."
+        },
+        {
+          "en": "Writes that span tables run in a transaction, and SQLite waits on a busy database instead of failing.",
+          "pt": "Escritas que envolvem mais de uma tabela rodam em transação, e o SQLite espera um banco ocupado em vez de falhar."
+        },
+        {
+          "en": "The container has a health check and restarts unless stopped.",
+          "pt": "O contêiner tem health check e reinicia a menos que seja parado."
+        }
+      ],
+      "gaps": [
+        {
+          "en": "Calls to the identity provider have no timeout.",
+          "pt": "As chamadas ao provedor de identidade não têm timeout."
+        },
+        {
+          "en": "No retry on external calls.",
+          "pt": "Não há retry nas chamadas externas."
+        },
+        {
+          "en": "The health check does not touch the database.",
+          "pt": "O health check não toca no banco."
+        },
+        {
+          "en": "A single instance: any restart is an outage.",
+          "pt": "Instância única: qualquer restart é uma indisponibilidade."
+        }
+      ],
+      "evidence": [
+        "server/routes/search.ts:54",
+        "server/db.ts:178",
+        "server/db.ts:145",
+        "Dockerfile:20",
+        "compose.yaml:6"
+      ]
+    },
+    {
+      "attribute": "observability",
+      "controls": [
+        {
+          "en": "A health endpoint.",
+          "pt": "Um endpoint de health."
+        },
+        {
+          "en": "Unexpected errors in route handlers are written to standard output.",
+          "pt": "Erros inesperados nos handlers de rota são escritos na saída padrão."
+        },
+        {
+          "en": "A request logger, in development only.",
+          "pt": "Um logger de requisições, só em desenvolvimento."
+        }
+      ],
+      "gaps": [
+        {
+          "en": "No access log in production.",
+          "pt": "Não há log de acesso em produção."
+        },
+        {
+          "en": "No metrics, tracing or alerting.",
+          "pt": "Não há métricas, tracing nem alertas."
+        },
+        {
+          "en": "Logs are unstructured.",
+          "pt": "Os logs não são estruturados."
+        }
+      ],
+      "evidence": [
+        "server/app.ts:58",
+        "server/routes/shelf.ts:102",
+        "server/app.ts:30"
+      ]
+    },
+    {
+      "attribute": "performance",
+      "controls": [
+        {
+          "en": "Hashed assets are served as immutable with a one-year cache.",
+          "pt": "Os assets com hash são servidos como imutáveis, com cache de um ano."
+        },
+        {
+          "en": "Search results and synopses are cached in server memory.",
+          "pt": "Resultados de busca e sinopses ficam em cache na memória do servidor."
+        },
+        {
+          "en": "Indexes cover the shelf by status and year and the friends badge by book and ISBN.",
+          "pt": "Índices cobrem a estante por status e ano e o selo de amigos por livro e ISBN."
+        },
+        {
+          "en": "Covers are cached on the device; those that can change are revalidated after 30 days.",
+          "pt": "As capas ficam em cache no aparelho; as que podem mudar são revalidadas após 30 dias."
+        }
+      ],
+      "gaps": [
+        {
+          "en": "Database queries are synchronous on the event loop (D2).",
+          "pt": "As consultas ao banco são síncronas no event loop (D2)."
+        },
+        {
+          "en": "HTML cannot be cached at the edge (D6).",
+          "pt": "O HTML não pode ser cacheado na borda (D6)."
+        }
+      ],
+      "evidence": [
+        "server/html.ts:31",
+        "server/routes/search.ts:36",
+        "server/db.ts:62",
+        "server/db.ts:85",
+        "client/public/sw.js:9"
+      ]
+    },
+    {
+      "attribute": "recoverability",
+      "controls": [
+        {
+          "en": "All persistent state is confined to one named volume.",
+          "pt": "Todo o estado persistente fica confinado a um volume nomeado."
+        },
+        {
+          "en": "Schema creation and migrations are idempotent and run at every startup.",
+          "pt": "A criação do schema e as migrações são idempotentes e rodam a cada inicialização."
+        },
+        {
+          "en": "Images are tagged by commit, so a previous version can be redeployed.",
+          "pt": "As imagens são marcadas por commit, então uma versão anterior pode ser reimplantada."
+        }
+      ],
+      "gaps": [
+        {
+          "en": "No scheduled backup and no restore test.",
+          "pt": "Não há backup agendado nem teste de restauração."
+        },
+        {
+          "en": "Migrations cannot be rolled back (D2).",
+          "pt": "As migrações não podem ser revertidas (D2)."
+        }
+      ],
+      "evidence": [
+        "deploy/compose.prod.yaml:20",
+        "server/db.ts:147",
+        "deploy/publish.sh:10",
+        "docs/PENDENCIAS.md:25"
+      ]
+    }
+  ],
+  "risks": [
+    {
+      "risk": {
+        "en": "All state lives in one file on one volume, with no scheduled backup.",
+        "pt": "Todo o estado vive em um arquivo em um volume, sem backup agendado."
+      },
+      "status": "open",
+      "note": {
+        "en": "Losing the volume loses every account. A manual consistent-copy procedure exists, but nothing runs it.",
+        "pt": "Perder o volume perde todas as contas. Existe um procedimento manual de cópia consistente, mas nada o executa."
+      }
+    },
+    {
+      "risk": {
+        "en": "One container on one self-hosted machine behind one tunnel.",
+        "pt": "Um contêiner em uma máquina própria atrás de um túnel."
+      },
+      "status": "open",
+      "note": {
+        "en": "A failure of the host, the tunnel or the container is a full outage. It follows from D1 and D2; the owner has not yet classified it as accepted.",
+        "pt": "Uma falha do host, do túnel ou do contêiner é uma indisponibilidade total. Decorre de D1 e D2; o dono ainda não o classificou como aceito."
+      }
+    },
+    {
+      "risk": {
+        "en": "Sign-in depends entirely on one identity provider.",
+        "pt": "O login depende inteiramente de um único provedor de identidade."
+      },
+      "status": "accepted",
+      "note": {
+        "en": "There is no second provider. Thirty-day sessions soften a short outage for readers who are already signed in.",
+        "pt": "Não há segundo provedor. Sessões de trinta dias amenizam uma indisponibilidade curta para quem já está logado."
+      }
+    },
+    {
+      "risk": {
+        "en": "Search depends on free quotas of external catalogs.",
+        "pt": "A busca depende de cotas gratuitas de catálogos externos."
+      },
+      "status": "mitigated",
+      "note": {
+        "en": "Mitigated by the layers of D5; if both catalogs fail, search is unavailable while the rest of the app keeps working.",
+        "pt": "Mitigado pelas camadas de D5; se os dois catálogos falharem, a busca fica indisponível e o resto do app segue funcionando."
+      }
+    },
+    {
+      "risk": {
+        "en": "Calls to the identity provider have no timeout.",
+        "pt": "As chamadas ao provedor de identidade não têm timeout."
+      },
+      "status": "open",
+      "note": {
+        "en": "A slow answer during sign-in holds the request open for as long as the runtime allows.",
+        "pt": "Uma resposta lenta durante o login mantém a requisição aberta pelo tempo que o runtime permitir."
+      }
+    },
+    {
+      "risk": {
+        "en": "Moderation rests on one person and leaves no record of who decided.",
+        "pt": "A moderação depende de uma pessoa e não registra quem decidiu."
+      },
+      "status": "accepted",
+      "note": {
+        "en": "Accepted while D7 holds.",
+        "pt": "Aceito enquanto D7 valer."
+      }
+    }
+  ],
+  "knownLimits": [
+    {
+      "en": "Rewarded ads are only partly wired. The client can call the ad placement API and the server has the reward route, but the ad script is not in the page and the content security policy allows no ad host; only the simulated provider works end to end. The ad gate is off by default and the privacy policy states that no ads are shown, so turning the gate on, even simulated, would contradict that text.",
+      "pt": "O anúncio recompensado está só parcialmente ligado. O cliente sabe chamar a API de posicionamento de anúncios e o servidor tem a rota de recompensa, mas o script de anúncio não está na página e a política de segurança de conteúdo não libera nenhum host de anúncio; só o provedor simulado funciona de ponta a ponta. O gate de anúncio vem desligado e a política de privacidade afirma que não há anúncios, então ligar o gate, mesmo simulado, contradiria esse texto."
+    },
+    {
+      "en": "An Android app packaged as a Trusted Web Activity is planned: the digital asset links file exists but holds placeholder values, and there is no Android project in the repository.",
+      "pt": "Um app Android empacotado como Trusted Web Activity está planejado: o arquivo de digital asset links existe, mas tem valores de exemplo, e não há projeto Android no repositório."
+    },
+    {
+      "en": "The server has a route that opens a session from a Google ID token sent by a native client, verified remotely, but no native client exists.",
+      "pt": "O servidor tem uma rota que abre sessão a partir de um ID token do Google enviado por um cliente nativo, verificado remotamente, mas não existe cliente nativo."
+    },
+    {
+      "en": "The privacy policy says deleted data may remain in backups for a limited period, but no backup is scheduled and nothing enforces that period.",
+      "pt": "A política de privacidade diz que dados apagados podem continuar em backups por um período limitado, mas não há backup agendado e nada impõe esse período."
+    }
+  ],
+  "hypotheses": [
+    {
+      "en": "TLS probably terminates at the Cloudflare edge. The repository shows only that the tunnel connector reaches the container over plain HTTP and that the privacy policy promises HTTPS; where the certificate lives is not stated anywhere.",
+      "pt": "O TLS provavelmente termina na borda da Cloudflare. O repositório mostra apenas que o conector do túnel alcança o contêiner por HTTP puro e que a política de privacidade promete HTTPS; onde o certificado fica não está dito em lugar nenhum."
+    }
+  ],
+  "glossary": [
+    {
+      "term": "ad gate",
+      "definition": {
+        "en": "A switch that requires a reader to watch one rewarded ad per session before adding a new book. Editing and removing are never blocked. Off by default.",
+        "pt": "Uma chave que exige que o leitor assista a um anúncio recompensado por sessão antes de adicionar um livro novo. Editar e remover nunca são bloqueados. Vem desligada."
+      }
+    },
+    {
+      "term": "cover reference",
+      "definition": {
+        "en": "A short marker stored with a book, from which the client derives the cover URL at Google Books or Open Library (D4).",
+        "pt": "Um marcador curto guardado com o livro, do qual o cliente deriva a URL da capa no Google Books ou na Open Library (D4)."
+      }
+    },
+    {
+      "term": "synopsis",
+      "definition": {
+        "en": "The book description. Its source is the external catalog; the durable copy is in the database, shared by all readers of that book; disposable copies live in server memory for an hour and in the browser cache.",
+        "pt": "A descrição do livro. A fonte é o catálogo externo; a cópia durável fica no banco, compartilhada por todos os leitores daquele livro; cópias descartáveis ficam na memória do servidor por uma hora e no cache do navegador."
+      }
+    },
+    {
+      "term": "state cookie",
+      "definition": {
+        "en": "A ten-minute HttpOnly cookie holding the random value sent to the identity provider, compared on the callback to reject forged sign-in responses.",
+        "pt": "Um cookie HttpOnly de dez minutos com o valor aleatório enviado ao provedor de identidade, comparado no callback para rejeitar respostas de login forjadas."
+      }
+    },
+    {
+      "term": "ID token",
+      "definition": {
+        "en": "The signed OpenID Connect token in which Google states who the reader is and whether the e-mail is verified.",
+        "pt": "O token assinado do OpenID Connect em que o Google declara quem é o leitor e se o e-mail é verificado."
+      }
+    },
+    {
+      "term": "app shell",
+      "definition": {
+        "en": "The minimal HTML, manifest and icon the service worker keeps so the app opens offline.",
+        "pt": "O HTML mínimo, o manifesto e o ícone que o service worker guarda para o app abrir offline."
+      }
+    },
+    {
+      "term": "per-user bucket",
+      "definition": {
+        "en": "The token bucket that limits each reader to a burst of five searches and one per second after that (D5).",
+        "pt": "O token bucket que limita cada leitor a uma rajada de cinco buscas e a uma por segundo depois disso (D5)."
+      }
+    },
+    {
+      "term": "landing",
+      "definition": {
+        "en": "The static, script-free home page served to visitors without a session (D6).",
+        "pt": "A home estática e sem script servida a visitantes sem sessão (D6)."
+      }
+    }
+  ]
+}

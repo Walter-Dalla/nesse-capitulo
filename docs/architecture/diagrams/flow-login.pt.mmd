@@ -1,0 +1,29 @@
+sequenceDiagram
+    actor reader as Leitor
+    participant spa as Aplicação de página única
+    participant web_server as Servidor web
+    participant google_identity as Google Identity
+    participant sqlite_db as Banco de dados
+    reader->>spa: Toca em Entrar com Google
+    spa->>web_server: GET /auth/google
+    web_server-->>spa: Redireciona para o Google e define um cookie de state de 10 min
+    spa->>google_identity: Abre a tela de consentimento
+    google_identity-->>spa: Redireciona para o callback com code e state
+    spa->>web_server: GET /auth/google/callback
+    alt State ausente ou diferente do cookie de state
+        web_server-->>spa: Redireciona para o login com erro de state
+    else State confere
+        web_server->>google_identity: Troca o code por um ID token
+        google_identity-->>web_server: ID token
+        web_server->>sqlite_db: Cria ou atualiza o usuário pelo subject do Google
+        sqlite_db-->>web_server: Linha do usuário
+        alt Conta banida
+            web_server-->>spa: Redireciona para o login com erro de banimento
+        else Conta ativa
+            web_server->>sqlite_db: Insere a sessão e apaga as sessões expiradas
+            web_server-->>spa: Define o cookie de sessão HttpOnly e redireciona para a home
+            spa->>web_server: GET /api/me
+            web_server->>sqlite_db: Busca a sessão com junção ao usuário, excluindo banidos
+            web_server-->>spa: Usuário, aceite dos termos e flag de moderador
+        end
+    end

@@ -1,0 +1,16 @@
+flowchart TB
+    reader["Reader<br/>[Person]"]:::person
+    cloudflare["Cloudflare<br/>[Edge network + Tunnel]"]:::external
+    subgraph container_host["Container host<br/>[Docker Compose]"]
+        tunnel_connector["Tunnel connector<br/>[cloudflared]"]:::infrastructure
+        web_server["Web server<br/>[Node.js 24 + Hono 4]"]:::container
+        sqlite_db[("Database<br/>[SQLite via node:sqlite, WAL]")]:::database
+        data_volume["Data volume<br/>[Docker named volume]"]:::infrastructure
+    end
+    container_registry["Container registry<br/>[Private OCI registry]"]:::infrastructure
+    reader -->|"connects over HTTPS to"| cloudflare
+    cloudflare -->|"forwards requests through the tunnel to"| tunnel_connector
+    tunnel_connector -->|"proxies plain HTTP to"| web_server
+    web_server -->|"reads and writes"| sqlite_db
+    sqlite_db -->|"keeps its file on"| data_volume
+    container_host -->|"pulls the application image from"| container_registry

@@ -1,0 +1,28 @@
+flowchart TB
+    reader["Leitor<br/>[Pessoa]"]:::person
+    moderator["Moderador<br/>[Pessoa]"]:::person
+    subgraph estante["Estante"]
+        spa["Aplicação de página única<br/>[React 19 + Vite + TanStack Query]"]:::container
+        service_worker["Service worker<br/>[Service Worker API]"]:::container
+        browser_cache[("Cache do navegador<br/>[Cache Storage]")]:::database
+        web_server["Servidor web<br/>[Node.js 24 + Hono 4]"]:::container
+        sqlite_db[("Banco de dados<br/>[SQLite via node:sqlite, WAL]")]:::database
+    end
+    google_identity["Google Identity<br/>[OAuth 2.0 / OpenID Connect]"]:::external
+    google_books["Google Books<br/>[REST API + cover images]"]:::external
+    open_library["Open Library<br/>[REST API + cover images]"]:::external
+    cloudflare["Cloudflare<br/>[Edge network + Tunnel]"]:::external
+    reader -->|"gerencia a estante, amigos e comentários na"| spa
+    moderator -->|"resolve denúncias na"| spa
+    reader -->|"lê a home e as páginas legais do"| web_server
+    cloudflare -->|"encaminha requisições e adiciona o país do visitante ao"| web_server
+    spa -->|"chama a API JSON com cookie de sessão do"| web_server
+    spa -->|"registra e carrega capas por meio do"| service_worker
+    spa -->|"mantém uma cópia de cada sinopse no"| browser_cache
+    service_worker -->|"guarda o app shell e as capas no"| browser_cache
+    web_server -->|"lê e grava no"| sqlite_db
+    web_server -->|"troca o code e verifica ID tokens com o"| google_identity
+    web_server -->|"busca livros e sinopses no"| google_books
+    web_server -->|"recorre para busca e sinopses à"| open_library
+    service_worker -->|"busca imagens de capa no"| google_books
+    service_worker -->|"busca imagens de capa na"| open_library
