@@ -1,0 +1,28 @@
+flowchart TB
+    reader["Reader<br/>[Person]"]:::person
+    moderator["Moderator<br/>[Person]"]:::person
+    subgraph estante["Estante"]
+        spa["Single-page app<br/>[React 19 + Vite + TanStack Query]"]:::container
+        service_worker["Service worker<br/>[Service Worker API]"]:::container
+        browser_cache[("Browser cache<br/>[Cache Storage]")]:::database
+        web_server["Web server<br/>[Node.js 24 + Hono 4]"]:::container
+        sqlite_db[("Database<br/>[SQLite via node:sqlite, WAL]")]:::database
+    end
+    google_identity["Google Identity<br/>[OAuth 2.0 / OpenID Connect]"]:::external
+    google_books["Google Books<br/>[REST API + cover images]"]:::external
+    open_library["Open Library<br/>[REST API + cover images]"]:::external
+    cloudflare["Cloudflare<br/>[Edge network + Tunnel]"]:::external
+    reader -->|"manages shelf, friends and comments in"| spa
+    moderator -->|"resolves reports in"| spa
+    reader -->|"reads landing and legal pages from"| web_server
+    cloudflare -->|"forwards requests and adds visitor country to"| web_server
+    spa -->|"calls JSON API with session cookie"| web_server
+    spa -->|"registers and loads covers through"| service_worker
+    spa -->|"keeps a copy of each synopsis in"| browser_cache
+    service_worker -->|"caches app shell and covers in"| browser_cache
+    web_server -->|"reads and writes"| sqlite_db
+    web_server -->|"exchanges code and verifies ID tokens with"| google_identity
+    web_server -->|"searches books and fetches synopses from"| google_books
+    web_server -->|"falls back for search and synopses to"| open_library
+    service_worker -->|"fetches cover images from"| google_books
+    service_worker -->|"fetches cover images from"| open_library

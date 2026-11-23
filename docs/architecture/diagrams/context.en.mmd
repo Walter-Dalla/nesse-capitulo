@@ -1,0 +1,14 @@
+flowchart TB
+reader["Reader<br/>[Person]"]:::person
+moderator["Moderator<br/>[Person]"]:::person
+estante["Estante<br/>[Reading tracker PWA + API]"]:::system
+google_identity["Google Identity<br/>[OAuth 2.0 / OpenID Connect]"]:::external
+google_books["Google Books<br/>[REST API + cover images]"]:::external
+open_library["Open Library<br/>[REST API + cover images]"]:::external
+cloudflare["Cloudflare<br/>[Edge network + Tunnel]"]:::external
+reader -->|"tracks books, friends and comments in"| estante
+moderator -->|"reviews content reports in"| estante
+estante -->|"signs users in with"| google_identity
+estante -->|"searches books and loads covers from"| google_books
+estante -->|"falls back for search and covers to"| open_library
+estante -->|"is published through"| cloudflare

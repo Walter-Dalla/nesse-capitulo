@@ -1,0 +1,29 @@
+sequenceDiagram
+    actor reader as Reader
+    participant spa as Single-page app
+    participant web_server as Web server
+    participant google_identity as Google Identity
+    participant sqlite_db as Database
+    reader->>spa: Taps Sign in with Google
+    spa->>web_server: GET /auth/google
+    web_server-->>spa: Redirect to Google, sets a 10 min state cookie
+    spa->>google_identity: Opens the consent screen
+    google_identity-->>spa: Redirect to callback with code and state
+    spa->>web_server: GET /auth/google/callback
+    alt State missing or different from the state cookie
+        web_server-->>spa: Redirect to login with a state error
+    else State matches
+        web_server->>google_identity: Exchange code for an ID token
+        google_identity-->>web_server: ID token
+        web_server->>sqlite_db: Upsert user by Google subject
+        sqlite_db-->>web_server: User row
+        alt Account is banned
+            web_server-->>spa: Redirect to login with a banned error
+        else Account is active
+            web_server->>sqlite_db: Insert session, delete expired sessions
+            web_server-->>spa: Set HttpOnly session cookie, redirect to home
+            spa->>web_server: GET /api/me
+            web_server->>sqlite_db: Find session joined with user, banned excluded
+            web_server-->>spa: User, terms acceptance and moderator flag
+        end
+    end

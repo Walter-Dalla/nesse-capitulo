@@ -1,0 +1,37 @@
+sequenceDiagram
+    actor reader as Leitor
+    participant spa as Aplicação de página única
+    participant web_server as Servidor web
+    participant google_books as Google Books
+    participant open_library as Open Library
+    participant sqlite_db as Banco de dados
+    participant service_worker as Service worker
+    reader->>spa: Digita um título (3+ caracteres)
+    spa->>web_server: GET /api/search após um debounce de 1 s
+    web_server->>sqlite_db: Busca a sessão pelo cookie
+    web_server->>web_server: Consome um token do limite por usuário, depois consulta o cache de 10 min
+    web_server->>google_books: Busca volumes
+    alt Google Books responde
+        google_books-->>web_server: Volumes
+    else Google Books falha ou atinge o limite
+        web_server->>open_library: Busca obras
+        open_library-->>web_server: Obras
+    end
+    web_server-->>spa: Itens normalizados e provedor
+    reader->>spa: Toca num status em um resultado
+    spa->>web_server: POST /api/shelf com livro e status
+    web_server->>web_server: Valida a entrada e reconcilia as regras de status
+    alt Gate de anúncio ligado, sessão não liberada e livro novo
+        web_server-->>spa: 403 AD_REQUIRED
+    else Gate de anúncio desligado ou já liberado
+        web_server->>sqlite_db: Transação, busca ou cria o livro e faz upsert do item da estante
+        web_server-->>spa: Item da estante
+        spa->>service_worker: Pré-carrega as capas a partir da referência de capa
+        service_worker->>google_books: Busca a capa (ou na Open Library)
+        service_worker->>service_worker: Guarda a capa no Cache Storage
+        spa->>web_server: GET /api/shelf/:id/details
+        web_server->>sqlite_db: Lê a sinopse guardada
+        web_server->>google_books: Busca a sinopse se faltar, depois salva no banco de dados
+        web_server-->>spa: Sinopse
+        spa->>spa: Copia a sinopse para o Cache Storage
+    end
